@@ -1,0 +1,2 @@
+Issue1 利用 Material 取得 UV，但邊緣會有分界線(沒有分界乾淨)的情況
+Solution 用於產生 Material 的 Texture，將 Filter Mode 設置為 Point(no filter)
