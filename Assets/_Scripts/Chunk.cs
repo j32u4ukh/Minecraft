@@ -15,6 +15,14 @@ public class Chunk : MonoBehaviour
     public int height = 2;
     public int depth = 2;
 
+    [Header("Perlin Settings")]
+    public float hightScale = 10f;
+    public float scale = 0.001f;
+    public int octaves = 8;
+    public float heightOffset = -33f;
+
+    public Vector3 location;
+
     public Block[,,] blocks;
     // Flat[x + WIDTH * (y + DEPTH * z)] = Original[x, y, z]
     // x = i % WIDTH
@@ -29,10 +37,10 @@ public class Chunk : MonoBehaviour
 
         for (int i = 0; i < blockCount; i++)
         {
-            int x = i % width;
-            int y = (i / width) % height;
-            int z = i / (width * height);
-            float land = (int)MeshUtils.fBM(x, z, 8, 0.001f, 10f, -33f);
+            int x = i % width + (int) location.x;
+            int y = (i / width) % height + (int)location.y;
+            int z = i / (width * height) + (int)location.z;
+            float land = (int)MeshUtils.fBM(x, z, octaves, scale, hightScale, heightOffset);
 
             if (y < land)
             {
@@ -47,9 +55,19 @@ public class Chunk : MonoBehaviour
         }
     }
 
-    // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
+        
+    }
+
+    // Start is called before the first frame update
+    public void CreateChunk(Vector3 dimensions, Vector3 position)
+    {
+        location = position;
+        width = (int)dimensions.x;
+        height = (int)dimensions.y;
+        depth = (int)dimensions.z;
+
         MeshFilter mf = gameObject.AddComponent<MeshFilter>();
         MeshRenderer mr = gameObject.AddComponent<MeshRenderer>();
         mr.material = atlas;
@@ -74,7 +92,7 @@ public class Chunk : MonoBehaviour
                 for (int x = 0; x < width; x++)
                 {
                     int chunk_idx = x + width * (y + depth * z);
-                    blocks[x, y, z] = new Block(new Vector3(x, y, z), chunkData[chunk_idx], this);
+                    blocks[x, y, z] = new Block(new Vector3(x, y, z) + location, chunkData[chunk_idx], this);
 
                     // 只將有 mesh 的 Block 加入 inputMeshes
                     if (blocks[x, y, z].mesh != null)
@@ -109,7 +127,7 @@ public class Chunk : MonoBehaviour
 
         var handle = jobs.Schedule(inputMeshes.Count, 4);
         var newMesh = new Mesh();
-        newMesh.name = "Chunk";
+        newMesh.name = $"Chunk_{location.x}_{location.y}_{location.z}";
 
         var sm = new SubMeshDescriptor(0, triStart, MeshTopology.Triangles);
         sm.firstVertex = 0;
@@ -125,6 +143,9 @@ public class Chunk : MonoBehaviour
         newMesh.RecalculateBounds();
 
         mf.mesh = newMesh;
+
+        MeshCollider collider = gameObject.AddComponent<MeshCollider>();
+        collider.sharedMesh = mf.mesh;
     }
 
     // BurstCompile 需使用 .NET 4.0 以上

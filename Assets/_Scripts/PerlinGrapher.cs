@@ -43,7 +43,7 @@ public class PerlinGrapher : MonoBehaviour
 
         for(int x = 0; x < lr.positionCount; x++) 
         {
-            float y = fBM(x, z) - heightOffset;
+            float y = fBM(x, z) + heightOffset;
             positions[x] = new Vector3(x, y, z);
         }
 
