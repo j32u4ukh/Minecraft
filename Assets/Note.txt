@@ -1,2 +1,10 @@
 Issue1 利用 Material 取得 UV，但邊緣會有分界線(沒有分界乾淨)的情況
 Solution 用於產生 Material 的 Texture，將 Filter Mode 設置為 Point(no filter)
+
+Issue2 使用 Job Sustem
+Solution 
+1. Window > Package Manager > Unity Registry > Burst > Install
+2. Window > Package Manager > Unity Registry > Mathematics > Install
+
+Issue3 Burst 和 Mathematics 都在 package 當中，卻無法載入或使用
+Solution [BurstCompile] 和 using Unity.Mathematics; 需使用 .NET 4.0 以上

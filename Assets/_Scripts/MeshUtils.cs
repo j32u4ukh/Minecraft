@@ -8,6 +8,9 @@ using VertexData = System.Tuple<UnityEngine.Vector3, UnityEngine.Vector3, UnityE
 
 public static class MeshUtils
 {
+
+    public enum BlockSide { BOTTOM, TOP, LEFT, RIGHT, FRONT, BACK }
+
     public enum BlockType
     {
         GRASSTOP,
@@ -15,9 +18,11 @@ public static class MeshUtils
         DIRT,
         WATER,
         STONE,
-        SAND
+        SAND,
+        AIR,
     }
 
+    // 此種取得 UV 邊界座標的方式，與 enum BlockType 的順序有關聯，是不好的方法
     public static Vector2[,] blockUVs =
     {
         // GRASSTOP
@@ -64,6 +69,34 @@ public static class MeshUtils
         }
     };
 
+    // TODO: Dict<BlockType, Tuple(x, y)> -> (x, y) 再利用 Vector2[] getBlockUVs(int x, int y) 取得 UV 邊界座標
+    public static readonly Dictionary<BlockType, Tuple<int, int>> blockAnchor = new Dictionary<BlockType, Tuple<int, int>>()
+    {
+        {BlockType.GRASSTOP, new Tuple<int, int>(2, 15) },
+        {BlockType.GRASSSIDE, new Tuple<int, int>(2, 15) },
+        {BlockType.DIRT, new Tuple<int, int>(2, 15) },
+        {BlockType.WATER, new Tuple<int, int>(2, 15) },
+        {BlockType.STONE, new Tuple<int, int>(2, 15) },
+        {BlockType.SAND, new Tuple<int, int>(2, 15) },
+    };
+
+    public static Dictionary<BlockType, Vector2[]> block2Coordinate = new Dictionary<BlockType, Vector2[]>();
+
+    public static Vector2[] getBlockTypeCoordinate(BlockType block_type)
+    {
+        if (!blockAnchor.ContainsKey(block_type))
+        {
+            return null;
+        }
+        else if (!block2Coordinate.ContainsKey(block_type))
+        {
+            Tuple<int, int> anchor = blockAnchor[block_type];
+            block2Coordinate[block_type] = getBlockUVs(x: anchor.Item1, y: anchor.Item2);
+        }
+
+        return block2Coordinate[block_type];
+    }
+    
     // 每個方塊尺寸為 0.0625 * 0.0625，根據 (x, y) 位置，返回邊界四點座標
     public static Vector2[] getBlockUVs(int x, int y)
     {

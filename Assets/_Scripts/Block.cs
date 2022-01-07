@@ -2,44 +2,87 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Block : MonoBehaviour
+public class Block
 {
-    [System.Serializable] 
-    public enum BlockSide{ BOTTOM, TOP, LEFT, RIGHT, FRONT, BACK}
-
-    public Material atlas;
+    public Mesh mesh;
+    Chunk parentChunk;
 
     // Start is called before the first frame update
-    void Start()
+    public Block(Vector3 offset, MeshUtils.BlockType type, Chunk chunk)
     {
-        MeshFilter mf = gameObject.AddComponent<MeshFilter>();
-        MeshRenderer mr = gameObject.AddComponent<MeshRenderer>();
-        mr.material = atlas;
+        parentChunk = chunk;
 
-        Quad[] quads = new Quad[6];
-        quads[0] = new Quad(BlockSide.TOP, new Vector3(0f, 0f, 0f), MeshUtils.BlockType.GRASSTOP);
-        quads[1] = new Quad(BlockSide.FRONT, new Vector3(0f, 0f, 0f), MeshUtils.BlockType.GRASSSIDE);
-        quads[2] = new Quad(BlockSide.BACK, new Vector3(0f, 0f, 0f), MeshUtils.BlockType.GRASSSIDE);
-        quads[3] = new Quad(BlockSide.LEFT, new Vector3(0f, 0f, 0f), MeshUtils.BlockType.GRASSSIDE);
-        quads[4] = new Quad(BlockSide.RIGHT, new Vector3(0f, 0f, 0f), MeshUtils.BlockType.GRASSSIDE);
-        quads[5] = new Quad(BlockSide.BOTTOM, new Vector3(0f, 0f, 0f), MeshUtils.BlockType.DIRT);
-        //mf.mesh = quad.Build(side, new Vector3(1f, 1f, 1f));
+        if(type != MeshUtils.BlockType.AIR)
+        {
+            List<Quad> quads = new List<Quad>();
 
-        Mesh[] sideMeshes = new Mesh[6];
-        sideMeshes[0] = quads[0].mesh;
-        sideMeshes[1] = quads[1].mesh;
-        sideMeshes[2] = quads[2].mesh;
-        sideMeshes[3] = quads[3].mesh;
-        sideMeshes[4] = quads[4].mesh;
-        sideMeshes[5] = quads[5].mesh;
+            /* 利用 HasSolidNeighbour 檢查各個方向是否還有下一格，
+             * 因此傳入的座標為該方向下一格 Block 的座標 */
 
-        mf.mesh = MeshUtils.MergeMeshes(sideMeshes);
-        mf.mesh.name = "Cube_0_0_0";
+            if (!HasSolidNeighbour((int)offset.x, (int)offset.y - 1, (int)offset.z))
+            {
+                quads.Add(new Quad(MeshUtils.BlockSide.BOTTOM, offset, type));
+            }
+
+            if (!HasSolidNeighbour((int)offset.x, (int)offset.y + 1, (int)offset.z))
+            {
+                quads.Add(new Quad(MeshUtils.BlockSide.TOP, offset, type));
+            }
+
+            if (!HasSolidNeighbour((int)offset.x - 1, (int)offset.y, (int)offset.z))
+            {
+                quads.Add(new Quad(MeshUtils.BlockSide.LEFT, offset, type));
+            }
+
+            if (!HasSolidNeighbour((int)offset.x + 1, (int)offset.y, (int)offset.z))
+            {
+                quads.Add(new Quad(MeshUtils.BlockSide.RIGHT, offset, type));
+            }
+
+            if (!HasSolidNeighbour((int)offset.x, (int)offset.y, (int)offset.z + 1))
+            {
+                quads.Add(new Quad(MeshUtils.BlockSide.FRONT, offset, type));
+            }
+
+            if (!HasSolidNeighbour((int)offset.x, (int)offset.y, (int)offset.z - 1))
+            {
+                quads.Add(new Quad(MeshUtils.BlockSide.BACK, offset, type));
+            }
+
+            if (quads.Count == 0)
+            {
+                return;
+            }
+
+            Mesh[] sideMeshes = new Mesh[quads.Count];
+            int m = 0;
+            foreach (Quad q in quads)
+            {
+                sideMeshes[m] = q.mesh;
+                m++;
+            }
+
+            mesh = MeshUtils.MergeMeshes(sideMeshes);
+            mesh.name = "Cube_0_0_0";
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    public bool HasSolidNeighbour(int x, int y, int z)
     {
-        
+        if (x < 0 || x >= parentChunk.width ||
+            y < 0 || y >= parentChunk.height ||
+            z < 0 || z >= parentChunk.depth)
+        {
+            return false;
+        }
+
+        if (parentChunk.chunkData[x + parentChunk.width * (y + parentChunk.depth * z)] == MeshUtils.BlockType.AIR || 
+            parentChunk.chunkData[x + parentChunk.width * (y + parentChunk.depth * z)] == MeshUtils.BlockType.WATER)
+        {
+            return false;
+        }
+            
+
+        return true;
     }
 }
