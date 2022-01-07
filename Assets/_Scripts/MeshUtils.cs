@@ -189,4 +189,17 @@ public static class MeshUtils
         mesh.uv = uvs.ToArray();
     }
 
+    public static float fBM(float x, float z, int octaves, float scale, float hightScale, float heightOffset)
+    {
+        float total = 0f;
+        float frequncy = 1f;
+
+        for (int i = 0; i < octaves; i++)
+        {
+            total += Mathf.PerlinNoise(x * scale * frequncy, z * scale * frequncy) * hightScale;
+            frequncy *= 2f;
+        }
+
+        return total + heightOffset;
+    }
 }

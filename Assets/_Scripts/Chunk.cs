@@ -16,7 +16,10 @@ public class Chunk : MonoBehaviour
     public int depth = 2;
 
     public Block[,,] blocks;
-    //Flat[x + WIDTH * (y + DEPTH * z)] = Original[x, y, z]
+    // Flat[x + WIDTH * (y + DEPTH * z)] = Original[x, y, z]
+    // x = i % WIDTH
+    // y = (i / WIDTH) % HEIGHT
+    // z = i / (WIDTH * HEIGHT)
     public MeshUtils.BlockType[] chunkData;
 
     void BuildChunk()
@@ -26,7 +29,12 @@ public class Chunk : MonoBehaviour
 
         for (int i = 0; i < blockCount; i++)
         {
-            if (UnityEngine.Random.Range(0, 100) < 50)
+            int x = i % width;
+            int y = (i / width) % height;
+            int z = i / (width * height);
+            float land = (int)MeshUtils.fBM(x, z, 8, 0.001f, 10f, -33f);
+
+            if (y < land)
             {
                 chunkData[i] = MeshUtils.BlockType.DIRT;
             }
