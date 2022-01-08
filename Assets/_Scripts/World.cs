@@ -23,7 +23,7 @@ public struct PerlinSettings
 
 public class World : MonoBehaviour
 {
-    public static Vector3Int worldDimesions = new Vector3Int(10, 5, 10);
+    public static Vector3Int worldDimesions = new Vector3Int(5, 5, 5);
     public static Vector3Int extraWorldDimesions = new Vector3Int(5, 5, 5);
     public static Vector3Int chunkDimensions = new Vector3Int(10, 10, 10);
     public GameObject chunkPrefab;
@@ -56,28 +56,15 @@ public class World : MonoBehaviour
 
     Queue<IEnumerator> buildQueue = new Queue<IEnumerator>();
 
-    IEnumerator BuildCoordinator()
-    {
-        while (true)
-        {
-            while(buildQueue.Count > 0)
-            {
-                yield return StartCoroutine(buildQueue.Dequeue());
-            }
-
-            yield return null;
-        }
-    }
-
     // Start is called before the first frame update
     void Start()
     {
         loadingBar.maxValue = worldDimesions.x * worldDimesions.z;
 
-        surfaceSettings = new PerlinSettings(surface.heightScale, 
-                                             surface.scale, 
-                                             surface.octaves, 
-                                             surface.heightOffset, 
+        surfaceSettings = new PerlinSettings(surface.heightScale,
+                                             surface.scale,
+                                             surface.octaves,
+                                             surface.heightOffset,
                                              surface.probability);
 
         stoneSettings = new PerlinSettings(stone.heightScale,
@@ -105,6 +92,51 @@ public class World : MonoBehaviour
                                           caves.DrawCutOff);
 
         StartCoroutine(BuildWorld());
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
+        {
+            RaycastHit hit;
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+            if (Physics.Raycast(ray, out hit, 10f))
+            {
+                Vector3 hitBlock = Vector3.zero;
+
+                if (Input.GetMouseButtonDown(0))
+                {
+                    hitBlock = hit.point - hit.normal / 2.0f;                    
+                }
+
+                //Debug.Log($"Block location: {hitBlock}");
+                Chunk thisChunk = hit.collider.gameObject.GetComponent<Chunk>();
+                int bx = (int)(Mathf.Round(hitBlock.x) - thisChunk.location.x);
+                int by = (int)(Mathf.Round(hitBlock.y) - thisChunk.location.y);
+                int bz = (int)(Mathf.Round(hitBlock.z) - thisChunk.location.z);
+                int i = bx + chunkDimensions.x * (by + chunkDimensions.z * bz);
+                thisChunk.chunkData[i] = MeshUtils.BlockType.AIR;
+                DestroyImmediate(thisChunk.GetComponent<MeshFilter>());
+                DestroyImmediate(thisChunk.GetComponent<MeshRenderer>());
+                DestroyImmediate(thisChunk.GetComponent<Collider>());
+                thisChunk.CreateChunk(chunkDimensions, thisChunk.location, false);
+            }
+        }
+    }
+
+    IEnumerator BuildCoordinator()
+    {
+        while (true)
+        {
+            while(buildQueue.Count > 0)
+            {
+                yield return StartCoroutine(buildQueue.Dequeue());
+            }
+
+            yield return null;
+        }
     }
 
     // 新增一欄 Chunk
@@ -202,9 +234,9 @@ public class World : MonoBehaviour
         StartCoroutine(BuildCoordinator());
 
         // 將 IEnumerator 添加到 buildQueue 當中
-        StartCoroutine(UpdateWorld());
+        //StartCoroutine(UpdateWorld());
         
-        // 
+        // 在背景中持續生成環境
         StartCoroutine(BuildExtraWorld());
     }
 
@@ -285,11 +317,5 @@ public class World : MonoBehaviour
         BuildChunkColumn(x - chunkDimensions.x, z, meshEnabled: true);
         buildQueue.Enqueue(BuildRecursiveWorld(x - chunkDimensions.x, z, nextrad));
         yield return null;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }
