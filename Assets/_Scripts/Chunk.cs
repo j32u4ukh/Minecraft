@@ -23,6 +23,7 @@ public class Chunk : MonoBehaviour
     // y = (i / WIDTH) % HEIGHT
     // z = i / (WIDTH * HEIGHT)
     public MeshUtils.BlockType[] chunkData;
+    public MeshRenderer meshRenderer;
 
     void BuildChunk()
     {
@@ -119,7 +120,11 @@ public class Chunk : MonoBehaviour
         depth = (int)dimensions.z;
 
         MeshFilter mf = gameObject.AddComponent<MeshFilter>();
+
+        // TODO: 可將此處的 mr 用全域的 meshRenderer 取代
         MeshRenderer mr = gameObject.AddComponent<MeshRenderer>();
+        meshRenderer = mr;
+
         mr.material = atlas;
         blocks = new Block[width, height, depth];
         BuildChunk();

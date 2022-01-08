@@ -45,6 +45,29 @@ public class World : MonoBehaviour
     public static PerlinSettings caveSettings;
     public Perlin3DGrapher caves;
 
+    HashSet<Vector3Int> chunkChecker = new HashSet<Vector3Int>();
+    HashSet<Vector2Int> chunkColumns = new HashSet<Vector2Int>();
+    Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
+
+    // 前一次世界建造時，玩家所在位置
+    Vector3Int lastBuildPosition;
+    int drawRadius = 3;
+
+    Queue<IEnumerator> buildQueue = new Queue<IEnumerator>();
+
+    IEnumerator BuildCoordinator()
+    {
+        while (true)
+        {
+            while(buildQueue.Count > 0)
+            {
+                yield return StartCoroutine(buildQueue.Dequeue());
+            }
+
+            yield return null;
+        }
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -87,9 +110,21 @@ public class World : MonoBehaviour
     {
         for (int y = 0; y < worldDimesions.y; y++)
         {
-            GameObject chunk = Instantiate(chunkPrefab);
-            Vector3Int position = new Vector3Int(chunkDimensions.x * x, chunkDimensions.y * y, chunkDimensions.z * z);
-            chunk.GetComponent<Chunk>().CreateChunk(dimensions: chunkDimensions, position: position);
+            Vector3Int position = new Vector3Int(x, chunkDimensions.y * y, z);
+
+            if (!chunkChecker.Contains(position))
+            {
+                GameObject chunk = Instantiate(chunkPrefab);
+                chunk.name = $"Chunk_{position.x}_{position.y}_{position.z}";
+                Chunk c = chunk.GetComponent<Chunk>();
+                c.CreateChunk(dimensions: chunkDimensions, position: position);
+                chunkChecker.Add(position);
+                chunks.Add(position, c);
+            }
+            else
+            {
+                chunks[position].meshRenderer.enabled = true;
+            }           
         }
     }
 
@@ -99,7 +134,7 @@ public class World : MonoBehaviour
         {
             for (int x = 0; x < worldDimesions.x; x++)
             {
-                BuildChunkColumn(x, z);
+                BuildChunkColumn(chunkDimensions.x * x, chunkDimensions.z * z);
                 loadingBar.value++;
                 yield return null;
             }
@@ -117,6 +152,58 @@ public class World : MonoBehaviour
                                       surfaceSettings.heightOffset) + 10;
         fpc.transform.position = new Vector3Int(xpos, ypos, zpos);
         fpc.SetActive(true);
+        //lastBuildPosition = new Vector3Int(xpos, ypos, zpos);
+        lastBuildPosition = Vector3Int.CeilToInt(fpc.transform.position);
+
+        StartCoroutine(BuildCoordinator());
+        StartCoroutine(UpdateWorld());
+    }
+
+    WaitForSeconds wfs = new WaitForSeconds(0.5f);
+    IEnumerator UpdateWorld()
+    {
+        while (true)
+        {
+            // 當玩家移動距離離上一次世界生成點 lastBuildPosition 大過一個 chunk 的距離時
+            if ((lastBuildPosition - fpc.transform.position).magnitude > chunkDimensions.x)
+            {
+                lastBuildPosition = Vector3Int.CeilToInt(fpc.transform.position);
+                int posx = (int)(fpc.transform.position.x / chunkDimensions.x) * chunkDimensions.x;
+                int posz = (int)(fpc.transform.position.z / chunkDimensions.z) * chunkDimensions.z;
+                buildQueue.Enqueue(BuildRecursiveWorld(posx, posz, drawRadius));
+            }
+
+            yield return wfs;
+        }
+    }
+
+    IEnumerator BuildRecursiveWorld(int x, int z, int rad)
+    {
+        int nextrad = rad - 1;
+
+        if(nextrad <= 0)
+        {
+            yield break;
+        }
+
+        BuildChunkColumn(x, z + chunkDimensions.z);
+
+        // Next chunk z position: z + chunkDimensions.z
+        buildQueue.Enqueue(BuildRecursiveWorld(x, z + chunkDimensions.z, nextrad));
+        yield return null;
+
+        BuildChunkColumn(x, z - chunkDimensions.z);
+
+        buildQueue.Enqueue(BuildRecursiveWorld(x, z - chunkDimensions.z, nextrad));
+        yield return null;
+
+        BuildChunkColumn(x + chunkDimensions.x, z);
+        buildQueue.Enqueue(BuildRecursiveWorld(x + chunkDimensions.x, z, nextrad));
+        yield return null;
+
+        BuildChunkColumn(x - chunkDimensions.x, z);
+        buildQueue.Enqueue(BuildRecursiveWorld(x - chunkDimensions.x, z, nextrad));
+        yield return null;
     }
 
     // Update is called once per frame
