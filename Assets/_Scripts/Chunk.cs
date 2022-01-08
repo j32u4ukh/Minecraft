@@ -40,9 +40,14 @@ public class Chunk : MonoBehaviour
             int x = i % width + (int) location.x;
             int y = (i / width) % height + (int)location.y;
             int z = i / (width * height) + (int)location.z;
-            float land = (int)MeshUtils.fBM(x, z, octaves, scale, hightScale, heightOffset);
+            float surfaceHeight = (int)MeshUtils.fBM(x, z, octaves, scale, hightScale, heightOffset);
 
-            if (y < land)
+            if (y == surfaceHeight) 
+            {
+                chunkData[i] = MeshUtils.BlockType.GRASSSIDE;
+            }
+
+            else if (y < surfaceHeight)
             {
                 chunkData[i] = MeshUtils.BlockType.DIRT;
             }
