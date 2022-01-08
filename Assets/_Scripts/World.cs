@@ -106,6 +106,7 @@ public class World : MonoBehaviour
         StartCoroutine(BuildWorld());
     }
 
+    // 新增一欄 Chunk
     void BuildChunkColumn(int x, int z)
     {
         for (int y = 0; y < worldDimesions.y; y++)
@@ -126,6 +127,8 @@ public class World : MonoBehaviour
                 chunks[position].meshRenderer.enabled = true;
             }           
         }
+
+        chunkColumns.Add(new Vector2Int(x, z));
     }
 
     IEnumerator BuildWorld()
@@ -155,7 +158,11 @@ public class World : MonoBehaviour
         //lastBuildPosition = new Vector3Int(xpos, ypos, zpos);
         lastBuildPosition = Vector3Int.CeilToInt(fpc.transform.position);
 
+
+        // 依序執行 buildQueue 當中的 IEnumerator
         StartCoroutine(BuildCoordinator());
+
+        // 將 IEnumerator 添加到 buildQueue 當中
         StartCoroutine(UpdateWorld());
     }
 
@@ -171,10 +178,42 @@ public class World : MonoBehaviour
                 int posx = (int)(fpc.transform.position.x / chunkDimensions.x) * chunkDimensions.x;
                 int posz = (int)(fpc.transform.position.z / chunkDimensions.z) * chunkDimensions.z;
                 buildQueue.Enqueue(BuildRecursiveWorld(posx, posz, drawRadius));
+                buildQueue.Enqueue(HideColumns(posx, posz));
             }
 
             yield return wfs;
         }
+    }
+
+    public void HideChunkColumn(int x, int z)
+    {
+        for(int y = 0; y < worldDimesions.y; y++)
+        {
+            // Chunk position
+            Vector3Int pos = new Vector3Int(x, y * chunkDimensions.y, z);
+
+            if (chunkChecker.Contains(pos))
+            {
+                chunks[pos].meshRenderer.enabled = false;
+            }
+        }
+    }
+
+    IEnumerator HideColumns(int x, int z)
+    {
+        Vector2Int fpcPos = new Vector2Int(x, z);
+
+        // cc: chunk position
+        foreach (Vector2Int cc in chunkColumns)
+        {
+            if((cc - fpcPos).magnitude >= drawRadius * chunkDimensions.x)
+            {
+                // 實際上是 Z 值，但 Vector2Int 本身屬性為 y
+                HideChunkColumn(cc.x, cc.y);
+            }
+        }
+
+        yield return null;
     }
 
     IEnumerator BuildRecursiveWorld(int x, int z, int rad)
