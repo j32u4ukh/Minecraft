@@ -730,6 +730,8 @@ MonoBehaviour:
   mCamera: {fileID: 935847871}
   fpc: {fileID: 1168555848}
   loadingBar: {fileID: 1861604688}
+  surface: {fileID: 1477574368}
+  stone: {fileID: 1835694191}
 --- !u!1 &1477574367
 GameObject:
   m_ObjectHideFlags: 0
@@ -742,7 +744,7 @@ GameObject:
   - component: {fileID: 1477574369}
   - component: {fileID: 1477574368}
   m_Layer: 0
-  m_Name: Landscape
+  m_Name: Surface
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -765,6 +767,7 @@ MonoBehaviour:
   scale: 0.001
   octaves: 8
   heightOffset: -18
+  probability: 1
 --- !u!120 &1477574369
 LineRenderer:
   m_ObjectHideFlags: 0
@@ -784,7 +787,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 0}
+  - {fileID: 2100000, guid: 987052d061508674ab21f1c26578b60d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1024,6 +1027,7 @@ MonoBehaviour:
   scale: 0.001
   octaves: 8
   heightOffset: -28
+  probability: 1
 --- !u!120 &1835694192
 LineRenderer:
   m_ObjectHideFlags: 0
@@ -1043,7 +1047,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 0}
+  - {fileID: 2100000, guid: 987052d061508674ab21f1c26578b60d, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

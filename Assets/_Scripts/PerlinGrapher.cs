@@ -7,9 +7,15 @@ public class PerlinGrapher : MonoBehaviour
 {
     public LineRenderer lr;
     public float hightScale = 2;
+
+    [Range(0.0f, 1.0f)]
     public float scale = 0.85f;
+
     public int octaves = 1;
     public float heightOffset = 1f;
+
+    [Range(0.0f, 1.0f)]
+    public float probability = 1f;
 
     // Start is called before the first frame update
     void Start()

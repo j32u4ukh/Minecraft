@@ -3,6 +3,24 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+public struct PerlinSettings
+{
+    public float heightScale;
+    public float scale;
+    public int octaves;
+    public float heightOffset;
+    public float probability;
+
+    public PerlinSettings(float hs, float s, int o, float ho, float p)
+    {
+        heightScale= hs;
+        scale = s;
+        octaves = o;
+        heightOffset = ho;
+        probability = p;
+    }
+}
+
 public class World : MonoBehaviour
 {
     public static Vector3 worldDimesions = new Vector3(3, 3, 3);
@@ -12,11 +30,29 @@ public class World : MonoBehaviour
     public GameObject fpc;
     public Slider loadingBar;
 
+    public static PerlinSettings surfaceSettings;
+    public PerlinGrapher surface;
+
+    public static PerlinSettings stoneSettings;
+    public PerlinGrapher stone;
 
     // Start is called before the first frame update
     void Start()
     {
         loadingBar.maxValue = worldDimesions.x * worldDimesions.y * worldDimesions.z;
+
+        surfaceSettings = new PerlinSettings(surface.hightScale, 
+                                             surface.scale, 
+                                             surface.octaves, 
+                                             surface.heightOffset, 
+                                             surface.probability);
+
+        stoneSettings = new PerlinSettings(stone.hightScale,
+                                           stone.scale,
+                                           stone.octaves,
+                                           stone.heightOffset,
+                                           stone.probability);
+
         StartCoroutine(BuildWorld());
     }
 
