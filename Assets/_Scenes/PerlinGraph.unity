@@ -1027,7 +1027,7 @@ MonoBehaviour:
   scale: 0.001
   octaves: 8
   heightOffset: -28
-  probability: 1
+  probability: 0.1
 --- !u!120 &1835694192
 LineRenderer:
   m_ObjectHideFlags: 0

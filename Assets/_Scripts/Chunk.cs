@@ -15,12 +15,6 @@ public class Chunk : MonoBehaviour
     public int height = 2;
     public int depth = 2;
 
-    [Header("Perlin Settings")]
-    public float hightScale = 10f;
-    public float scale = 0.001f;
-    public int octaves = 8;
-    public float heightOffset = -33f;
-
     public Vector3 location;
 
     public Block[,,] blocks;
@@ -40,11 +34,26 @@ public class Chunk : MonoBehaviour
             int x = i % width + (int) location.x;
             int y = (i / width) % height + (int)location.y;
             int z = i / (width * height) + (int)location.z;
-            float surfaceHeight = (int)MeshUtils.fBM(x, z, octaves, scale, hightScale, heightOffset);
+            float surfaceHeight = (int)MeshUtils.fBM(x, z, 
+                                                     World.surfaceSettings.octaves, 
+                                                     World.surfaceSettings.scale, 
+                                                     World.surfaceSettings.heightScale, 
+                                                     World.surfaceSettings.heightOffset);
+
+            float stoneHeight = (int)MeshUtils.fBM(x, z, 
+                                                   World.stoneSettings.octaves,
+                                                   World.stoneSettings.scale, 
+                                                   World.stoneSettings.heightScale,
+                                                   World.stoneSettings.heightOffset);
 
             if (y == surfaceHeight) 
             {
                 chunkData[i] = MeshUtils.BlockType.GRASSSIDE;
+            }
+
+            else if ((y < stoneHeight) && (UnityEngine.Random.Range(0.0f, 1.0f) < World.stoneSettings.probability))
+            {
+                chunkData[i] = MeshUtils.BlockType.STONE;
             }
 
             else if (y < surfaceHeight)

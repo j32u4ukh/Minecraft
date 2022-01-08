@@ -78,8 +78,12 @@ public class World : MonoBehaviour
 
         float xpos = chunkDimensions.x * worldDimesions.x / 2.0f;
         float zpos = chunkDimensions.z * worldDimesions.z / 2.0f;
-        Chunk c = chunkPrefab.GetComponent<Chunk>();
-        float ypos = MeshUtils.fBM(xpos, zpos, c.octaves, c.scale, c.hightScale, c.heightOffset) + 10f;
+        //Chunk c = chunkPrefab.GetComponent<Chunk>();
+        float ypos = MeshUtils.fBM(xpos, zpos, 
+                                   surfaceSettings.octaves, 
+                                   surfaceSettings.scale, 
+                                   surfaceSettings.heightScale, 
+                                   surfaceSettings.heightOffset) + 10f;
         fpc.transform.position = new Vector3(xpos, ypos, zpos);
         fpc.SetActive(true);
     }
