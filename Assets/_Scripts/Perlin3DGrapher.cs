@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[ExecuteInEditMode]
+//[ExecuteInEditMode]
 public class Perlin3DGrapher : MonoBehaviour
 {
     Vector3 dimensions = new Vector3(10, 10, 10);

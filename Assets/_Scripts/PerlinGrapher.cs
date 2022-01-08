@@ -6,7 +6,7 @@ using UnityEngine;
 public class PerlinGrapher : MonoBehaviour
 {
     public LineRenderer lr;
-    public float hightScale = 2;
+    public float heightScale = 2;
 
     [Range(0.0f, 1.0f)]
     public float scale = 0.85f;
@@ -31,7 +31,7 @@ public class PerlinGrapher : MonoBehaviour
     //    float frequncy = 1f;
     //    for(int i = 0; i < octaves; i++)
     //    {
-    //        total += Mathf.PerlinNoise(x * scale * frequncy, z * scale * frequncy) * hightScale;
+    //        total += Mathf.PerlinNoise(x * scale * frequncy, z * scale * frequncy) * heightScale;
     //        frequncy *= 2f;
     //    }
     //    return total;
@@ -47,7 +47,7 @@ public class PerlinGrapher : MonoBehaviour
 
         for(int x = 0; x < lr.positionCount; x++) 
         {
-            float y = MeshUtils.fBM(x, z, octaves, scale, hightScale, heightOffset);
+            float y = MeshUtils.fBM(x, z, octaves, scale, heightScale, heightOffset);
             positions[x] = new Vector3(x, y, z);
         }
 
