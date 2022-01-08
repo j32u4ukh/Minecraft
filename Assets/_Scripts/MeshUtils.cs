@@ -13,14 +13,9 @@ public static class MeshUtils
 
     public enum BlockType
     {
-        GRASSTOP,
-        GRASSSIDE,
-        DIRT,
-        WATER,
-        STONE,
-        SAND,
-        AIR,
-    }
+        GRASSTOP, GRASSSIDE, DIRT, WATER, STONE, SAND, GOLD, BEDROCK, REDSTONE, DIAMOND, NOCRACK,
+        CRACK1, CRACK2, CRACK3, CRACK4, AIR
+    };
 
     // 此種取得 UV 邊界座標的方式，與 enum BlockType 的順序有關聯，是不好的方法
     public static Vector2[,] blockUVs =
@@ -66,6 +61,69 @@ public static class MeshUtils
             new Vector2(0.1875f, 0.8750f),
             new Vector2(0.1250f, 0.9375f),
             new Vector2(0.1875f, 0.9375f)
+        },
+        /*GOLD*/        
+        { 
+            new Vector2(0.0000f, 0.8125f),  
+            new Vector2(0.0625f, 0.8125f),
+            new Vector2(0.0000f, 0.8750f), 
+            new Vector2(0.0625f, 0.8750f)
+        },
+        /*BEDROCK*/     
+        {
+            new Vector2(0.3125f, 0.8125f), 
+            new Vector2(0.3750f, 0.8125f),
+            new Vector2(0.3125f, 0.8750f),
+            new Vector2(0.3750f, 0.8750f)
+        },
+        /*REDSTONE*/    
+        {
+            new Vector2(0.1875f, 0.7500f), 
+            new Vector2(0.2500f, 0.7500f),
+            new Vector2(0.1875f, 0.8125f),
+            new Vector2(0.2500f, 0.8125f)
+        },
+        /*DIAMOND*/    
+        {
+            new Vector2( 0.125f, 0.75f ), 
+            new Vector2( 0.1875f, 0.75f),
+            new Vector2( 0.125f, 0.8125f ),
+            new Vector2( 0.1875f, 0.8125f )
+        },
+        /*NOCRACK*/     
+        {
+            new Vector2( 0.6875f, 0f ), 
+            new Vector2( 0.75f, 0f),         
+            new Vector2( 0.6875f, 0.0625f ),
+            new Vector2( 0.75f, 0.0625f )
+        },
+        /*CRACK1*/      
+        { 
+            new Vector2(0.0000f,0.0000f),  
+            new Vector2(0.0625f,0.0000f),
+            new Vector2(0.0000f,0.0625f), 
+            new Vector2(0.0625f,0.0625f)
+        },
+        /*CRACK2*/      
+        { 
+            new Vector2(0.0625f,0.0000f),  
+            new Vector2(0.125f,0.0000f),
+            new Vector2(0.0625f,0.0625f), 
+            new Vector2(0.125f,0.0625f)
+        },
+        /*CRACK3*/      
+        { 
+            new Vector2(0.125f,0.0000f),  
+            new Vector2(0.1875f,0.0000f),
+            new Vector2(0.125f,0.0625f), 
+            new Vector2(0.1875f,0.0625f)
+        },
+        /*CRACK4*/      
+        { 
+            new Vector2(0.1875f,0.0000f),  
+            new Vector2(0.25f,0.0000f),
+            new Vector2(0.1875f,0.0625f), 
+            new Vector2(0.25f,0.0625f)
         }
     };
 
@@ -96,7 +154,7 @@ public static class MeshUtils
 
         return block2Coordinate[block_type];
     }
-    
+
     // 每個方塊尺寸為 0.0625 * 0.0625，根據 (x, y) 位置，返回邊界四點座標
     public static Vector2[] getBlockUVs(int x, int y)
     {
@@ -123,7 +181,7 @@ public static class MeshUtils
         int pIndex = 0;
 
         // loop through each mesh
-        for (int i = 0; i < meshes.Length; i++) 
+        for (int i = 0; i < meshes.Length; i++)
         {
             if (meshes[i] == null)
             {
@@ -131,7 +189,7 @@ public static class MeshUtils
             }
 
             // loop through each vertex of the current mesh
-            for (int j = 0; j < meshes[i].vertices.Length; j++) 
+            for (int j = 0; j < meshes[i].vertices.Length; j++)
             {
                 Vector3 v = meshes[i].vertices[j];
                 Vector3 n = meshes[i].normals[j];
@@ -202,4 +260,17 @@ public static class MeshUtils
 
         return total + heightOffset;
     }
+
+    public static float fBM3D(float x, float y, float z, int octaves, float scale, float heightScale, float heightOffset)
+    {
+        float XY = fBM(x, y, octaves, scale, heightScale, heightOffset);
+        float YZ = fBM(y, z, octaves, scale, heightScale, heightOffset);
+        float XZ = fBM(x, z, octaves, scale, heightScale, heightOffset);
+        float YX = fBM(y, x, octaves, scale, heightScale, heightOffset);
+        float ZY = fBM(z, y, octaves, scale, heightScale, heightOffset);
+        float ZX = fBM(z, x, octaves, scale, heightScale, heightOffset);
+
+        return (XY + YZ + XZ + YX + ZY + ZX) / 6.0f;
+    }
+
 }
