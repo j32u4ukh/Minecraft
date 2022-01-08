@@ -73,6 +73,7 @@ public class Chunk : MonoBehaviour
                 continue;
             }
 
+            // TODO: 目前的洞穴可能會挖到地表，且因沒有考慮到是否是地表，因而造成地表為泥土而非草地
             if (digCave < World.caveSettings.probability)
             {
                 chunkData[i] = MeshUtils.BlockType.AIR;
