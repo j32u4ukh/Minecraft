@@ -23,7 +23,8 @@ public struct PerlinSettings
 
 public class World : MonoBehaviour
 {
-    public static Vector3Int worldDimesions = new Vector3Int(4, 4, 4);
+    public static Vector3Int worldDimesions = new Vector3Int(10, 5, 10);
+    public static Vector3Int extraWorldDimesions = new Vector3Int(5, 5, 5);
     public static Vector3Int chunkDimensions = new Vector3Int(10, 10, 10);
     public GameObject chunkPrefab;
     public GameObject mCamera;
@@ -107,7 +108,7 @@ public class World : MonoBehaviour
     }
 
     // 新增一欄 Chunk
-    void BuildChunkColumn(int x, int z)
+    void BuildChunkColumn(int x, int z, bool meshEnabled = true)
     {
         for (int y = 0; y < worldDimesions.y; y++)
         {
@@ -122,13 +123,51 @@ public class World : MonoBehaviour
                 chunkChecker.Add(position);
                 chunks.Add(position, c);
             }
-            else
-            {
-                chunks[position].meshRenderer.enabled = true;
-            }           
+
+            chunks[position].meshRenderer.enabled = meshEnabled;
         }
 
         chunkColumns.Add(new Vector2Int(x, z));
+    }
+
+    IEnumerator BuildExtraWorld()
+    {
+        int zStart = worldDimesions.z;
+        int zEnd = worldDimesions.z + extraWorldDimesions.z;
+        int xStart = worldDimesions.x;
+        int xEnd = worldDimesions.x + extraWorldDimesions.x;
+
+        for (int z = zStart; z < zEnd; z++)
+        {
+            for (int x = 0; x < xEnd; x++)
+            {
+                BuildChunkColumn(chunkDimensions.x * x, chunkDimensions.z * z, meshEnabled: false);
+                yield return null;
+            }
+        }
+
+        for (int z = 0; z < zEnd; z++)
+        {
+            for (int x = xStart; x < xEnd; x++)
+            {
+                BuildChunkColumn(chunkDimensions.x * x, chunkDimensions.z * z, meshEnabled: false);
+                yield return null;
+            }
+        }
+
+        //for (int z = 0; z < worldDimesions.z + extraWorldDimesions.z; z++)
+        //{
+        //    for (int x = 0; x < worldDimesions.x + extraWorldDimesions.x; x++)
+        //    {
+        //        if ((z < worldDimesions.z) && (x < worldDimesions.x))
+        //        {
+        //            continue;
+        //        }
+
+        //        BuildChunkColumn(chunkDimensions.x * x, chunkDimensions.z * z);
+        //        yield return null;
+        //    }
+        //}
     }
 
     IEnumerator BuildWorld()
@@ -137,7 +176,7 @@ public class World : MonoBehaviour
         {
             for (int x = 0; x < worldDimesions.x; x++)
             {
-                BuildChunkColumn(chunkDimensions.x * x, chunkDimensions.z * z);
+                BuildChunkColumn(chunkDimensions.x * x, chunkDimensions.z * z, meshEnabled: true);
                 loadingBar.value++;
                 yield return null;
             }
@@ -164,6 +203,9 @@ public class World : MonoBehaviour
 
         // 將 IEnumerator 添加到 buildQueue 當中
         StartCoroutine(UpdateWorld());
+        
+        // 
+        StartCoroutine(BuildExtraWorld());
     }
 
     WaitForSeconds wfs = new WaitForSeconds(0.5f);
@@ -225,22 +267,22 @@ public class World : MonoBehaviour
             yield break;
         }
 
-        BuildChunkColumn(x, z + chunkDimensions.z);
+        BuildChunkColumn(x, z + chunkDimensions.z, meshEnabled: true);
 
         // Next chunk z position: z + chunkDimensions.z
         buildQueue.Enqueue(BuildRecursiveWorld(x, z + chunkDimensions.z, nextrad));
         yield return null;
 
-        BuildChunkColumn(x, z - chunkDimensions.z);
+        BuildChunkColumn(x, z - chunkDimensions.z, meshEnabled: true);
 
         buildQueue.Enqueue(BuildRecursiveWorld(x, z - chunkDimensions.z, nextrad));
         yield return null;
 
-        BuildChunkColumn(x + chunkDimensions.x, z);
+        BuildChunkColumn(x + chunkDimensions.x, z, meshEnabled: true);
         buildQueue.Enqueue(BuildRecursiveWorld(x + chunkDimensions.x, z, nextrad));
         yield return null;
 
-        BuildChunkColumn(x - chunkDimensions.x, z);
+        BuildChunkColumn(x - chunkDimensions.x, z, meshEnabled: true);
         buildQueue.Enqueue(BuildRecursiveWorld(x - chunkDimensions.x, z, nextrad));
         yield return null;
     }
