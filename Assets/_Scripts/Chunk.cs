@@ -64,6 +64,20 @@ public class Chunk : MonoBehaviour
                                                  World.caveSettings.heightScale,
                                                  World.caveSettings.heightOffset);
 
+
+
+            if (y == 0)
+            {
+                chunkData[i] = MeshUtils.BlockType.BEDROCK;
+                continue;
+            }
+
+            if (digCave < World.caveSettings.probability)
+            {
+                chunkData[i] = MeshUtils.BlockType.AIR;
+                continue;
+            }
+
             if (y == surfaceHeight) 
             {
                 chunkData[i] = MeshUtils.BlockType.GRASSSIDE;
@@ -85,11 +99,6 @@ public class Chunk : MonoBehaviour
             }
 
             else
-            {
-                chunkData[i] = MeshUtils.BlockType.AIR;
-            }
-
-            if (digCave < World.caveSettings.probability)
             {
                 chunkData[i] = MeshUtils.BlockType.AIR;
             }
