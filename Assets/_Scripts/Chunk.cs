@@ -27,6 +27,7 @@ public class Chunk : MonoBehaviour
 
     CalculateBlockTypes calculateBlockTypes;
     JobHandle jobHandle;
+    public NativeArray<Unity.Mathematics.Random> RandomArray { get; private set; }
 
     struct CalculateBlockTypes : IJobParallelFor
     {
@@ -34,7 +35,9 @@ public class Chunk : MonoBehaviour
         public int width;
         public int height;
         public Vector3 location;
-        public Unity.Mathematics.Random random;
+
+        // TODO: 原本每次開起的隨機數都會相同，是因為給 Unity.Mathematics.Random 的 seed 都是 1，因此只須傳入隨機的 seed，並在 Execute(int i) 外部建立 Unity.Mathematics.Random 物件即可
+        public NativeArray<Unity.Mathematics.Random> randoms;
 
         public void Execute(int i)
         {
@@ -42,7 +45,7 @@ public class Chunk : MonoBehaviour
             int y = (i / width) % height + (int)location.y;
             int z = i / (width * height) + (int)location.z;
 
-            random = new Unity.Mathematics.Random(1);
+            var random = randoms[i];
 
             float surfaceHeight = (int)MeshUtils.fBM(x, z,
                                                      World.surfaceSettings.octaves,
@@ -119,13 +122,24 @@ public class Chunk : MonoBehaviour
         int blockCount = width * depth * height;
         chunkData = new MeshUtils.BlockType[blockCount];
         NativeArray<MeshUtils.BlockType> blockTypes = new NativeArray<MeshUtils.BlockType>(chunkData, Allocator.Persistent);
-        
+
+        var randomArray = new Unity.Mathematics.Random[blockCount];
+        var seed = new System.Random();
+
+        for (int i = 0; i < blockCount; i++)
+        {
+            randomArray[i] = new Unity.Mathematics.Random((uint)seed.Next());
+        }
+
+        RandomArray = new NativeArray<Unity.Mathematics.Random>(randomArray, Allocator.Persistent);
+
         calculateBlockTypes = new CalculateBlockTypes()
         {
             cData = blockTypes,
             width = width,
             height = height,
-            location = location
+            location = location,
+            randoms = RandomArray
         };
 
         jobHandle = calculateBlockTypes.Schedule(chunkData.Length, 64);
@@ -135,6 +149,7 @@ public class Chunk : MonoBehaviour
 
         calculateBlockTypes.cData.CopyTo(chunkData);
         blockTypes.Dispose();
+        RandomArray.Dispose();
     }
 
     private void Start()
