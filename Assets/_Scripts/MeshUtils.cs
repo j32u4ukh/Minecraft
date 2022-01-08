@@ -247,6 +247,7 @@ public static class MeshUtils
         mesh.uv = uvs.ToArray();
     }
 
+    // TODO: 可以考慮直接返回 int
     public static float fBM(float x, float z, int octaves, float scale, float heightScale, float heightOffset)
     {
         float total = 0f;
