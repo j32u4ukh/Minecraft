@@ -55,8 +55,14 @@ public class World : MonoBehaviour
     int drawRadius = 3;
 
     Queue<IEnumerator> buildQueue = new Queue<IEnumerator>();
-    WaitForSeconds wfs = new WaitForSeconds(0.5f);
     MeshUtils.BlockType buildType = MeshUtils.BlockType.DIRT;
+
+    // For UpdateWorld
+    WaitForSeconds wfs = new WaitForSeconds(0.5f);
+
+    // For HealBlock
+    WaitForSeconds threeSeconds = new WaitForSeconds(3.0f);
+
 
     // Start is called before the first frame update
     void Start()
@@ -169,6 +175,12 @@ public class World : MonoBehaviour
                     // TODO: 教學中為了避免 health 為 -1 的方塊被刪除，因此加了這個判斷，但其實根本沒必要。health 從 NOCRACK(10) 開始往上加，本來就不可能加到 -1
                     if (MeshUtils.blockTypeHealth[(int)thisChunk.chunkData[i]] != -1)
                     {
+                        // 第一次敲擊時觸發，一段時間後檢查是否已被敲掉，否則修復自己 health 恢復成 NOCRACK
+                        if (thisChunk.healthData[i] == MeshUtils.BlockType.NOCRACK)
+                        {
+                            StartCoroutine(HealBlock(c: thisChunk, blockIndex: i));
+                        }
+
                         thisChunk.healthData[i]++;
 
                         if (thisChunk.healthData[i] == MeshUtils.BlockType.NOCRACK + MeshUtils.blockTypeHealth[(int)thisChunk.chunkData[i]])
@@ -184,12 +196,33 @@ public class World : MonoBehaviour
                     thisChunk.healthData[i] = MeshUtils.BlockType.NOCRACK;
                 }
 
-                DestroyImmediate(thisChunk.GetComponent<MeshFilter>());
-                DestroyImmediate(thisChunk.GetComponent<MeshRenderer>());
-                DestroyImmediate(thisChunk.GetComponent<Collider>());
-                thisChunk.CreateChunk(chunkDimensions, thisChunk.location, false);
+                //DestroyImmediate(thisChunk.GetComponent<MeshFilter>());
+                //DestroyImmediate(thisChunk.GetComponent<MeshRenderer>());
+                //DestroyImmediate(thisChunk.GetComponent<Collider>());
+                //thisChunk.CreateChunk(chunkDimensions, thisChunk.location, false);
+                RedrawChunk(thisChunk);
             }
         }
+    }
+
+    // 一段時間後檢查是否已被敲掉，否則修復自己 health 恢復成 NOCRACK
+    public IEnumerator HealBlock(Chunk c, int blockIndex)
+    {
+        yield return threeSeconds;
+
+        if(c.chunkData[blockIndex] != MeshUtils.BlockType.AIR)
+        {
+            c.healthData[blockIndex] = MeshUtils.BlockType.NOCRACK;
+            RedrawChunk(c);
+        }
+    }
+
+    void RedrawChunk(Chunk c)
+    {
+        DestroyImmediate(c.GetComponent<MeshFilter>());
+        DestroyImmediate(c.GetComponent<MeshRenderer>());
+        DestroyImmediate(c.GetComponent<Collider>());
+        c.CreateChunk(chunkDimensions, c.location, false);
     }
 
 
