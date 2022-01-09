@@ -3,8 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// vertex, normal, uv
-using VertexData = System.Tuple<UnityEngine.Vector3, UnityEngine.Vector3, UnityEngine.Vector2>;
+// vertex, normal, uv0, uv1
+using VertexData = System.Tuple<UnityEngine.Vector3, UnityEngine.Vector3, UnityEngine.Vector2, UnityEngine.Vector2>;
 
 public static class MeshUtils
 {
@@ -85,45 +85,45 @@ public static class MeshUtils
         },
         /*DIAMOND*/    
         {
-            new Vector2( 0.125f, 0.75f ), 
-            new Vector2( 0.1875f, 0.75f),
-            new Vector2( 0.125f, 0.8125f ),
-            new Vector2( 0.1875f, 0.8125f )
+            new Vector2(0.1250f, 0.7500f), 
+            new Vector2(0.1875f, 0.7500f),
+            new Vector2(0.1250f, 0.8125f),
+            new Vector2(0.1875f, 0.8125f)
         },
         /*NOCRACK*/     
         {
-            new Vector2( 0.6875f, 0f ), 
-            new Vector2( 0.75f, 0f),         
-            new Vector2( 0.6875f, 0.0625f ),
-            new Vector2( 0.75f, 0.0625f )
+            new Vector2(0.6875f, 0.0000f), 
+            new Vector2(0.7500f, 0.0000f),         
+            new Vector2(0.6875f, 0.0625f),
+            new Vector2(0.7500f, 0.0625f)
         },
         /*CRACK1*/      
         { 
-            new Vector2(0.0000f,0.0000f),  
-            new Vector2(0.0625f,0.0000f),
-            new Vector2(0.0000f,0.0625f), 
-            new Vector2(0.0625f,0.0625f)
+            new Vector2(0.0000f, 0.0000f),  
+            new Vector2(0.0625f, 0.0000f),
+            new Vector2(0.0000f, 0.0625f), 
+            new Vector2(0.0625f, 0.0625f)
         },
         /*CRACK2*/      
         { 
-            new Vector2(0.0625f,0.0000f),  
-            new Vector2(0.125f,0.0000f),
-            new Vector2(0.0625f,0.0625f), 
-            new Vector2(0.125f,0.0625f)
+            new Vector2(0.0625f, 0.0000f),  
+            new Vector2(0.1250f, 0.0000f),
+            new Vector2(0.0625f, 0.0625f), 
+            new Vector2(0.1250f, 0.0625f)
         },
         /*CRACK3*/      
         { 
-            new Vector2(0.125f,0.0000f),  
-            new Vector2(0.1875f,0.0000f),
-            new Vector2(0.125f,0.0625f), 
-            new Vector2(0.1875f,0.0625f)
+            new Vector2(0.1250f, 0.0000f),  
+            new Vector2(0.1875f, 0.0000f),
+            new Vector2(0.1250f, 0.0625f), 
+            new Vector2(0.1875f, 0.0625f)
         },
         /*CRACK4*/      
         { 
-            new Vector2(0.1875f,0.0000f),  
-            new Vector2(0.25f,0.0000f),
-            new Vector2(0.1875f,0.0625f), 
-            new Vector2(0.25f,0.0625f)
+            new Vector2(0.1875f, 0.0000f),  
+            new Vector2(0.2500f, 0.0000f),
+            new Vector2(0.1875f, 0.0625f), 
+            new Vector2(0.2500f, 0.0625f)
         }
     };
 
@@ -194,7 +194,8 @@ public static class MeshUtils
                 Vector3 v = meshes[i].vertices[j];
                 Vector3 n = meshes[i].normals[j];
                 Vector2 u = meshes[i].uv[j];
-                VertexData p = new VertexData(v, n, u);
+                Vector2 u2 = meshes[i].uv2[j];
+                VertexData p = new VertexData(v, n, u, u2);
 
                 if (!pointsHash.Contains(p))
                 {
@@ -212,7 +213,8 @@ public static class MeshUtils
                 Vector3 v = meshes[i].vertices[triPoint];
                 Vector3 n = meshes[i].normals[triPoint];
                 Vector2 u = meshes[i].uv[triPoint];
-                VertexData p = new VertexData(v, n, u);
+                Vector2 u2 = meshes[i].uv2[triPoint];
+                VertexData p = new VertexData(v, n, u, u2);
 
                 int index;
                 pointsOrder.TryGetValue(p, out index);
@@ -234,17 +236,20 @@ public static class MeshUtils
         List<Vector3> verts = new List<Vector3>();
         List<Vector3> norms = new List<Vector3>();
         List<Vector2> uvs = new List<Vector2>();
+        List<Vector2> uvs2 = new List<Vector2>();
 
         foreach (VertexData v in list.Keys)
         {
             verts.Add(v.Item1);
             norms.Add(v.Item2);
             uvs.Add(v.Item3);
+            uvs2.Add(v.Item4);
         }
 
         mesh.vertices = verts.ToArray();
         mesh.normals = norms.ToArray();
         mesh.uv = uvs.ToArray();
+        mesh.uv2 = uvs2.ToArray();
     }
 
     // TODO: 可以考慮直接返回 int

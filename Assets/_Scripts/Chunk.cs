@@ -197,7 +197,7 @@ public class Chunk : MonoBehaviour
                 for (int x = 0; x < width; x++)
                 {
                     int chunk_idx = x + width * (y + depth * z);
-                    blocks[x, y, z] = new Block(new Vector3(x, y, z) + location, chunkData[chunk_idx], this);
+                    blocks[x, y, z] = new Block(new Vector3(x, y, z) + location, chunkData[chunk_idx], this, MeshUtils.BlockType.NOCRACK);
 
                     // 只將有 mesh 的 Block 加入 inputMeshes
                     if (blocks[x, y, z].mesh != null)

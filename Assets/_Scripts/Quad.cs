@@ -7,7 +7,7 @@ public class Quad
     public Mesh mesh;
 
     // Start is called before the first frame update
-    public Quad(MeshUtils.BlockSide side, Vector3 offset, MeshUtils.BlockType bType)
+    public Quad(MeshUtils.BlockSide side, Vector3 offset, MeshUtils.BlockType bType, MeshUtils.BlockType hType)
     {
         mesh = new Mesh();
         mesh.name = "ScriptedQuad";
@@ -19,6 +19,14 @@ public class Quad
 
         // 前 3 定義第一個三角形，後 3 定義第二個三角形，每個三角形的頂點順序應為順時鐘
         triangles = new int[] { 3, 1, 0, 3, 2, 1 };
+
+
+        // 順序 3, 2, 1, 0 是故意的，理由應該是為了配合 mesh.SetUVs 的設置
+        List<Vector2> suvs = new List<Vector2>();
+        suvs.Add(MeshUtils.blockUVs[(int)hType, 3]);
+        suvs.Add(MeshUtils.blockUVs[(int)hType, 2]);
+        suvs.Add(MeshUtils.blockUVs[(int)hType, 1]);
+        suvs.Add(MeshUtils.blockUVs[(int)hType, 0]);
 
         Vector2 uv00 = MeshUtils.blockUVs[(int)bType, 0];
         Vector2 uv10 = MeshUtils.blockUVs[(int)bType, 1];
@@ -73,6 +81,7 @@ public class Quad
         mesh.normals = normals;
         mesh.uv = uvs;
         mesh.triangles = triangles;
+        mesh.SetUVs(1, suvs);
 
         mesh.RecalculateBounds();
     }
