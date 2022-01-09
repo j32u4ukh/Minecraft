@@ -86,6 +86,7 @@ public static class FileSaver
         BinaryFormatter bf = new BinaryFormatter();
         FileStream file = File.Open(filename, FileMode.OpenOrCreate);
         wd = new WorldData(world.chunkChecker, world.chunkColumns, world.chunks, world.fpc.transform.position);
+        Debug.Log($"Save WorldData fpc: ({wd.fpcX}, {wd.fpcY}, {wd.fpcZ})");
         bf.Serialize(file, wd);
         file.Close();
         Debug.Log($"Saving world to file: {filename}");

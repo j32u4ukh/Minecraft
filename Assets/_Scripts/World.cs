@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -448,7 +449,7 @@ public class World : MonoBehaviour
 
         chunkChecker.Clear();
 
-        for(int i = 0; i < wd.chunkCheckerValues.Length; i += 3)
+        for (int i = 0; i < wd.chunkCheckerValues.Length; i += 3)
         {
             chunkChecker.Add(new Vector3Int(wd.chunkCheckerValues[i],
                                             wd.chunkCheckerValues[i + 1],
@@ -465,8 +466,9 @@ public class World : MonoBehaviour
 
         chunks.Clear();
         int index = 0;
+        loadingBar.maxValue = chunkChecker.Count;
 
-        foreach(Vector3Int chunkPos in chunkChecker)
+        foreach (Vector3Int chunkPos in chunkChecker)
         {
             GameObject chunk = Instantiate(chunkPrefab);
             chunk.name = $"Chunk_{chunkPos.x}_{chunkPos.y}_{chunkPos.z}";
@@ -478,19 +480,30 @@ public class World : MonoBehaviour
 
             for(int i = 0; i < blockCount; i++)
             {
-                c.chunkData[i] = (MeshUtils.BlockType)wd.allChunkData[index];
+                try
+                {
+                    c.chunkData[i] = (MeshUtils.BlockType)wd.allChunkData[index];
+                }
+                catch (IndexOutOfRangeException)
+                {
+                    Debug.LogError($"#wd.allChunkData: {wd.allChunkData.GetLength(0)}, index: {index}, blockCount: {blockCount}, #Chunk: {chunkChecker.Count}");
+                }
+
                 c.healthData[i] = MeshUtils.BlockType.NOCRACK;
                 index++;
             }
 
             c.CreateChunk(chunkDimensions, chunkPos, false);
             RedrawChunk(c);
-
-            fpc.transform.position = new Vector3(wd.fpcX, wd.fpcY, wd.fpcZ);
-            mCamera.SetActive(false);
-            fpc.SetActive(true);
-            lastBuildPosition = Vector3Int.CeilToInt(fpc.transform.position);
+            loadingBar.value++;
             yield return null;
         }
+
+        fpc.transform.position = new Vector3(wd.fpcX, wd.fpcY, wd.fpcZ);
+        Debug.Log($"Load WorldData fpc: ({fpc.transform.position})");
+        mCamera.SetActive(false);
+        loadingBar.gameObject.SetActive(false);
+        fpc.SetActive(true);
+        lastBuildPosition = Vector3Int.CeilToInt(fpc.transform.position);
     }
 }
