@@ -1610,6 +1610,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85d2683014d137d48a6a06900232dc97, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  laodFromFile: 1
   chunkPrefab: {fileID: 2561348407618640890, guid: 5ecccdd4aeb19434d874aa70e70a4f1a, type: 3}
   mCamera: {fileID: 935847871}
   fpc: {fileID: 1168555848}

@@ -13,8 +13,9 @@ public class CanvasNav : MonoBehaviour
     {
         if (buttons != null)
         {
-            //If there are, select the first one
-            buttons[0].onClick.Invoke();
+			//If there are, select the first one
+			buttons[0].Select();
+			buttons[0].onClick.Invoke();
 			buttonIndex = 0;
 		}
     }
@@ -34,6 +35,7 @@ public class CanvasNav : MonoBehaviour
 				}
 
 				buttonIndex--;
+				buttons[buttonIndex].Select();
 				buttons[buttonIndex].onClick.Invoke();
 			}
 			else
@@ -45,6 +47,7 @@ public class CanvasNav : MonoBehaviour
 				}
 
 				buttonIndex++;
+				buttons[buttonIndex].Select();
 				buttons[buttonIndex].onClick.Invoke();
 			}
 		}

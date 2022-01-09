@@ -90,4 +90,23 @@ public static class FileSaver
         file.Close();
         Debug.Log($"Saving world to file: {filename}");
     }
+
+    public static WorldData Load()
+    {
+        string filename = BuildFileName();
+
+        // 確保檔案存在
+        if (File.Exists(filename))
+        {
+            BinaryFormatter bf = new BinaryFormatter();
+            FileStream file = File.Open(filename, FileMode.Open);
+            wd = new WorldData();
+            wd = (WorldData)bf.Deserialize(file);
+            file.Close();
+            Debug.Log($"Loading world from file: {filename}");
+            return wd;
+        }
+
+        return null;
+    }
 }

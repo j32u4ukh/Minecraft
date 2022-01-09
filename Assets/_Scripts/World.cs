@@ -26,6 +26,7 @@ public class World : MonoBehaviour
     public static Vector3Int worldDimesions = new Vector3Int(5, 5, 5);
     public static Vector3Int extraWorldDimesions = new Vector3Int(5, 5, 5);
     public static Vector3Int chunkDimensions = new Vector3Int(10, 10, 10);
+    public bool laodFromFile = false;
     public GameObject chunkPrefab;
     public GameObject mCamera;
     public GameObject fpc;
@@ -99,7 +100,14 @@ public class World : MonoBehaviour
                                           caves.heightOffset,
                                           caves.DrawCutOff);
 
-        StartCoroutine(BuildWorld());
+        if (laodFromFile)
+        {
+            StartCoroutine(LoadWorldFromFile());
+        }
+        else
+        {
+            StartCoroutine(BuildWorld());
+        }
     }
 
     // Update is called once per frame
@@ -224,7 +232,6 @@ public class World : MonoBehaviour
         DestroyImmediate(c.GetComponent<Collider>());
         c.CreateChunk(chunkDimensions, c.location, false);
     }
-
 
     public void SetBuildType(int type)
     {
@@ -427,5 +434,63 @@ public class World : MonoBehaviour
     public void SaveWorld()
     {
         FileSaver.Save(this);
+    }
+
+    IEnumerator LoadWorldFromFile()
+    {
+        WorldData wd = FileSaver.Load();
+
+        if (wd == null)
+        {
+            StartCoroutine(BuildWorld());
+            yield break;
+        }
+
+        chunkChecker.Clear();
+
+        for(int i = 0; i < wd.chunkCheckerValues.Length; i += 3)
+        {
+            chunkChecker.Add(new Vector3Int(wd.chunkCheckerValues[i],
+                                            wd.chunkCheckerValues[i + 1],
+                                            wd.chunkCheckerValues[i + 2]));
+        }
+
+        chunkColumns.Clear();
+
+        for (int i = 0; i < wd.chunkColumnsValues.Length; i += 2)
+        {
+            chunkColumns.Add(new Vector2Int(wd.chunkColumnsValues[i],
+                                            wd.chunkColumnsValues[i + 1]));
+        }
+
+        chunks.Clear();
+        int index = 0;
+
+        foreach(Vector3Int chunkPos in chunkChecker)
+        {
+            GameObject chunk = Instantiate(chunkPrefab);
+            chunk.name = $"Chunk_{chunkPos.x}_{chunkPos.y}_{chunkPos.z}";
+            Chunk c = chunk.GetComponent<Chunk>();
+
+            int blockCount = chunkDimensions.x * chunkDimensions.y * chunkDimensions.z;
+            c.chunkData = new MeshUtils.BlockType[blockCount];
+            c.healthData = new MeshUtils.BlockType[blockCount];
+
+            for(int i = 0; i < blockCount; i++)
+            {
+                c.chunkData[i] = (MeshUtils.BlockType)wd.allChunkData[index];
+                c.healthData[i] = MeshUtils.BlockType.NOCRACK;
+                index++;
+            }
+
+            c.CreateChunk(chunkDimensions, chunkPos, false);
+            RedrawChunk(c);
+
+            fpc.transform.position = new Vector3(wd.fpcX, wd.fpcY, wd.fpcZ);
+            mCamera.SetActive(false);
+            fpc.SetActive(true);
+            lastBuildPosition = Vector3Int.CeilToInt(fpc.transform.position);
+            yield return null;
+        }
     }
 }
