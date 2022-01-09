@@ -27,6 +27,10 @@ public class Quad
         suvs.Add(MeshUtils.blockUVs[(int)hType, 2]);
         suvs.Add(MeshUtils.blockUVs[(int)hType, 1]);
         suvs.Add(MeshUtils.blockUVs[(int)hType, 0]);
+        //suvs.Add(MeshUtils.blockUVs[(int)hType, 0]);
+        //suvs.Add(MeshUtils.blockUVs[(int)hType, 1]);
+        //suvs.Add(MeshUtils.blockUVs[(int)hType, 2]);
+        //suvs.Add(MeshUtils.blockUVs[(int)hType, 3]);
 
         Vector2 uv00 = MeshUtils.blockUVs[(int)bType, 0];
         Vector2 uv10 = MeshUtils.blockUVs[(int)bType, 1];
