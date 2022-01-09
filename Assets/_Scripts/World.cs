@@ -46,9 +46,9 @@ public class World : MonoBehaviour
     public static PerlinSettings caveSettings;
     public Perlin3DGrapher caves;
 
-    HashSet<Vector3Int> chunkChecker = new HashSet<Vector3Int>();
-    HashSet<Vector2Int> chunkColumns = new HashSet<Vector2Int>();
-    Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
+    public HashSet<Vector3Int> chunkChecker = new HashSet<Vector3Int>();
+    public HashSet<Vector2Int> chunkColumns = new HashSet<Vector2Int>();
+    public Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
 
     // 前一次世界建造時，玩家所在位置
     Vector3Int lastBuildPosition;
@@ -422,5 +422,10 @@ public class World : MonoBehaviour
         BuildChunkColumn(x - chunkDimensions.x, z, meshEnabled: true);
         buildQueue.Enqueue(BuildRecursiveWorld(x - chunkDimensions.x, z, nextrad));
         yield return null;
+    }
+
+    public void SaveWorld()
+    {
+        FileSaver.Save(this);
     }
 }
