@@ -117,7 +117,7 @@ public class World : MonoBehaviour
                     hitBlock = hit.point + hit.normal / 2.0f;
                 }
 
-                //Debug.Log($"Block location: {hitBlock}");
+                // Debug.Log($"Block location: {hitBlock}");
                 Chunk thisChunk = hit.collider.gameObject.GetComponent<Chunk>();
                 int bx = (int)(Mathf.Round(hitBlock.x) - thisChunk.location.x);
                 int by = (int)(Mathf.Round(hitBlock.y) - thisChunk.location.y);
@@ -166,11 +166,22 @@ public class World : MonoBehaviour
 
                 if (Input.GetMouseButtonDown(0))
                 {
-                    thisChunk.chunkData[i] = MeshUtils.BlockType.AIR;
+                    // TODO: 教學中為了避免 health 為 -1 的方塊被刪除，因此加了這個判斷，但其實根本沒必要。health 從 NOCRACK(10) 開始往上加，本來就不可能加到 -1
+                    if (MeshUtils.blockTypeHealth[(int)thisChunk.chunkData[i]] != -1)
+                    {
+                        thisChunk.healthData[i]++;
+
+                        if (thisChunk.healthData[i] == MeshUtils.BlockType.NOCRACK + MeshUtils.blockTypeHealth[(int)thisChunk.chunkData[i]])
+                        {
+                            thisChunk.chunkData[i] = MeshUtils.BlockType.AIR;
+                            //thisChunk.healthData[i] = MeshUtils.BlockType.NOCRACK;
+                        }
+                    }
                 }
                 else
                 {
                     thisChunk.chunkData[i] = buildType;
+                    thisChunk.healthData[i] = MeshUtils.BlockType.NOCRACK;
                 }
 
                 DestroyImmediate(thisChunk.GetComponent<MeshFilter>());

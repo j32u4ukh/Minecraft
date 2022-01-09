@@ -13,8 +13,14 @@ public static class MeshUtils
 
     public enum BlockType
     {
-        GRASSTOP, GRASSSIDE, DIRT, WATER, STONE, SAND, GOLD, BEDROCK, REDSTONE, DIAMOND, NOCRACK,
-        CRACK1, CRACK2, CRACK3, CRACK4, AIR
+        GRASSTOP, GRASSSIDE, DIRT, WATER, STONE, SAND, GOLD, BEDROCK, REDSTONE, DIAMOND, 
+        NOCRACK, CRACK1, CRACK2, CRACK3, CRACK4, AIR
+    };
+
+    public static int[] blockTypeHealth =
+    {
+        2, 2, 1, 1, 4, 3, 4, -1, 3, 4, 
+        -1, -1, -1, -1, -1, -1
     };
 
     // 此種取得 UV 邊界座標的方式，與 enum BlockType 的順序有關聯，是不好的方法

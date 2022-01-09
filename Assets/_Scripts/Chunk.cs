@@ -31,6 +31,17 @@ public class Chunk : MonoBehaviour
     JobHandle jobHandle;
     public NativeArray<Unity.Mathematics.Random> RandomArray { get; private set; }
 
+    private void Start()
+    {
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
+
     struct CalculateBlockTypes : IJobParallelFor
     {
         public NativeArray<MeshUtils.BlockType> cData;
@@ -122,6 +133,83 @@ public class Chunk : MonoBehaviour
         }
     }
 
+    // BurstCompile 需使用 .NET 4.0 以上
+    [BurstCompile]
+    struct ProcessMeshDataJob : IJobParallelFor
+    {
+        [ReadOnly] public Mesh.MeshDataArray meshData;
+        public Mesh.MeshData outputMesh;
+        public NativeArray<int> vertexStart;
+        public NativeArray<int> triStart;
+
+        public void Execute(int index)
+        {
+            var data = meshData[index];
+            var vCount = data.vertexCount;
+            var vStart = vertexStart[index];
+
+            // Reinterpret<Vector3>: 讀入 Vector3，轉換成 float3
+            var verts = new NativeArray<float3>(vCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            data.GetVertices(verts.Reinterpret<Vector3>());
+
+            var normals = new NativeArray<float3>(vCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            data.GetNormals(normals.Reinterpret<Vector3>());
+
+            // uv 本身雖是 Vector2，但在 Job System 中應使用 Vector3
+            var uvs = new NativeArray<float3>(vCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            data.GetUVs(0, uvs.Reinterpret<Vector3>());
+
+            var uvs2 = new NativeArray<float3>(vCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            data.GetUVs(1, uvs2.Reinterpret<Vector3>());
+
+            var outputVerts = outputMesh.GetVertexData<Vector3>(stream: 0);
+            var outputNormals = outputMesh.GetVertexData<Vector3>(stream: 1);
+            var outputUVs = outputMesh.GetVertexData<Vector3>(stream: 2);
+            var outputUVs2 = outputMesh.GetVertexData<Vector3>(stream: 3);
+
+            for (int i = 0; i < vCount; i++)
+            {
+                outputVerts[i + vStart] = verts[i];
+                outputNormals[i + vStart] = normals[i];
+                outputUVs[i + vStart] = uvs[i];
+                outputUVs2[i + vStart] = uvs2[i];
+            }
+
+            /* NativeArray 使用後應呼叫 Dispose()，以避免記憶體溢出 */
+            verts.Dispose();
+            normals.Dispose();
+            uvs.Dispose();
+            uvs2.Dispose();
+
+            var tStart = triStart[index];
+            var tCount = data.GetSubMesh(0).indexCount;
+            var outputTris = outputMesh.GetIndexData<int>();
+
+            // Android
+            if (data.indexFormat == IndexFormat.UInt16)
+            {
+                var tris = data.GetIndexData<ushort>();
+
+                for (int i = 0; i < tCount; ++i)
+                {
+                    int idx = tris[i];
+                    outputTris[i + tStart] = vStart + idx;
+                }
+            }
+
+            // IndexFormat.UInt32: PC
+            else
+            {
+                var tris = data.GetIndexData<int>();
+                for (int i = 0; i < tCount; ++i)
+                {
+                    int idx = tris[i];
+                    outputTris[i + tStart] = vStart + idx;
+                }
+            }
+        }
+    }
+    
     void BuildChunk()
     {
         int blockCount = width * depth * height;
@@ -160,11 +248,6 @@ public class Chunk : MonoBehaviour
         blockTypes.Dispose();
         healthTypes.Dispose();
         RandomArray.Dispose();
-    }
-
-    private void Start()
-    {
-        
     }
 
     // Start is called before the first frame update
@@ -264,86 +347,4 @@ public class Chunk : MonoBehaviour
         collider.sharedMesh = mf.mesh;
     }
 
-    // BurstCompile 需使用 .NET 4.0 以上
-    [BurstCompile]
-    struct ProcessMeshDataJob : IJobParallelFor
-    {
-        [ReadOnly] public Mesh.MeshDataArray meshData;
-        public Mesh.MeshData outputMesh;
-        public NativeArray<int> vertexStart;
-        public NativeArray<int> triStart;
-
-        public void Execute(int index)
-        {
-            var data = meshData[index];
-            var vCount = data.vertexCount;
-            var vStart = vertexStart[index];
-
-            // Reinterpret<Vector3>: 讀入 Vector3，轉換成 float3
-            var verts = new NativeArray<float3>(vCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            data.GetVertices(verts.Reinterpret<Vector3>());
-
-            var normals = new NativeArray<float3>(vCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            data.GetNormals(normals.Reinterpret<Vector3>());
-
-            // uv 本身雖是 Vector2，但在 Job System 中應使用 Vector3
-            var uvs = new NativeArray<float3>(vCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            data.GetUVs(0, uvs.Reinterpret<Vector3>());
-
-            var uvs2 = new NativeArray<float3>(vCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            data.GetUVs(1, uvs2.Reinterpret<Vector3>());
-
-            var outputVerts = outputMesh.GetVertexData<Vector3>(stream: 0);
-            var outputNormals = outputMesh.GetVertexData<Vector3>(stream: 1);
-            var outputUVs = outputMesh.GetVertexData<Vector3>(stream: 2);
-            var outputUVs2 = outputMesh.GetVertexData<Vector3>(stream: 3);
-
-            for (int i = 0; i < vCount; i++)
-            {
-                outputVerts[i + vStart] = verts[i];
-                outputNormals[i + vStart] = normals[i];
-                outputUVs[i + vStart] = uvs[i];
-                outputUVs2[i + vStart] = uvs2[i];
-            }
-
-            /* NativeArray 使用後應呼叫 Dispose()，以避免記憶體溢出 */
-            verts.Dispose();
-            normals.Dispose();
-            uvs.Dispose();
-            uvs2.Dispose();
-
-            var tStart = triStart[index];
-            var tCount = data.GetSubMesh(0).indexCount;
-            var outputTris = outputMesh.GetIndexData<int>();
-
-            // Android
-            if (data.indexFormat == IndexFormat.UInt16)
-            {
-                var tris = data.GetIndexData<ushort>();
-
-                for (int i = 0; i < tCount; ++i)
-                {
-                    int idx = tris[i];
-                    outputTris[i + tStart] = vStart + idx;
-                }
-            }
-
-            // IndexFormat.UInt32: PC
-            else
-            {
-                var tris = data.GetIndexData<int>();
-                for (int i = 0; i < tCount; ++i)
-                {
-                    int idx = tris[i];
-                    outputTris[i + tStart] = vStart + idx;
-                }
-            }
-        }
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }
