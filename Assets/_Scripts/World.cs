@@ -23,7 +23,7 @@ public struct PerlinSettings
 
 public class World : MonoBehaviour
 {
-    public static Vector3Int worldDimesions = new Vector3Int(5, 5, 5);
+    public static Vector3Int worldDimesions = new Vector3Int(3, 3, 3);
     public static Vector3Int extraWorldDimesions = new Vector3Int(5, 5, 5);
     public static Vector3Int chunkDimensions = new Vector3Int(10, 10, 10);
     public GameObject chunkPrefab;
@@ -55,6 +55,8 @@ public class World : MonoBehaviour
     int drawRadius = 3;
 
     Queue<IEnumerator> buildQueue = new Queue<IEnumerator>();
+    WaitForSeconds wfs = new WaitForSeconds(0.5f);
+    MeshUtils.BlockType buildType = MeshUtils.BlockType.DIRT;
 
     // Start is called before the first frame update
     void Start()
@@ -104,11 +106,15 @@ public class World : MonoBehaviour
 
             if (Physics.Raycast(ray, out hit, 10f))
             {
-                Vector3 hitBlock = Vector3.zero;
+                Vector3 hitBlock;
 
                 if (Input.GetMouseButtonDown(0))
                 {
-                    hitBlock = hit.point - hit.normal / 2.0f;                    
+                    hitBlock = hit.point - hit.normal / 2.0f;
+                }
+                else
+                {
+                    hitBlock = hit.point + hit.normal / 2.0f;
                 }
 
                 //Debug.Log($"Block location: {hitBlock}");
@@ -117,13 +123,29 @@ public class World : MonoBehaviour
                 int by = (int)(Mathf.Round(hitBlock.y) - thisChunk.location.y);
                 int bz = (int)(Mathf.Round(hitBlock.z) - thisChunk.location.z);
                 int i = bx + chunkDimensions.x * (by + chunkDimensions.z * bz);
-                thisChunk.chunkData[i] = MeshUtils.BlockType.AIR;
+
+                if (Input.GetMouseButtonDown(0))
+                {
+                    thisChunk.chunkData[i] = MeshUtils.BlockType.AIR;
+                }
+                else
+                {
+                    thisChunk.chunkData[i] = buildType;
+                }
+
                 DestroyImmediate(thisChunk.GetComponent<MeshFilter>());
                 DestroyImmediate(thisChunk.GetComponent<MeshRenderer>());
                 DestroyImmediate(thisChunk.GetComponent<Collider>());
                 thisChunk.CreateChunk(chunkDimensions, thisChunk.location, false);
             }
         }
+    }
+
+
+    public void SetBuildType(int type)
+    {
+        buildType = (MeshUtils.BlockType)type;
+        Debug.Log($"buildType: {buildType}, type: {type}");
     }
 
     IEnumerator BuildCoordinator()
@@ -240,7 +262,6 @@ public class World : MonoBehaviour
         StartCoroutine(BuildExtraWorld());
     }
 
-    WaitForSeconds wfs = new WaitForSeconds(0.5f);
     IEnumerator UpdateWorld()
     {
         while (true)
