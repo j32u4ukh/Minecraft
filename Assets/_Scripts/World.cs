@@ -65,6 +65,9 @@ public class World : MonoBehaviour
     // For HealBlock
     WaitForSeconds threeSeconds = new WaitForSeconds(3.0f);
 
+    // For (failling block)
+    WaitForSeconds dropDelay = new WaitForSeconds(0.1f);
+
 
     // Start is called before the first frame update
     void Start()
@@ -161,6 +164,13 @@ public class World : MonoBehaviour
                         {
                             thisChunk.chunkData[i] = MeshUtils.BlockType.AIR;
                             //thisChunk.healthData[i] = MeshUtils.BlockType.NOCRACK;
+                            Vector3Int nBlock = FromFlat(i);
+                            var neghbourBlock = GetWorldNeighbour(new Vector3Int(nBlock.x, nBlock.y + 1, nBlock.z), Vector3Int.CeilToInt(thisChunk.location));
+                            Vector3Int block = neghbourBlock.Item1;
+                            int neighboutBlockIndex = ToFlat(block);
+                            Chunk neighbourChunk = chunks[neghbourBlock.Item2];
+
+                            StartCoroutine(Drop(neighbourChunk, neighboutBlockIndex));
                         }
                     }
                 }
@@ -168,6 +178,8 @@ public class World : MonoBehaviour
                 {
                     thisChunk.chunkData[i] = buildType;
                     thisChunk.healthData[i] = MeshUtils.BlockType.NOCRACK;
+
+                    StartCoroutine(Drop(thisChunk, i));
                 }
 
                 RedrawChunk(thisChunk);
@@ -238,6 +250,61 @@ public class World : MonoBehaviour
         {
             c.healthData[blockIndex] = MeshUtils.BlockType.NOCRACK;
             RedrawChunk(c);
+        }
+    }
+
+    // 一段時間後檢查是否已被敲掉，否則修復自己 health 恢復成 NOCRACK
+    public IEnumerator Drop(Chunk c, int blockIndex)
+    {
+        if(c.chunkData[blockIndex] != MeshUtils.BlockType.SAND)
+        {
+            yield break;
+        }
+
+        yield return dropDelay;
+
+        while (true)
+        {
+            // Current block: Sand
+            Vector3Int thisBlock = FromFlat(blockIndex);
+
+            // Block below current block
+            var neighbourBlock = GetWorldNeighbour(new Vector3Int(thisBlock.x, thisBlock.y - 1, thisBlock.z), Vector3Int.CeilToInt(c.location));
+
+            Vector3Int block = neighbourBlock.Item1;
+            int neighbourBlockIndex = ToFlat(block);
+            Chunk neighbourChunk = chunks[neighbourBlock.Item2];
+
+            if(neighbourChunk.chunkData[neighbourBlockIndex] == MeshUtils.BlockType.AIR)
+            {
+                neighbourChunk.chunkData[neighbourBlockIndex] = MeshUtils.BlockType.SAND;
+                neighbourChunk.healthData[neighbourBlockIndex] = MeshUtils.BlockType.NOCRACK;
+
+                var nBlockAbove = GetWorldNeighbour(new Vector3Int(thisBlock.x, thisBlock.y + 1, thisBlock.z), Vector3Int.CeilToInt(c.location));
+                Vector3Int blockAbove = nBlockAbove.Item1;
+                int nBlockAboveIndex = ToFlat(blockAbove);
+                Chunk nChunkAbove = chunks[nBlockAbove.Item2];
+
+                c.chunkData[blockIndex] = MeshUtils.BlockType.AIR;
+                //c.healthData[blockIndex] = MeshUtils.BlockType.NOCRACK;
+
+                StartCoroutine(Drop(c: nChunkAbove, blockIndex: nBlockAboveIndex));
+
+                yield return dropDelay;
+                RedrawChunk(c);
+
+                if(neighbourChunk != c)
+                {
+                    RedrawChunk(neighbourChunk);
+                }
+
+                c = neighbourChunk;
+                blockIndex = neighbourBlockIndex;
+            }
+            else
+            {
+                yield break;
+            }
         }
     }
 
