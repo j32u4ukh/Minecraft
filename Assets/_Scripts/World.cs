@@ -237,7 +237,7 @@ public class World : MonoBehaviour
     public void SetBuildType(int type)
     {
         buildType = (MeshUtils.BlockType)type;
-        Debug.Log($"buildType: {buildType}, type: {type}");
+        //Debug.Log($"buildType: {buildType}, type: {type}");
     }
 
     IEnumerator BuildCoordinator()
@@ -258,7 +258,7 @@ public class World : MonoBehaviour
     {
         for (int y = 0; y < worldDimesions.y; y++)
         {
-            Vector3Int position = new Vector3Int(x, chunkDimensions.y * y, z);
+            Vector3Int position = new Vector3Int(x, y * chunkDimensions.y, z);
 
             if (!chunkChecker.Contains(position))
             {
@@ -348,8 +348,8 @@ public class World : MonoBehaviour
         StartCoroutine(BuildCoordinator());
 
         // 將 IEnumerator 添加到 buildQueue 當中
-        //StartCoroutine(UpdateWorld());
-        
+        StartCoroutine(UpdateWorld());
+
         // 在背景中持續生成環境
         StartCoroutine(BuildExtraWorld());
     }
@@ -437,6 +437,8 @@ public class World : MonoBehaviour
         FileSaver.Save(this);
     }
 
+    // TODO: 利用檔案重建世界，目前遇到若有刪除方塊，會發生 IndexOutOfRangeException，可能是刪除方塊的流程和添加有著關鍵性的不同
+    // TODO: 上述問題同時還觀察到 WorldData.allChunkData 似乎儲存失敗，當中沒有數據
     IEnumerator LoadWorldFromFile()
     {
         WorldData wd = FileSaver.Load();
@@ -464,8 +466,9 @@ public class World : MonoBehaviour
                                             wd.chunkColumnsValues[i + 1]));
         }
 
-        chunks.Clear();
+        //chunks.Clear();
         int index = 0;
+        int vIndex = 0;
         loadingBar.maxValue = chunkChecker.Count;
 
         foreach (Vector3Int chunkPos in chunkChecker)
@@ -494,7 +497,11 @@ public class World : MonoBehaviour
             }
 
             c.CreateChunk(chunkDimensions, chunkPos, false);
+            chunks.Add(chunkPos, c);
             RedrawChunk(c);
+            c.meshRenderer.enabled = wd.chunkVisibility[vIndex];
+            vIndex++;
+
             loadingBar.value++;
             yield return null;
         }
@@ -505,5 +512,11 @@ public class World : MonoBehaviour
         loadingBar.gameObject.SetActive(false);
         fpc.SetActive(true);
         lastBuildPosition = Vector3Int.CeilToInt(fpc.transform.position);
+
+        // 依序執行 buildQueue 當中的 IEnumerator
+        StartCoroutine(BuildCoordinator());
+
+        // 將 IEnumerator 添加到 buildQueue 當中
+        StartCoroutine(UpdateWorld());
     }
 }

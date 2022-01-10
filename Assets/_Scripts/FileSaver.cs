@@ -14,6 +14,7 @@ public class WorldData
     public int[] chunkCheckerValues;
     public int[] chunkColumnsValues;
     public int[] allChunkData;
+    public bool[] chunkVisibility;
 
     public int fpcX;
     public int fpcY;
@@ -45,6 +46,8 @@ public class WorldData
         }
 
         allChunkData = new int[chks.Count * World.chunkDimensions.x * World.chunkDimensions.y * World.chunkDimensions.z];
+        chunkVisibility = new bool[chks.Count];
+        int vIndex = 0;
         index = 0;
 
         foreach(KeyValuePair<Vector3Int, Chunk> ch in chks)
@@ -54,6 +57,9 @@ public class WorldData
                 allChunkData[index] = (int)bt;
                 index++;
             }
+
+            chunkVisibility[vIndex] = ch.Value.meshRenderer.enabled;
+            vIndex++;
         }
 
         fpcX = (int)fpc.x;
