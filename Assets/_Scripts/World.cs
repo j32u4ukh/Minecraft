@@ -163,7 +163,7 @@ public class World : MonoBehaviour
                         if (thisChunk.healthData[i] == MeshUtils.BlockType.NOCRACK + MeshUtils.blockTypeHealth[(int)thisChunk.chunkData[i]])
                         {
                             thisChunk.chunkData[i] = MeshUtils.BlockType.AIR;
-                            //thisChunk.healthData[i] = MeshUtils.BlockType.NOCRACK;
+                            thisChunk.healthData[i] = MeshUtils.BlockType.NOCRACK;
                             Vector3Int nBlock = FromFlat(i);
                             var neghbourBlock = GetWorldNeighbour(new Vector3Int(nBlock.x, nBlock.y + 1, nBlock.z), Vector3Int.CeilToInt(thisChunk.location));
                             Vector3Int block = neghbourBlock.Item1;
@@ -197,7 +197,14 @@ public class World : MonoBehaviour
         return v.x + chunkDimensions.x * (v.y + chunkDimensions.z * v.z);
     }
 
-    // (updated block index, chunk index)
+    /// <summary>
+    /// 處理 Chunk 邊界對 Block 索引值的處理，當超出當前 Chunk 時，指向下一個 Chunk 並修正 Block 索引值
+    /// TODO: 應該先返回 chunk index 再返回 updated block index，比較合邏輯
+    /// TODO: 當指向的下一個 Chunk 超出了世界範圍，應該返回 null
+    /// </summary>
+    /// <param name="blockIndex">updated block index</param>
+    /// <param name="chunkIndex">chunk index</param>
+    /// <returns>(updated block index, chunk index)</returns>
     public Tuple<Vector3Int, Vector3Int> GetWorldNeighbour(Vector3Int blockIndex, Vector3Int chunkIndex)
     {
         Chunk thisChunk = chunks[chunkIndex];
@@ -254,9 +261,10 @@ public class World : MonoBehaviour
     }
 
     // 一段時間後檢查是否已被敲掉，否則修復自己 health 恢復成 NOCRACK
-    public IEnumerator Drop(Chunk c, int blockIndex)
+    public IEnumerator Drop(Chunk c, int blockIndex, int strength = 3)
     {
-        if(c.chunkData[blockIndex] != MeshUtils.BlockType.SAND)
+        // 檢查當前方塊是否會掉落
+        if(!MeshUtils.canDrop.Contains(c.chunkData[blockIndex]))
         {
             yield break;
         }
@@ -275,18 +283,19 @@ public class World : MonoBehaviour
             int neighbourBlockIndex = ToFlat(block);
             Chunk neighbourChunk = chunks[neighbourBlock.Item2];
 
-            if(neighbourChunk.chunkData[neighbourBlockIndex] == MeshUtils.BlockType.AIR)
+            if(neighbourChunk != null && neighbourChunk.chunkData[neighbourBlockIndex] == MeshUtils.BlockType.AIR)
             {
-                neighbourChunk.chunkData[neighbourBlockIndex] = MeshUtils.BlockType.SAND;
+                neighbourChunk.chunkData[neighbourBlockIndex] = c.chunkData[blockIndex];
                 neighbourChunk.healthData[neighbourBlockIndex] = MeshUtils.BlockType.NOCRACK;
 
+                // 考慮當前方塊的上方一格是否會觸發掉落機制
                 var nBlockAbove = GetWorldNeighbour(new Vector3Int(thisBlock.x, thisBlock.y + 1, thisBlock.z), Vector3Int.CeilToInt(c.location));
                 Vector3Int blockAbove = nBlockAbove.Item1;
                 int nBlockAboveIndex = ToFlat(blockAbove);
                 Chunk nChunkAbove = chunks[nBlockAbove.Item2];
 
                 c.chunkData[blockIndex] = MeshUtils.BlockType.AIR;
-                //c.healthData[blockIndex] = MeshUtils.BlockType.NOCRACK;
+                c.healthData[blockIndex] = MeshUtils.BlockType.NOCRACK;
 
                 StartCoroutine(Drop(c: nChunkAbove, blockIndex: nBlockAboveIndex));
 
@@ -301,10 +310,58 @@ public class World : MonoBehaviour
                 c = neighbourChunk;
                 blockIndex = neighbourBlockIndex;
             }
+            else if (MeshUtils.canFlow.Contains(c.chunkData[blockIndex]))
+            {
+                FlowIntoNeighbour(thisBlock, Vector3Int.CeilToInt(c.location), Vector3Int.forward, strength - 1);
+                FlowIntoNeighbour(thisBlock, Vector3Int.CeilToInt(c.location), Vector3Int.back, strength - 1);
+                FlowIntoNeighbour(thisBlock, Vector3Int.CeilToInt(c.location), Vector3Int.left, strength - 1);
+                FlowIntoNeighbour(thisBlock, Vector3Int.CeilToInt(c.location), Vector3Int.right, strength - 1);
+                yield break;
+            }
             else
             {
                 yield break;
             }
+        }
+    }
+
+    /// <summary>
+    /// 讓水等物件流向四周
+    /// TODO: 應該不只 FlowIntoNeighbour 與 Drop 之間遞迴呼叫，還要 FlowIntoNeighbour 遞迴呼叫自身，
+    /// 只是前者的衰退速度應該會較快，相較於 FlowIntoNeighbour 每次 strength 減一
+    /// </summary>
+    /// <param name="blockPosition"></param>
+    /// <param name="chunkPosition"></param>
+    /// <param name="neighbourDirection"></param>
+    /// <param name="strength">流動距離(程度)</param>
+    public void FlowIntoNeighbour(Vector3Int blockPosition, Vector3Int chunkPosition, Vector3Int neighbourDirection, int strength)
+    {
+        strength--;
+
+        if(strength <= 0)
+        {
+            return;
+        }
+
+        Vector3Int neighbourPosition = blockPosition + neighbourDirection;
+        var neighbourBlock = GetWorldNeighbour(neighbourPosition, chunkPosition);
+        Vector3Int block = neighbourBlock.Item1;
+        int neighbourBlockIndex = ToFlat(block);
+        Chunk neighbourChunk = chunks[neighbourBlock.Item2];
+
+        if(neighbourChunk == null)
+        {
+            return;
+        }
+
+        if(neighbourChunk.chunkData[neighbourBlockIndex] == MeshUtils.BlockType.AIR)
+        {
+            neighbourChunk.chunkData[neighbourBlockIndex] = chunks[chunkPosition].chunkData[ToFlat(blockPosition)];
+            neighbourChunk.healthData[neighbourBlockIndex] = MeshUtils.BlockType.NOCRACK;
+            RedrawChunk(neighbourChunk);
+
+            // TODO: 此函式進來時就已經減一，遞迴呼叫時又再減一次，應該是重複做了？
+            StartCoroutine(Drop(c: neighbourChunk, blockIndex: neighbourBlockIndex, strength: strength--));
         }
     }
 
@@ -565,15 +622,7 @@ public class World : MonoBehaviour
 
             for(int i = 0; i < blockCount; i++)
             {
-                try
-                {
-                    c.chunkData[i] = (MeshUtils.BlockType)wd.allChunkData[index];
-                }
-                catch (IndexOutOfRangeException)
-                {
-                    Debug.LogError($"#wd.allChunkData: {wd.allChunkData.GetLength(0)}, index: {index}, blockCount: {blockCount}, #Chunk: {chunkChecker.Count}");
-                }
-
+                c.chunkData[i] = (MeshUtils.BlockType)wd.allChunkData[index];
                 c.healthData[i] = MeshUtils.BlockType.NOCRACK;
                 index++;
             }

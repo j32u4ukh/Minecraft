@@ -23,6 +23,9 @@ public static class MeshUtils
         -1, -1, -1, -1, -1, -1
     };
 
+    public static HashSet<BlockType> canDrop = new HashSet<BlockType> { BlockType.SAND, BlockType.WATER };
+    public static HashSet<BlockType> canFlow = new HashSet<BlockType> { BlockType.WATER };
+
     // 此種取得 UV 邊界座標的方式，與 enum BlockType 的順序有關聯，是不好的方法
     public static Vector2[,] blockUVs =
     {
