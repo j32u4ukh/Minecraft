@@ -91,6 +91,12 @@ public class Chunk : MonoBehaviour
                                                  World.caveSettings.heightScale,
                                                  World.caveSettings.heightOffset);
 
+            float plantTree = (int)MeshUtils.fBM3D(x, y, z,
+                                                   World.treeSettings.octaves,
+                                                   World.treeSettings.scale,
+                                                   World.treeSettings.heightScale,
+                                                   World.treeSettings.heightOffset);
+
             hData[i] = MeshUtils.BlockType.NOCRACK;
 
             if (y == 0)
@@ -108,7 +114,15 @@ public class Chunk : MonoBehaviour
 
             if (y == surfaceHeight)
             {
-                cData[i] = MeshUtils.BlockType.GRASSSIDE;
+                if (plantTree < World.treeSettings.probability && random.NextFloat(1) <= 0.1)
+                {
+                    // Execute 當中一次處理一個 Block，因此這裡僅放置樹基，而非直接種一棵樹
+                    cData[i] = MeshUtils.BlockType.WOODBASE;
+                }
+                else
+                {
+                    cData[i] = MeshUtils.BlockType.GRASSSIDE;
+                }
             }
 
             else if ((diamondBHeight < y) && (y < diamondTHeight) && (random.NextFloat(1) < World.diamondTSettings.probability))
@@ -248,6 +262,8 @@ public class Chunk : MonoBehaviour
         blockTypes.Dispose();
         healthTypes.Dispose();
         RandomArray.Dispose();
+
+        BuildTrees();
     }
 
     // Start is called before the first frame update
@@ -347,4 +363,57 @@ public class Chunk : MonoBehaviour
         collider.sharedMesh = mf.mesh;
     }
 
+    (Vector3Int, MeshUtils.BlockType)[] treeDesign = new (Vector3Int, MeshUtils.BlockType)[] {
+        (new Vector3Int(-1,1,-1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,1,-1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(1,1,-1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(-1,2,-1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,2,-1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,3,-1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(1,3,-1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,4,-1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,0,0), MeshUtils.BlockType.WOOD),
+        (new Vector3Int(-1,1,0), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,1,0), MeshUtils.BlockType.WOOD),
+        (new Vector3Int(1,1,0), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(-1,2,0), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,2,0), MeshUtils.BlockType.WOOD),
+        (new Vector3Int(1,2,0), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(-1,3,0), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,3,0), MeshUtils.BlockType.WOOD),
+        (new Vector3Int(1,3,0), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(-1,4,0), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,4,0), MeshUtils.BlockType.WOOD),
+        (new Vector3Int(1,4,0), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,5,0), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(-1,1,1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,1,1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(1,1,1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,2,1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(1,2,1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,3,1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(-1,4,1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(1,4,1), MeshUtils.BlockType.LEAVES),
+    };
+
+    void BuildTrees()
+    {
+        for(int i = 0; i < chunkData.Length; i++)
+        {
+            if(chunkData[i] == MeshUtils.BlockType.WOODBASE)
+            {
+                foreach ((Vector3Int, MeshUtils.BlockType) v in treeDesign)
+                {
+                    Vector3Int blockPos = World.FromFlat(i) + v.Item1;
+                    int bIndex = World.ToFlat(blockPos);
+
+                    if (0 <= bIndex && bIndex < chunkData.Length)
+                    {
+                        chunkData[bIndex] = v.Item2;
+                        healthData[bIndex] = MeshUtils.BlockType.NOCRACK;
+                    }
+                }
+            }
+        }
+    }
 }

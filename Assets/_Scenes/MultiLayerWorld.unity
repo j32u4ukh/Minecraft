@@ -1620,6 +1620,7 @@ MonoBehaviour:
   diamondT: {fileID: 119329592}
   diamondB: {fileID: 506334362}
   caves: {fileID: 8855333218858066351, guid: 00c5a3331d083494c9940d8b26088eac, type: 3}
+  tree: {fileID: 8855333218858066351, guid: d9f848cc04f3bc14792a0528a042c7ec, type: 3}
 --- !u!1 &1411408130
 GameObject:
   m_ObjectHideFlags: 0

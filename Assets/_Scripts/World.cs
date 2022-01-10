@@ -48,6 +48,9 @@ public class World : MonoBehaviour
     public static PerlinSettings caveSettings;
     public Perlin3DGrapher caves;
 
+    public static PerlinSettings treeSettings;
+    public Perlin3DGrapher tree;
+
     public HashSet<Vector3Int> chunkChecker = new HashSet<Vector3Int>();
     public HashSet<Vector2Int> chunkColumns = new HashSet<Vector2Int>();
     public Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
@@ -103,6 +106,12 @@ public class World : MonoBehaviour
                                           caves.octaves,
                                           caves.heightOffset,
                                           caves.DrawCutOff);
+
+        treeSettings = new PerlinSettings(tree.heightScale,
+                                          tree.scale,
+                                          tree.octaves,
+                                          tree.heightOffset,
+                                          tree.DrawCutOff);
 
         if (laodFromFile)
         {
@@ -187,12 +196,12 @@ public class World : MonoBehaviour
         }
     }
 
-    Vector3Int FromFlat(int i)
+    public static Vector3Int FromFlat(int i)
     {
         return new Vector3Int(i % chunkDimensions.x, (i / chunkDimensions.x) % chunkDimensions.y, i / (chunkDimensions.x * chunkDimensions.y));
     }
 
-    int ToFlat(Vector3Int v)
+    public static int ToFlat(Vector3Int v)
     {
         return v.x + chunkDimensions.x * (v.y + chunkDimensions.z * v.z);
     }
