@@ -138,47 +138,12 @@ public class World : MonoBehaviour
                 int by = (int)(Mathf.Round(hitBlock.y) - thisChunk.location.y);
                 int bz = (int)(Mathf.Round(hitBlock.z) - thisChunk.location.z);
 
-                Vector3Int neighbour;
+                var blockNeighbour = GetWorldNeighbour(new Vector3Int(bx, by, bz), Vector3Int.CeilToInt(thisChunk.location));
+                thisChunk = chunks[blockNeighbour.Item2];
 
-                if(bx == chunkDimensions.x)
-                {
-                    neighbour = new Vector3Int((int)thisChunk.location.x + chunkDimensions.x, (int)thisChunk.location.y, (int)thisChunk.location.z);
-                    thisChunk = chunks[neighbour];
-                    bx = 0;
-                }
-                else if (bx == -1)
-                {
-                    neighbour = new Vector3Int((int)thisChunk.location.x - chunkDimensions.x, (int)thisChunk.location.y, (int)thisChunk.location.z);
-                    thisChunk = chunks[neighbour];
-                    bx = chunkDimensions.x - 1;
-                }
-                else if (by == chunkDimensions.y)
-                {
-                    neighbour = new Vector3Int((int)thisChunk.location.x, (int)thisChunk.location.y + chunkDimensions.y, (int)thisChunk.location.z);
-                    thisChunk = chunks[neighbour];
-                    by = 0;
-                }
-                else if (by == -1)
-                {
-                    neighbour = new Vector3Int((int)thisChunk.location.x, (int)thisChunk.location.y - chunkDimensions.y, (int)thisChunk.location.z);
-                    thisChunk = chunks[neighbour];
-                    by = chunkDimensions.y - 1;
-                }
-                else if (bz == chunkDimensions.z)
-                {
-                    neighbour = new Vector3Int((int)thisChunk.location.x, (int)thisChunk.location.y, (int)thisChunk.location.z + chunkDimensions.z);
-                    thisChunk = chunks[neighbour];
-                    bz = 0;
-                }
-                else if (bz == -1)
-                {
-                    neighbour = new Vector3Int((int)thisChunk.location.x, (int)thisChunk.location.y, (int)thisChunk.location.z - chunkDimensions.z);
-                    thisChunk = chunks[neighbour];
-                    bz = chunkDimensions.z - 1;
-                }
-
-                int i = bx + chunkDimensions.x * (by + chunkDimensions.z * bz);
-
+                //int i = bx + chunkDimensions.x * (by + chunkDimensions.z * bz);
+                int i = ToFlat(blockNeighbour.Item1);
+                    
                 if (Input.GetMouseButtonDown(0))
                 {
                     // TODO: 教學中為了避免 health 為 -1 的方塊被刪除，因此加了這個判斷，但其實根本沒必要。health 從 NOCRACK(10) 開始往上加，本來就不可能加到 -1
@@ -205,13 +170,63 @@ public class World : MonoBehaviour
                     thisChunk.healthData[i] = MeshUtils.BlockType.NOCRACK;
                 }
 
-                //DestroyImmediate(thisChunk.GetComponent<MeshFilter>());
-                //DestroyImmediate(thisChunk.GetComponent<MeshRenderer>());
-                //DestroyImmediate(thisChunk.GetComponent<Collider>());
-                //thisChunk.CreateChunk(chunkDimensions, thisChunk.location, false);
                 RedrawChunk(thisChunk);
             }
         }
+    }
+
+    Vector3Int FromFlat(int i)
+    {
+        return new Vector3Int(i % chunkDimensions.x, (i / chunkDimensions.x) % chunkDimensions.y, i / (chunkDimensions.x * chunkDimensions.y));
+    }
+
+    int ToFlat(Vector3Int v)
+    {
+        return v.x + chunkDimensions.x * (v.y + chunkDimensions.z * v.z);
+    }
+
+    // (updated block index, chunk index)
+    public Tuple<Vector3Int, Vector3Int> GetWorldNeighbour(Vector3Int blockIndex, Vector3Int chunkIndex)
+    {
+        Chunk thisChunk = chunks[chunkIndex];
+        int bx = blockIndex.x;
+        int by = blockIndex.y;
+        int bz = blockIndex.z;
+
+        Vector3Int neighbour = chunkIndex;
+
+        if (bx == chunkDimensions.x)
+        {
+            neighbour = new Vector3Int((int)thisChunk.location.x + chunkDimensions.x, (int)thisChunk.location.y, (int)thisChunk.location.z);
+            bx = 0;
+        }
+        else if (bx == -1)
+        {
+            neighbour = new Vector3Int((int)thisChunk.location.x - chunkDimensions.x, (int)thisChunk.location.y, (int)thisChunk.location.z);
+            bx = chunkDimensions.x - 1;
+        }
+        else if (by == chunkDimensions.y)
+        {
+            neighbour = new Vector3Int((int)thisChunk.location.x, (int)thisChunk.location.y + chunkDimensions.y, (int)thisChunk.location.z);
+            by = 0;
+        }
+        else if (by == -1)
+        {
+            neighbour = new Vector3Int((int)thisChunk.location.x, (int)thisChunk.location.y - chunkDimensions.y, (int)thisChunk.location.z);
+            by = chunkDimensions.y - 1;
+        }
+        else if (bz == chunkDimensions.z)
+        {
+            neighbour = new Vector3Int((int)thisChunk.location.x, (int)thisChunk.location.y, (int)thisChunk.location.z + chunkDimensions.z);
+            bz = 0;
+        }
+        else if (bz == -1)
+        {
+            neighbour = new Vector3Int((int)thisChunk.location.x, (int)thisChunk.location.y, (int)thisChunk.location.z - chunkDimensions.z);
+            bz = chunkDimensions.z - 1;
+        }
+
+        return new Tuple<Vector3Int, Vector3Int>(new Vector3Int(bx, by, bz), neighbour);
     }
 
     // 一段時間後檢查是否已被敲掉，否則修復自己 health 恢復成 NOCRACK
