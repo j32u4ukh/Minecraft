@@ -58,6 +58,7 @@ public class WorldData
                 index++;
             }
 
+            // 無須同時儲存 Solid 和 Fluid 兩者的值，因為兩者對應的是同一個 Chunk
             chunkVisibility[vIndex] = ch.Value.meshRendererSolid.enabled;
             vIndex++;
         }

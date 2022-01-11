@@ -147,7 +147,7 @@ public class Chunk : MonoBehaviour
 
             // TODO: 實際數值要根據地形高低來做調整
             // TODO: 如何確保水是自己一個區塊，而非隨機的散佈在地圖中？大概要像樹一樣，使用 fBM3D
-            else if (y < 20)
+            else if (y < 16)
             {
                 cData[i] = MeshUtils.BlockType.WATER;
             }
@@ -316,7 +316,7 @@ public class Chunk : MonoBehaviour
             fluidMesh.transform.parent = transform;
             mff = fluidMesh.AddComponent<MeshFilter>();
             mrf = fluidMesh.AddComponent<MeshRenderer>();
-            meshRendererSolid = mrf;
+            meshRendererFluid = mrf;
             mrf.material = fluid;
         }
         else
@@ -412,12 +412,15 @@ public class Chunk : MonoBehaviour
             jobs.triStart.Dispose();
             newMesh.RecalculateBounds();
 
-            if(pass == 0)
+            // (pass: 0)載入固體方塊 Mesh
+            if (pass == 0)
             {
                 mfs.mesh = newMesh;
                 MeshCollider collider = solidMesh.AddComponent<MeshCollider>();
                 collider.sharedMesh = mfs.mesh;
             }
+
+            // (pass: 1)載入流體方塊 Mesh
             else
             {
                 mff.mesh = newMesh;

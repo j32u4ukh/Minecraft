@@ -145,7 +145,8 @@ public class World : MonoBehaviour
                 }
 
                 // Debug.Log($"Block location: {hitBlock}");
-                Chunk thisChunk = hit.collider.gameObject.GetComponent<Chunk>();
+                //Chunk thisChunk = hit.collider.gameObject.GetComponent<Chunk>();
+                Chunk thisChunk = hit.collider.gameObject.transform.parent.GetComponent<Chunk>();
                 int bx = (int)(Mathf.Round(hitBlock.x) - thisChunk.location.x);
                 int by = (int)(Mathf.Round(hitBlock.y) - thisChunk.location.y);
                 int bz = (int)(Mathf.Round(hitBlock.z) - thisChunk.location.z);
@@ -426,6 +427,7 @@ public class World : MonoBehaviour
             }
 
             chunks[position].meshRendererSolid.enabled = meshEnabled;
+            chunks[position].meshRendererFluid.enabled = meshEnabled;
         }
 
         chunkColumns.Add(new Vector2Int(x, z));
@@ -537,6 +539,7 @@ public class World : MonoBehaviour
             if (chunkChecker.Contains(pos))
             {
                 chunks[pos].meshRendererSolid.enabled = false;
+                chunks[pos].meshRendererFluid.enabled = false;
             }
         }
     }
@@ -647,6 +650,7 @@ public class World : MonoBehaviour
             chunks.Add(chunkPos, c);
             RedrawChunk(c);
             c.meshRendererSolid.enabled = wd.chunkVisibility[vIndex];
+            c.meshRendererFluid.enabled = wd.chunkVisibility[vIndex];
             vIndex++;
 
             loadingBar.value++;
