@@ -350,7 +350,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 10302, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -410,7 +410,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1791387471
 Transform:
   m_ObjectHideFlags: 0
@@ -438,7 +438,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   atlas: {fileID: 2100000, guid: d8bb48271eae1454583b06e3108f60e0, type: 2}
+  fluid: {fileID: 2100000, guid: 4093ca777884e3c40a2909f87a4d1abd, type: 2}
   width: 10
   height: 10
   depth: 10
+  location: {x: 0, y: 0, z: 0}
   chunkData: 
+  healthData: 
+  meshRendererSolid: {fileID: 0}
+  meshRendererFluid: {fileID: 0}

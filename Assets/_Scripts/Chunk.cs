@@ -316,6 +316,7 @@ public class Chunk : MonoBehaviour
             fluidMesh.transform.parent = transform;
             mff = fluidMesh.AddComponent<MeshFilter>();
             mrf = fluidMesh.AddComponent<MeshRenderer>();
+            fluidMesh.AddComponent<UVScroller>();
             meshRendererFluid = mrf;
             mrf.material = fluid;
         }
