@@ -8,3 +8,7 @@ Solution
 
 Issue3 Burst 和 Mathematics 都在 package 當中，卻無法載入或使用
 Solution [BurstCompile] 和 using Unity.Mathematics; 需使用 .NET 4.0 以上
+
+Issue4 希望玩家可進入水中，但水的 Collider 又是必需的。
+Solution 透過對 玩家 和 水 都設置 layer，再在 Edit > Project Settings > Physics 的最下方，
+有個三角形，定義了各個 layer 之間是否發生碰撞

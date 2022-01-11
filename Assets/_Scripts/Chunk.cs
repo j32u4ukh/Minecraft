@@ -426,6 +426,7 @@ public class Chunk : MonoBehaviour
             {
                 mff.mesh = newMesh;
                 MeshCollider collider = fluidMesh.AddComponent<MeshCollider>();
+                fluidMesh.layer = 4;
                 collider.sharedMesh = mff.mesh;
             }
 
