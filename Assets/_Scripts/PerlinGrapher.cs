@@ -9,7 +9,7 @@ public class PerlinGrapher : MonoBehaviour
     public float heightScale = 2;
 
     [Range(0.0f, 1.0f)]
-    public float scale = 0.85f;
+    public float scale = 0.5f;
 
     public int octaves = 1;
     public float heightOffset = 1f;

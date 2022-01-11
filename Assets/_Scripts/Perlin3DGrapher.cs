@@ -27,7 +27,7 @@ public class Perlin3DGrapher : MonoBehaviour
                 {
                     GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
                     cube.name = "perlin_cube";
-                    cube.transform.parent = this.transform;
+                    cube.transform.parent = transform;
                     cube.transform.position = new Vector3(x, y, z);
                 }
             }

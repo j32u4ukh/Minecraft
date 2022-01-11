@@ -364,18 +364,15 @@ public class Chunk : MonoBehaviour
     }
 
     (Vector3Int, MeshUtils.BlockType)[] treeDesign = new (Vector3Int, MeshUtils.BlockType)[] {
-        (new Vector3Int(-1,1,-1), MeshUtils.BlockType.LEAVES),
-        (new Vector3Int(0,1,-1), MeshUtils.BlockType.LEAVES),
-        (new Vector3Int(1,1,-1), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(-1,2,-1), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(0,2,-1), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(0,3,-1), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(1,3,-1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(-1,4,-1), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(0,4,-1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,5,-1), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(0,0,0), MeshUtils.BlockType.WOOD),
-        (new Vector3Int(-1,1,0), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(0,1,0), MeshUtils.BlockType.WOOD),
-        (new Vector3Int(1,1,0), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(-1,2,0), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(0,2,0), MeshUtils.BlockType.WOOD),
         (new Vector3Int(1,2,0), MeshUtils.BlockType.LEAVES),
@@ -385,15 +382,16 @@ public class Chunk : MonoBehaviour
         (new Vector3Int(-1,4,0), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(0,4,0), MeshUtils.BlockType.WOOD),
         (new Vector3Int(1,4,0), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(-1,5,0), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(0,5,0), MeshUtils.BlockType.LEAVES),
-        (new Vector3Int(-1,1,1), MeshUtils.BlockType.LEAVES),
-        (new Vector3Int(0,1,1), MeshUtils.BlockType.LEAVES),
-        (new Vector3Int(1,1,1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(1,5,0), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(0,2,1), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(1,2,1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(-1,3,1), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(0,3,1), MeshUtils.BlockType.LEAVES),
-        (new Vector3Int(-1,4,1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,4,1), MeshUtils.BlockType.LEAVES),
         (new Vector3Int(1,4,1), MeshUtils.BlockType.LEAVES),
+        (new Vector3Int(0,5,1), MeshUtils.BlockType.LEAVES)
     };
 
     void BuildTrees()
@@ -407,7 +405,8 @@ public class Chunk : MonoBehaviour
                     Vector3Int blockPos = World.FromFlat(i) + v.Item1;
                     int bIndex = World.ToFlat(blockPos);
 
-                    if (0 <= bIndex && bIndex < chunkData.Length)
+                    // TODO: 目前樹木若剛好在 Chunk 的邊界上，則會被切掉
+                    if ((0 <= bIndex) && (bIndex < chunkData.Length))
                     {
                         chunkData[bIndex] = v.Item2;
                         healthData[bIndex] = MeshUtils.BlockType.NOCRACK;

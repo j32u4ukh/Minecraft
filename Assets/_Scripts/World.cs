@@ -173,12 +173,13 @@ public class World : MonoBehaviour
                         {
                             thisChunk.chunkData[i] = MeshUtils.BlockType.AIR;
                             thisChunk.healthData[i] = MeshUtils.BlockType.NOCRACK;
+
+                            // 上方方塊是否掉落檢查
                             Vector3Int nBlock = FromFlat(i);
                             var neghbourBlock = GetWorldNeighbour(new Vector3Int(nBlock.x, nBlock.y + 1, nBlock.z), Vector3Int.CeilToInt(thisChunk.location));
                             Vector3Int block = neghbourBlock.Item1;
                             int neighboutBlockIndex = ToFlat(block);
                             Chunk neighbourChunk = chunks[neghbourBlock.Item2];
-
                             StartCoroutine(Drop(neighbourChunk, neighboutBlockIndex));
                         }
                     }
@@ -188,6 +189,7 @@ public class World : MonoBehaviour
                     thisChunk.chunkData[i] = buildType;
                     thisChunk.healthData[i] = MeshUtils.BlockType.NOCRACK;
 
+                    // 方塊是否掉落檢查
                     StartCoroutine(Drop(thisChunk, i));
                 }
 
@@ -292,6 +294,7 @@ public class World : MonoBehaviour
             int neighbourBlockIndex = ToFlat(block);
             Chunk neighbourChunk = chunks[neighbourBlock.Item2];
 
+            // 檢查下方是否有掉落空間
             if(neighbourChunk != null && neighbourChunk.chunkData[neighbourBlockIndex] == MeshUtils.BlockType.AIR)
             {
                 neighbourChunk.chunkData[neighbourBlockIndex] = c.chunkData[blockIndex];
@@ -385,8 +388,12 @@ public class World : MonoBehaviour
     public void SetBuildType(int type)
     {
         buildType = (MeshUtils.BlockType)type;
-        //Debug.Log($"buildType: {buildType}, type: {type}");
     }
+
+     public void SetBlockType(MeshUtils.BlockType type)
+     {
+        buildType = type;
+     }
 
     IEnumerator BuildCoordinator()
     {
