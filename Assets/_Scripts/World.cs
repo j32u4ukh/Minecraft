@@ -425,7 +425,7 @@ public class World : MonoBehaviour
                 chunks.Add(position, c);
             }
 
-            chunks[position].meshRenderer.enabled = meshEnabled;
+            chunks[position].meshRendererSolid.enabled = meshEnabled;
         }
 
         chunkColumns.Add(new Vector2Int(x, z));
@@ -536,7 +536,7 @@ public class World : MonoBehaviour
 
             if (chunkChecker.Contains(pos))
             {
-                chunks[pos].meshRenderer.enabled = false;
+                chunks[pos].meshRendererSolid.enabled = false;
             }
         }
     }
@@ -646,7 +646,7 @@ public class World : MonoBehaviour
             c.CreateChunk(chunkDimensions, chunkPos, false);
             chunks.Add(chunkPos, c);
             RedrawChunk(c);
-            c.meshRenderer.enabled = wd.chunkVisibility[vIndex];
+            c.meshRendererSolid.enabled = wd.chunkVisibility[vIndex];
             vIndex++;
 
             loadingBar.value++;

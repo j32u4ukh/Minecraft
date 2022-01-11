@@ -1,15 +1,17 @@
 using System.Collections.Generic;
 using Unity.Burst;
-using Unity.Mathematics;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
-
 
 public class Chunk : MonoBehaviour
 {
     public Material atlas;
+
+    // 流體相關的物件都會利用這個 Material
+    public Material fluid;
 
     public int width = 2;
     public int height = 2;
@@ -25,7 +27,10 @@ public class Chunk : MonoBehaviour
     public MeshUtils.BlockType[] chunkData;
     public MeshUtils.BlockType[] healthData;
 
-    public MeshRenderer meshRenderer;
+    public MeshRenderer meshRendererSolid;
+    public MeshRenderer meshRendererFluid;
+    GameObject solidMesh;
+    GameObject fluidMesh;
 
     CalculateBlockTypes calculateBlockTypes;
     JobHandle jobHandle;
@@ -138,6 +143,13 @@ public class Chunk : MonoBehaviour
             else if (y < surfaceHeight)
             {
                 cData[i] = MeshUtils.BlockType.DIRT;
+            }
+
+            // TODO: 實際數值要根據地形高低來做調整
+            // TODO: 如何確保水是自己一個區塊，而非隨機的散佈在地圖中？大概要像樹一樣，使用 fBM3D
+            else if (y < 20)
+            {
+                cData[i] = MeshUtils.BlockType.WATER;
             }
 
             else
@@ -274,13 +286,45 @@ public class Chunk : MonoBehaviour
         height = (int)dimensions.y;
         depth = (int)dimensions.z;
 
-        MeshFilter mf = gameObject.AddComponent<MeshFilter>();
+        // TODO: 可將此處的 mrs, mrf 用全域的 meshRendererSolid, meshRendererFluid 取代
+        // 固體(Solid)方塊 Mesh
+        MeshFilter mfs;
+        MeshRenderer mrs;
 
-        // TODO: 可將此處的 mr 用全域的 meshRenderer 取代
-        MeshRenderer mr = gameObject.AddComponent<MeshRenderer>();
-        meshRenderer = mr;
+        // 流體(Fluid)方塊 Mesh
+        MeshFilter mff;
+        MeshRenderer mrf;
 
-        mr.material = atlas;
+        if(solidMesh == null)
+        {
+            solidMesh = new GameObject("Solid");
+            solidMesh.transform.parent = transform;
+            mfs = solidMesh.AddComponent<MeshFilter>();
+            mrs = solidMesh.AddComponent<MeshRenderer>();
+            meshRendererSolid = mrs;
+            mrs.material = atlas;
+        }
+        else
+        {
+            mfs = solidMesh.GetComponent<MeshFilter>();
+            DestroyImmediate(solidMesh.GetComponent<Collider>());
+        }
+
+        if(fluidMesh == null)
+        {
+            fluidMesh = new GameObject("Fluid");
+            fluidMesh.transform.parent = transform;
+            mff = fluidMesh.AddComponent<MeshFilter>();
+            mrf = fluidMesh.AddComponent<MeshRenderer>();
+            meshRendererSolid = mrf;
+            mrf.material = fluid;
+        }
+        else
+        {
+            mff = fluidMesh.GetComponent<MeshFilter>();
+            DestroyImmediate(fluidMesh.GetComponent<Collider>());
+        }
+
         blocks = new Block[width, height, depth];
 
         if (rebuildBlocks)
@@ -288,79 +332,101 @@ public class Chunk : MonoBehaviour
             BuildChunk();
         }
 
-        var inputMeshes = new List<Mesh>();
-        int vertexStart = 0;
-        int triStart = 0;
-        int meshCount = width * height * depth;
-        int m = 0;
-
-        // Job 當中數據不會被新增或刪除，因此傳入最大可能 Mesh 個數 width * height * depth
-        var jobs = new ProcessMeshDataJob();
-        jobs.vertexStart = new NativeArray<int>(meshCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-        jobs.triStart = new NativeArray<int>(meshCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-
-        for (int z = 0; z < depth; z++)
+        for(int pass = 0; pass < 2; pass++)
         {
-            for (int y = 0; y < height; y++)
+            var inputMeshes = new List<Mesh>();
+            int vertexStart = 0;
+            int triStart = 0;
+            int meshCount = width * height * depth;
+            int m = 0;
+
+            // Job 當中數據不會被新增或刪除，因此傳入最大可能 Mesh 個數 width * height * depth
+            var jobs = new ProcessMeshDataJob();
+            jobs.vertexStart = new NativeArray<int>(meshCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            jobs.triStart = new NativeArray<int>(meshCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+
+            for (int z = 0; z < depth; z++)
             {
-                for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++)
                 {
-                    int chunk_idx = x + width * (y + depth * z);
-                    blocks[x, y, z] = new Block(new Vector3(x, y, z) + location, chunkData[chunk_idx], this, healthData[chunk_idx]);
-
-                    // 只將有 mesh 的 Block 加入 inputMeshes
-                    if (blocks[x, y, z].mesh != null)
+                    for (int x = 0; x < width; x++)
                     {
-                        inputMeshes.Add(blocks[x, y, z].mesh);
-                        var vcount = blocks[x, y, z].mesh.vertexCount;
+                        int chunk_idx = x + width * (y + depth * z);
+                        blocks[x, y, z] = new Block(new Vector3(x, y, z) + location, chunkData[chunk_idx], this, healthData[chunk_idx]);
 
-                        // 取得三角形數量
-                        var icount = (int)blocks[x, y, z].mesh.GetIndexCount(0);
+                        // 只將有 mesh 的 Block 加入 inputMeshes
+                        /* [condition]
+                         * condition1: blocks[x, y, z].mesh != null
+                         * condition2-1: (pass == 0) && !MeshUtils.canFlow.Contains(chunkData[chunk_idx])
+                         * condition2-2: (pass == 1) && MeshUtils.canFlow.Contains(chunkData[chunk_idx])
+                         * condition2: condition2-1 || condition2-2
+                         * condition: condition1 && condition2
+                         */
+                        if (blocks[x, y, z].mesh != null && 
+                            (((pass == 0) && !MeshUtils.canFlow.Contains(chunkData[chunk_idx]))||
+                            ((pass == 1) && MeshUtils.canFlow.Contains(chunkData[chunk_idx]))))
+                        {
+                            inputMeshes.Add(blocks[x, y, z].mesh);
+                            var vcount = blocks[x, y, z].mesh.vertexCount;
 
-                        jobs.vertexStart[m] = vertexStart;
-                        jobs.triStart[m] = triStart;
-                        vertexStart += vcount;
-                        triStart += icount;
-                        m++;
+                            // 取得三角形數量
+                            var icount = (int)blocks[x, y, z].mesh.GetIndexCount(0);
+
+                            jobs.vertexStart[m] = vertexStart;
+                            jobs.triStart[m] = triStart;
+                            vertexStart += vcount;
+                            triStart += icount;
+                            m++;
+                        }
                     }
                 }
             }
-        }
 
-        jobs.meshData = Mesh.AcquireReadOnlyMeshData(inputMeshes);
-        var outputMeshData = Mesh.AllocateWritableMeshData(1);
-        jobs.outputMesh = outputMeshData[0];
-        jobs.outputMesh.SetIndexBufferParams(triStart, IndexFormat.UInt32);
+            jobs.meshData = Mesh.AcquireReadOnlyMeshData(inputMeshes);
+            var outputMeshData = Mesh.AllocateWritableMeshData(1);
+            jobs.outputMesh = outputMeshData[0];
+            jobs.outputMesh.SetIndexBufferParams(triStart, IndexFormat.UInt32);
 
-        // 這裡的 stream 的順序，應和 ProcessMeshDataJob 當中 GetVertexData 的 stream 的順序相同
-        jobs.outputMesh.SetVertexBufferParams(
-            vertexStart, 
-            new VertexAttributeDescriptor(VertexAttribute.Position, stream: 0), 
-            new VertexAttributeDescriptor(VertexAttribute.Normal, stream: 1), 
-            new VertexAttributeDescriptor(VertexAttribute.TexCoord0, stream: 2), 
-            new VertexAttributeDescriptor(VertexAttribute.TexCoord1, stream: 3));
+            // 這裡的 stream 的順序，應和 ProcessMeshDataJob 當中 GetVertexData 的 stream 的順序相同
+            jobs.outputMesh.SetVertexBufferParams(
+                vertexStart,
+                new VertexAttributeDescriptor(VertexAttribute.Position, stream: 0),
+                new VertexAttributeDescriptor(VertexAttribute.Normal, stream: 1),
+                new VertexAttributeDescriptor(VertexAttribute.TexCoord0, stream: 2),
+                new VertexAttributeDescriptor(VertexAttribute.TexCoord1, stream: 3));
 
-        var handle = jobs.Schedule(inputMeshes.Count, 4);
-        var newMesh = new Mesh();
-        newMesh.name = $"Chunk_{location.x}_{location.y}_{location.z}";
+            var handle = jobs.Schedule(inputMeshes.Count, 4);
+            var newMesh = new Mesh();
+            newMesh.name = $"Chunk_{location.x}_{location.y}_{location.z}";
 
-        var sm = new SubMeshDescriptor(0, triStart, MeshTopology.Triangles);
-        sm.firstVertex = 0;
-        sm.vertexCount = vertexStart;
-        handle.Complete();
+            var sm = new SubMeshDescriptor(0, triStart, MeshTopology.Triangles);
+            sm.firstVertex = 0;
+            sm.vertexCount = vertexStart;
+            handle.Complete();
 
-        jobs.outputMesh.subMeshCount = 1;
-        jobs.outputMesh.SetSubMesh(0, sm);
-        Mesh.ApplyAndDisposeWritableMeshData(outputMeshData, new[] { newMesh });
-        jobs.meshData.Dispose();
-        jobs.vertexStart.Dispose();
-        jobs.triStart.Dispose();
-        newMesh.RecalculateBounds();
+            jobs.outputMesh.subMeshCount = 1;
+            jobs.outputMesh.SetSubMesh(0, sm);
+            Mesh.ApplyAndDisposeWritableMeshData(outputMeshData, new[] { newMesh });
+            jobs.meshData.Dispose();
+            jobs.vertexStart.Dispose();
+            jobs.triStart.Dispose();
+            newMesh.RecalculateBounds();
 
-        mf.mesh = newMesh;
+            if(pass == 0)
+            {
+                mfs.mesh = newMesh;
+                MeshCollider collider = solidMesh.AddComponent<MeshCollider>();
+                collider.sharedMesh = mfs.mesh;
+            }
+            else
+            {
+                mff.mesh = newMesh;
+                MeshCollider collider = fluidMesh.AddComponent<MeshCollider>();
+                collider.sharedMesh = mff.mesh;
+            }
 
-        MeshCollider collider = gameObject.AddComponent<MeshCollider>();
-        collider.sharedMesh = mf.mesh;
+            
+        }        
     }
 
     (Vector3Int, MeshUtils.BlockType)[] treeDesign = new (Vector3Int, MeshUtils.BlockType)[] {
