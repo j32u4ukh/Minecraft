@@ -24,7 +24,7 @@ public struct PerlinSettings
 
 public class World : MonoBehaviour
 {
-    public static Vector3Int worldDimesions = new Vector3Int(5, 5, 5);
+    public static Vector3Int worldDimesions = new Vector3Int(15, 15, 15);
     public static Vector3Int extraWorldDimesions = new Vector3Int(5, 5, 5);
     public static Vector3Int chunkDimensions = new Vector3Int(10, 10, 10);
     public bool laodFromFile = false;
@@ -51,13 +51,16 @@ public class World : MonoBehaviour
     public static PerlinSettings treeSettings;
     public Perlin3DGrapher tree;
 
+    public static PerlinSettings biomeSettings;
+    public Perlin3DGrapher biome;
+
     public HashSet<Vector3Int> chunkChecker = new HashSet<Vector3Int>();
     public HashSet<Vector2Int> chunkColumns = new HashSet<Vector2Int>();
     public Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
 
     // 前一次世界建造時，玩家所在位置
     Vector3Int lastBuildPosition;
-    int drawRadius = 3;
+    int drawRadius = 5;
 
     Queue<IEnumerator> buildQueue = new Queue<IEnumerator>();
     MeshUtils.BlockType buildType = MeshUtils.BlockType.DIRT;
@@ -112,6 +115,12 @@ public class World : MonoBehaviour
                                           tree.octaves,
                                           tree.heightOffset,
                                           tree.DrawCutOff);
+
+        biomeSettings = new PerlinSettings(biome.heightScale,
+                                           biome.scale,
+                                           biome.octaves,
+                                           biome.heightOffset,
+                                           biome.DrawCutOff);
 
         if (laodFromFile)
         {
@@ -505,7 +514,7 @@ public class World : MonoBehaviour
         StartCoroutine(BuildCoordinator());
 
         // 將 IEnumerator 添加到 buildQueue 當中
-        StartCoroutine(UpdateWorld());
+        //StartCoroutine(UpdateWorld());
 
         // 在背景中持續生成環境
         StartCoroutine(BuildExtraWorld());

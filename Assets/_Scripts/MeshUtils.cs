@@ -13,12 +13,12 @@ public static class MeshUtils
 
     public enum BlockType
     {
-        GRASSTOP, GRASSSIDE, DIRT, WATER, STONE, LEAVES, WOOD, WOODBASE, SAND, GOLD, BEDROCK, REDSTONE, DIAMOND, NOCRACK,
+        GRASSTOP, GRASSSIDE, DIRT, WATER, STONE, LEAVES, WOOD, WOODBASE, FOREST, CACTUS, SAND, GOLD, BEDROCK, REDSTONE, DIAMOND, NOCRACK,
         CRACK1, CRACK2, CRACK3, CRACK4, AIR
     };
 
     public static int[] blockTypeHealth =
-    { 2, 2, 1, 1, 4, 2, 4, 4, 3, 4, -1, 3, 4, -1, -1, -1, -1, -1, -1
+    { 2, 2, 1, 1, 4, 2, 4, 4, 3, 2, 3, 4, -1, 3, 4, -1, -1, -1, -1, -1, -1
     };
 
     public static HashSet<BlockType> canDrop = new HashSet<BlockType> { BlockType.SAND, BlockType.WATER };
@@ -83,6 +83,20 @@ public static class MeshUtils
             new Vector2(0.375f,0.6875f), 
             new Vector2(0.4375f,0.6875f)
         },	
+        /*FOREST*/    
+        { 
+            new Vector2(0.2500f, 0.8125f),  
+            new Vector2(0.3125f, 0.8125f),
+            new Vector2(0.2500f, 0.8750f), 
+            new Vector2(0.3125f, 0.8750f)
+        },
+        /*CACTUS*/    
+        { 
+            new Vector2(0.1250f, 0.3125f),  
+            new Vector2(0.1875f, 0.3125f),
+            new Vector2(0.1250f, 0.3750f), 
+            new Vector2(0.1875f, 0.3750f)
+        },
         // SAND
         {
             new Vector2(0.1250f, 0.8750f),

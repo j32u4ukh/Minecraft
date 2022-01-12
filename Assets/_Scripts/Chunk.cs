@@ -102,6 +102,14 @@ public class Chunk : MonoBehaviour
                                                    World.treeSettings.heightScale,
                                                    World.treeSettings.heightOffset);
 
+            float desertBiome = (int)MeshUtils.fBM3D(x, y, z,
+                                                     World.biomeSettings.octaves,
+                                                     World.biomeSettings.scale,
+                                                     World.biomeSettings.heightScale,
+                                                     World.biomeSettings.heightOffset);
+
+            int WATER_LINE = 16;
+
             hData[i] = MeshUtils.BlockType.NOCRACK;
 
             if (y == 0)
@@ -117,12 +125,26 @@ public class Chunk : MonoBehaviour
                 return;
             }
 
-            if (y == surfaceHeight)
+            if (y == surfaceHeight && y >= WATER_LINE)
             {
-                if (plantTree < World.treeSettings.probability && random.NextFloat(1) <= 0.1)
+                if (desertBiome < World.biomeSettings.probability)
                 {
-                    // Execute 當中一次處理一個 Block，因此這裡僅放置樹基，而非直接種一棵樹
-                    cData[i] = MeshUtils.BlockType.WOODBASE;
+                    cData[i] = MeshUtils.BlockType.SAND;
+
+                    if (random.NextFloat(1) <= 0.1)
+                    {
+                        cData[i] = MeshUtils.BlockType.CACTUS;
+                    }
+                }
+                else if (plantTree < World.treeSettings.probability)
+                {
+                    cData[i] = MeshUtils.BlockType.FOREST;
+
+                    if (random.NextFloat(1) <= 0.1)
+                    {
+                        // Execute 當中一次處理一個 Block，因此這裡僅放置樹基，而非直接種一棵樹
+                        cData[i] = MeshUtils.BlockType.WOODBASE;
+                    }
                 }
                 else
                 {
@@ -147,7 +169,7 @@ public class Chunk : MonoBehaviour
 
             // TODO: 實際數值要根據地形高低來做調整
             // TODO: 如何確保水是自己一個區塊，而非隨機的散佈在地圖中？大概要像樹一樣，使用 fBM3D
-            else if (y < 16)
+            else if (y < WATER_LINE)
             {
                 cData[i] = MeshUtils.BlockType.WATER;
             }
@@ -465,6 +487,22 @@ public class Chunk : MonoBehaviour
         (new Vector3Int(0,5,1), MeshUtils.BlockType.LEAVES)
     };
 
+    (Vector3Int, MeshUtils.BlockType)[] cactusDesign = new (Vector3Int, MeshUtils.BlockType)[] {
+                                            (new Vector3Int(0,0,0), MeshUtils.BlockType.WOOD),
+                                            (new Vector3Int(0,1,0), MeshUtils.BlockType.GRASSTOP),
+                                            (new Vector3Int(-2,2,0), MeshUtils.BlockType.GRASSTOP),
+                                            (new Vector3Int(-1,2,0), MeshUtils.BlockType.GRASSTOP),
+                                            (new Vector3Int(0,2,0), MeshUtils.BlockType.GRASSTOP),
+                                            (new Vector3Int(-2,3,0), MeshUtils.BlockType.GRASSTOP),
+                                            (new Vector3Int(0,3,0), MeshUtils.BlockType.GRASSTOP),
+                                            (new Vector3Int(1,3,0), MeshUtils.BlockType.GRASSTOP),
+                                            (new Vector3Int(2,3,0), MeshUtils.BlockType.GRASSTOP),
+                                            (new Vector3Int(-2,4,0), MeshUtils.BlockType.GRASSTOP),
+                                            (new Vector3Int(0,4,0), MeshUtils.BlockType.GRASSTOP),
+                                            (new Vector3Int(2,4,0), MeshUtils.BlockType.GRASSTOP),
+                                            (new Vector3Int(0,5,0), MeshUtils.BlockType.GRASSTOP)
+    };
+
     void BuildTrees()
     {
         for(int i = 0; i < chunkData.Length; i++)
@@ -477,6 +515,20 @@ public class Chunk : MonoBehaviour
                     int bIndex = World.ToFlat(blockPos);
 
                     // TODO: 目前樹木若剛好在 Chunk 的邊界上，則會被切掉
+                    if ((0 <= bIndex) && (bIndex < chunkData.Length))
+                    {
+                        chunkData[bIndex] = v.Item2;
+                        healthData[bIndex] = MeshUtils.BlockType.NOCRACK;
+                    }
+                }
+            }
+            else if (chunkData[i] == MeshUtils.BlockType.CACTUS)
+            {
+                foreach ((Vector3Int, MeshUtils.BlockType) v in cactusDesign)
+                {
+                    Vector3Int blockPos = World.FromFlat(i) + v.Item1;
+                    int bIndex = World.ToFlat(blockPos);
+
                     if ((0 <= bIndex) && (bIndex < chunkData.Length))
                     {
                         chunkData[bIndex] = v.Item2;
