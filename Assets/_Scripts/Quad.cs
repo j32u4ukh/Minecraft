@@ -15,11 +15,9 @@ public class Quad
         Vector3[] vertices = new Vector3[4];
         Vector3[] normals = new Vector3[4];
         Vector2[] uvs = new Vector2[4];
-        int[] triangles = new int[6];
 
         // 前 3 定義第一個三角形，後 3 定義第二個三角形，每個三角形的頂點順序應為順時鐘
-        triangles = new int[] { 3, 1, 0, 3, 2, 1 };
-
+        int[] triangles = new int[] { 3, 1, 0, 3, 2, 1 };
 
         // 順序 3, 2, 1, 0 是故意的，理由應該是為了配合 mesh.SetUVs 的設置
         List<Vector2> suvs = new List<Vector2>();
@@ -34,14 +32,14 @@ public class Quad
         Vector2 uv11 = MeshUtils.blockUVs[(int)bType, 3];
 
         // 數值參考 Cube
-        Vector3 p0 = new Vector3(-0.5f, -0.5f, 0.5f) + offset;
-        Vector3 p1 = new Vector3(0.5f, -0.5f, 0.5f) + offset;
-        Vector3 p2 = new Vector3(0.5f, -0.5f, -0.5f) + offset;
+        Vector3 p0 = new Vector3(-0.5f, -0.5f,  0.5f) + offset;
+        Vector3 p1 = new Vector3( 0.5f, -0.5f,  0.5f) + offset;
+        Vector3 p2 = new Vector3( 0.5f, -0.5f, -0.5f) + offset;
         Vector3 p3 = new Vector3(-0.5f, -0.5f, -0.5f) + offset;
-        Vector3 p4 = new Vector3(-0.5f, 0.5f, 0.5f) + offset;
-        Vector3 p5 = new Vector3(0.5f, 0.5f, 0.5f) + offset;
-        Vector3 p6 = new Vector3(0.5f, 0.5f, -0.5f) + offset;
-        Vector3 p7 = new Vector3(-0.5f, 0.5f, -0.5f) + offset;
+        Vector3 p4 = new Vector3(-0.5f,  0.5f,  0.5f) + offset;
+        Vector3 p5 = new Vector3( 0.5f,  0.5f,  0.5f) + offset;
+        Vector3 p6 = new Vector3( 0.5f,  0.5f, -0.5f) + offset;
+        Vector3 p7 = new Vector3(-0.5f,  0.5f, -0.5f) + offset;
 
         switch (side)
         {
