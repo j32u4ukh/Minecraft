@@ -36,7 +36,7 @@ namespace udemy
         };
 
         // Coordinate of block which is queried 
-        private static Dictionary<BlockType, Vector2[]> block_to_coordinate = new Dictionary<BlockType, Vector2[]>();
+        private static Dictionary<BlockType, Vector2[,]> block_to_coordinate = new Dictionary<BlockType, Vector2[,]>();
 
         /// <summary>
         /// Merge multi meshes into one mesh.
@@ -118,12 +118,13 @@ namespace udemy
         /// </summary>
         /// <param name="block_type">what kind of block</param>
         /// <returns></returns>
-        public static Vector2[] getBlockTypeCoordinate(BlockType block_type)
+        public static Vector2[,] getBlockTypeCoordinate(BlockType block_type)
         {
             if (!block_anchor.ContainsKey(block_type))
             {
                 // uv00, uv01, uv11, uv10
-                return new Vector2[] { new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 1), new Vector2(1, 0), };
+                return new Vector2[,] { { new Vector2(0, 0), new Vector2(0, 1) }, 
+                                        { new Vector2(1, 0), new Vector2(1, 1) } };
             }
             else if (!block_to_coordinate.ContainsKey(block_type))
             {
@@ -139,19 +140,17 @@ namespace udemy
         /// </summary>
         /// <param name="x"></param>
         /// <param name="y"></param>
-        /// <returns>the coordinate of uv texture (LeftBottom, LeftTop, RightTop, RightBottom)</returns>
-        private static Vector2[] getBlockUVs(int x, int y)
+        /// <returns>the coordinate of uv texture ((LeftBottom  00, LeftTop   01), 
+        ///                                        (RightBottom 10, RightTop  11))</returns>
+        private static Vector2[,] getBlockUVs(int x, int y)
         {
             const float SIZE = 0.0625f;
             float left = SIZE * x, right = SIZE * (x + 1);
             float bottom = SIZE * y, top = SIZE * (y + 1);
 
-            // 我自己的順序 LeftBottom, LeftTop, RightTop, RightBottom
-            return new Vector2[] {
-                new Vector2(left, bottom),
-                new Vector2(left, top),
-                new Vector2(right, top),
-                new Vector2(right, bottom)
+            return new Vector2[,] {
+                { new Vector2(left, bottom), new Vector2(left, top) },
+                { new Vector2(right, bottom), new Vector2(right, top) }
             };
         }
     }

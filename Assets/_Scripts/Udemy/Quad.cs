@@ -9,7 +9,10 @@ namespace udemy
         public Mesh mesh;
 
         // 考慮法線方向時須注意 Unity 為左手座標系
-        public Quad(BlockSide side, Vector3 offset)
+        // ((LeftBottom 00, RightBottom 01), 
+        //  (LeftTop    10, RightTop    11))
+        // 頂點選取順序為 (00, 01, 11), (11, 10, 00)，根據左手座標系形成兩個三角形，組合成一個正方形
+        public Quad(BlockType type0, BlockSide side, Vector3 offset)
         {
             mesh = new Mesh();
             mesh.name = "ScriptedMesh";
@@ -73,21 +76,25 @@ namespace udemy
             //Vector2 uv10 = new Vector2(1, 0);
             //Vector2 uv01 = new Vector2(0, 1);
             //Vector2 uv11 = new Vector2(1, 1);
-            Vector2 uv00 = MeshUtils.getBlockTypeCoordinate(BlockType.DIRT)[0];
-            Vector2 uv01 = MeshUtils.getBlockTypeCoordinate(BlockType.DIRT)[1];
-            Vector2 uv11 = MeshUtils.getBlockTypeCoordinate(BlockType.DIRT)[2];
-            Vector2 uv10 = MeshUtils.getBlockTypeCoordinate(BlockType.DIRT)[3];
+
+            Vector2 uv00 = MeshUtils.getBlockTypeCoordinate(type0)[0, 0];
+            Vector2 uv01 = MeshUtils.getBlockTypeCoordinate(type0)[0, 1];
+            Vector2 uv10 = MeshUtils.getBlockTypeCoordinate(type0)[1, 0];
+            Vector2 uv11 = MeshUtils.getBlockTypeCoordinate(type0)[1, 1];
 
             mesh.vertices = vertices;
             mesh.normals = normals;
+            // (10, 01, 11), (10, 00, 01)
             //mesh.uv = new Vector2[] { uv11, uv01, uv00, uv10 };
             //mesh.uv2 = new Vector2[] { uv11, uv01, uv00, uv10 };
+            // 依照順序: uv00, uv01, uv11, uv10
             mesh.uv = new Vector2[] { uv00, uv01, uv11, uv10 };
             mesh.uv2 = new Vector2[] { uv00, uv01, uv11, uv10 };
 
             // 前 3 定義第一個三角形，後 3 定義第二個三角形，每個三角形的頂點順序應為順時鐘
             //mesh.triangles = new int[] { 3, 1, 0, 3, 2, 1 };
             // LeftBottom, LeftTop, RightTop, RightBottom
+            //mesh.triangles = new int[] { 0, 1, 2, 2, 3, 0 };
             mesh.triangles = new int[] { 0, 1, 2, 2, 3, 0 };
             
             mesh.RecalculateBounds();
