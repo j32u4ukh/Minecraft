@@ -10,7 +10,32 @@ namespace udemy
 {
     public class Chunk
     {
+        public int width = 2;
+        public int height = 2;
+        public int depth = 2;
 
+        public Block[,,] blocks;
+
+        // 將三維的 blocks 的 BlockType 攤平成一個陣列，可加快存取速度
+        public BlockType[] block_types;
+
+        public Vector3Int location;
+
+        void buildChunk()
+        {
+            int n_block = width * depth * height;
+            block_types = new BlockType[n_block];
+
+            for (int i = 0; i < n_block; i++)
+            {
+                block_types[i] = BlockType.DIRT;
+            }
+        }
+
+        public BlockType getBlockType(int index)
+        {
+            return block_types[index];
+        }
     }
 
     /* 所有的 job 都會是 struct，並根據需要繼承不同的interface

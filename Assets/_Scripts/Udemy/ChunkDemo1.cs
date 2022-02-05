@@ -8,14 +8,15 @@ using UnityEngine.Rendering;
 
 namespace udemy
 {
-    public class ChunkDemo : MonoBehaviour
+    public class ChunkDemo1 : MonoBehaviour
     {
         public Material atlas;
 
-        public Block[,,] blocks;
         public int width = 2;
         public int height = 2;
         public int depth = 2;
+
+        public Block1[,,] blocks;
 
         // Start is called before the first frame update
         void Start()
@@ -24,14 +25,14 @@ namespace udemy
             MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
             renderer.material = atlas;
 
-            blocks = new Block[width, height, depth];
+            blocks = new Block1[width, height, depth];
             int x, y, z;
 
             int n_mesh = width * height * depth;
             List<Mesh> input_mesh_datas = new List<Mesh>(n_mesh);
             int vertex_index_offset = 0, triangle_index_offset = 0, idx = 0;
             int n_vertex, n_triangle;
-            Block block;
+            Block1 block;
 
             ProcessMeshDataJob jobs = new ProcessMeshDataJob();
             jobs.vertex_index_offsets = new NativeArray<int>(n_mesh, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -43,7 +44,7 @@ namespace udemy
                 {
                     for (x = 0; x < width; x++)
                     {
-                        block = new Block(BlockType.DIRT, new Vector3(x, y, z));
+                        block = new Block1(BlockType.DIRT, new Vector3Int(x, y, z));
                         blocks[x, y, z] = block;
                         input_mesh_datas.Add(block.mesh);
 

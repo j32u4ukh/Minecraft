@@ -12,7 +12,7 @@ namespace udemy
         // ((LeftBottom 00, RightBottom 01), 
         //  (LeftTop    10, RightTop    11))
         // 頂點選取順序為 (00, 01, 11), (11, 10, 00)，根據左手座標系形成兩個三角形，組合成一個正方形
-        public Quad(BlockType type0, BlockSide side, Vector3 offset)
+        public Quad(BlockType block_type, BlockSide side, Vector3 offset)
         {
             mesh = new Mesh();
             mesh.name = "ScriptedMesh";
@@ -77,10 +77,10 @@ namespace udemy
             //Vector2 uv01 = new Vector2(0, 1);
             //Vector2 uv11 = new Vector2(1, 1);
 
-            Vector2 uv00 = MeshUtils.getBlockTypeCoordinate(type0)[0, 0];
-            Vector2 uv01 = MeshUtils.getBlockTypeCoordinate(type0)[0, 1];
-            Vector2 uv10 = MeshUtils.getBlockTypeCoordinate(type0)[1, 0];
-            Vector2 uv11 = MeshUtils.getBlockTypeCoordinate(type0)[1, 1];
+            Vector2 uv00 = MeshUtils.getBlockTypeCoordinate(block_type)[0, 0];
+            Vector2 uv01 = MeshUtils.getBlockTypeCoordinate(block_type)[0, 1];
+            Vector2 uv10 = MeshUtils.getBlockTypeCoordinate(block_type)[1, 0];
+            Vector2 uv11 = MeshUtils.getBlockTypeCoordinate(block_type)[1, 1];
 
             mesh.vertices = vertices;
             mesh.normals = normals;

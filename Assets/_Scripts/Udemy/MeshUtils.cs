@@ -28,15 +28,22 @@ namespace udemy
             {BlockType.BEDROCK, new Tuple<int, int>(5, 13) },
             {BlockType.REDSTONE, new Tuple<int, int>(3, 12) },
             {BlockType.DIAMOND, new Tuple<int, int>(2, 12) },
-            {BlockType.NOCRACK, new Tuple<int, int>(11, 0) },
-            {BlockType.CRACK1, new Tuple<int, int>(0, 0) },
-            {BlockType.CRACK2, new Tuple<int, int>(1, 0) },
-            {BlockType.CRACK3, new Tuple<int, int>(2, 0) },
-            {BlockType.CRACK4, new Tuple<int, int>(3, 0) },
+        };
+
+        private static readonly Dictionary<CrackState, Tuple<int, int>> crack_anchor = new Dictionary<CrackState, Tuple<int, int>>()
+        {
+            {CrackState.None, new Tuple<int, int>(11, 0) },
+            {CrackState.Crack1, new Tuple<int, int>(0, 0) },
+            {CrackState.Crack2, new Tuple<int, int>(1, 0) },
+            {CrackState.Crack3, new Tuple<int, int>(2, 0) },
+            {CrackState.Crack4, new Tuple<int, int>(3, 0) },
         };
 
         // Coordinate of block which is queried 
         private static Dictionary<BlockType, Vector2[,]> block_to_coordinate = new Dictionary<BlockType, Vector2[,]>();
+
+        // Coordinate of crack which is queried 
+        private static Dictionary<CrackState, Vector2[,]> crack_to_coordinate = new Dictionary<CrackState, Vector2[,]>();
 
         /// <summary>
         /// Merge multi meshes into one mesh.
@@ -63,6 +70,12 @@ namespace udemy
             // loop through each mesh
             for (i = 0; i < n_mesh; i++)
             {
+                // 主要用在 Block 當中，而 meshes 為自行傳入的 List<Mesh>，應該不會有空值
+                if (meshes[i] == null)
+                {
+                    continue;
+                }
+
                 n_triangle = meshes[i].triangles.Length;
 
                 // loop through each vertex of the current mesh
@@ -129,10 +142,27 @@ namespace udemy
             else if (!block_to_coordinate.ContainsKey(block_type))
             {
                 Tuple<int, int> anchor = block_anchor[block_type];
-                block_to_coordinate[block_type] = getBlockUVs(x: anchor.Item1, y: anchor.Item2);
+                block_to_coordinate[block_type] = getUVCoordinate(x: anchor.Item1, y: anchor.Item2);
             }
 
             return block_to_coordinate[block_type];
+        }
+
+        public static Vector2[,] getCrackStateCoordinate(CrackState crack_state)
+        {
+            if (!crack_anchor.ContainsKey(crack_state))
+            {
+                // uv00, uv01, uv11, uv10
+                return new Vector2[,] { { new Vector2(0, 0), new Vector2(0, 1) },
+                                        { new Vector2(1, 0), new Vector2(1, 1) } };
+            }
+            else if (!crack_to_coordinate.ContainsKey(crack_state))
+            {
+                Tuple<int, int> anchor = crack_anchor[crack_state];
+                crack_to_coordinate[crack_state] = getUVCoordinate(x: anchor.Item1, y: anchor.Item2);
+            }
+
+            return crack_to_coordinate[crack_state];
         }
 
         /// <summary>
@@ -142,7 +172,7 @@ namespace udemy
         /// <param name="y"></param>
         /// <returns>the coordinate of uv texture ((LeftBottom  00, LeftTop   01), 
         ///                                        (RightBottom 10, RightTop  11))</returns>
-        private static Vector2[,] getBlockUVs(int x, int y)
+        private static Vector2[,] getUVCoordinate(int x, int y)
         {
             const float SIZE = 0.0625f;
             float left = SIZE * x, right = SIZE * (x + 1);
