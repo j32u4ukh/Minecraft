@@ -6,15 +6,29 @@ namespace udemy
 {
     public static class Utils
     {
-        // x = i % WIDTH
-        // y = (i / WIDTH) % HEIGHT
-        // z = i / (WIDTH * HEIGHT)
+        /// <summary>
+        /// x = i % WIDTH 
+        /// y = (i / WIDTH) % HEIGHT
+        /// z = i / (WIDTH * HEIGHT)
+        /// </summary>
+        /// <param name="i"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <returns></returns>
         public static Vector3Int flatToVector3Int(int i, int width, int height)
         {
             return new Vector3Int(i % width, (i / width) % height, i / (width * height));
         }
 
-        // Flat[x + WIDTH * (y + DEPTH * z)] = Original[x, y, z]
+        /// <summary>
+        /// Flat[x + WIDTH * (y + DEPTH * z)] = Original[x, y, z]
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
+        /// <param name="width"></param>
+        /// <param name="depth"></param>
+        /// <returns></returns>
         public static int xyzToFlat(int x, int y, int z, int width, int depth)
         {
             return x + width * (y + depth * z);

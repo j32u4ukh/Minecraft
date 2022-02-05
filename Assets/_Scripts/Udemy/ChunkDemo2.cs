@@ -18,11 +18,6 @@ namespace udemy
 
         Chunk chunk;
 
-        public Block[,,] blocks;
-
-        // 將三維的 blocks 的 BlockType 攤平成一個陣列，可加快存取速度
-        public BlockType[] block_types;
-
         // Start is called before the first frame update
         void Start()
         {
@@ -31,6 +26,11 @@ namespace udemy
             renderer.material = atlas;
 
             chunk = new Chunk();
+            chunk.width = width;
+            chunk.height = height;
+            chunk.depth = depth;
+
+            chunk.location = Vector3Int.zero;
             chunk.blocks = new Block[width, height, depth];
             buildChunk();
             int x, y, z;
@@ -51,9 +51,10 @@ namespace udemy
                 {
                     for (x = 0; x < width; x++)
                     {
-                        block_idx = x + width * (y + depth * z);
-                        block = new Block(block_type: block_types[block_idx], offset: new Vector3Int(x, y, z), chunk);
-                        blocks[x, y, z] = block;
+                        //block_idx = x + width * (y + depth * z);
+                        block_idx = Utils.xyzToFlat(x, y, z, width, depth);
+                        block = new Block(block_type: chunk.block_types[block_idx], offset: new Vector3Int(x, y, z), chunk);
+                        chunk.blocks[x, y, z] = block;
 
                         if(block.mesh != null)
                         {

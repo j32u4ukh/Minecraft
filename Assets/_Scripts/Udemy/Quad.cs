@@ -54,14 +54,18 @@ namespace udemy
                     vertices = new Vector3[] { p7, p0, p3, p4 };
                     normals = new Vector3[] { Vector3.down, Vector3.down, Vector3.down, Vector3.down };
                     break;
+
+                // 指向 Vector3.left 的那一面(X 逐漸變小那個方向)，而非面對正面時，在左邊的那面
                 case BlockSide.Left:
                     //vertices = new Vector3[] { p7, p4, p0, p3 };
-                    vertices = new Vector3[] { p7, p6, p1, p0 };
+                    vertices = new Vector3[] { p3, p2, p5, p4 };
                     normals = new Vector3[] { Vector3.left, Vector3.left, Vector3.left, Vector3.left };
                     break;
+
+                // 指向 Vector3.right 的那一面(X 逐漸變大那個方向)，而非面對正面時，在右邊的那面
                 case BlockSide.Right:
                     //vertices = new Vector3[] { p5, p6, p2, p1 };
-                    vertices = new Vector3[] { p3, p2, p5, p4 };
+                    vertices = new Vector3[] { p7, p6, p1, p0 };
                     normals = new Vector3[] { Vector3.right, Vector3.right, Vector3.right, Vector3.right };
                     break;
                 default:
