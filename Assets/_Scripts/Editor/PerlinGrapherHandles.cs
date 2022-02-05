@@ -8,6 +8,7 @@ public class PerlinGrapherHandles : Editor
     void OnSceneGUI()
     {
         PerlinGrapher handle = (PerlinGrapher)target;
+
         if (handle == null)
         {
             return;

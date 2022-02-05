@@ -10,9 +10,19 @@ namespace udemy
         // Start is called before the first frame update
         void Start()
         {
-            VertexData vd1 = new VertexData(new Vector3(0, 0, 0), new Vector3(0, 0, 1), new Vector2(0, 0), new Vector2(0, 0));
-            VertexData vd2 = new VertexData(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector2(0, 0), new Vector2(0, 0));
-            print(vd1.Equals(vd2));
+            int x, z, len = 10000;
+            float value = 0f;
+            
+            for (x = 0; x < len; x++)
+            {
+                for (z = 0; z < len; z++)
+                {
+                    value += Mathf.PerlinNoise(x, z);
+                }
+            }
+
+            value /= (len * len);
+            print($"mean: {value}");
         }
     }
 }

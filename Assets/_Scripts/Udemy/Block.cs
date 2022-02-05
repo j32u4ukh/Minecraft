@@ -20,7 +20,6 @@ namespace udemy
 
             List<Quad> quads = new List<Quad>();
             Vector3Int local_position = offset - chunk.location;
-            //Debug.Log($"local_position: {local_position}");
 
             //quads.Add(new Quad(block_type, BlockSide.Bottom, offset));
             //quads.Add(new Quad(block_type, BlockSide.Top, offset));
@@ -97,7 +96,6 @@ namespace udemy
                 y < 0 || chunk.height <= y ||
                 z < 0 || chunk.depth <= z)
             {
-                Debug.Log($"{block_type}: ({x}, {y}, {z}), false");
                 return false;
             }
 
@@ -107,18 +105,15 @@ namespace udemy
 
             if (chunk.block_types[block_idx] == block_type)
             {
-                Debug.Log($"{block_type}: ({x}, {y}, {z}), true(same type)");
                 return true;
             }
 
             if (chunk.block_types[block_idx] == BlockType.AIR ||
                 chunk.block_types[block_idx] == BlockType.WATER)
             {
-                Debug.Log($"{block_type}: ({x}, {y}, {z}), false(AIR|WATER)");
                 return false;
             }
 
-            Debug.Log($"{block_type}: ({x}, {y}, {z}), true");
             return true;
         }
     }
