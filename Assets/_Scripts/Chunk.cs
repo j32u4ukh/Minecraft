@@ -36,17 +36,6 @@ public class Chunk : MonoBehaviour
     JobHandle jobHandle;
     public NativeArray<Unity.Mathematics.Random> RandomArray { get; private set; }
 
-    private void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
     struct CalculateBlockTypes : IJobParallelFor
     {
         public NativeArray<MeshUtils.BlockType> cData;
