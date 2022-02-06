@@ -65,24 +65,26 @@ namespace udemy
         /// <param name="octaves">疊加 PerlinNoise 的組數，會改變波型</param>
         /// <param name="scale">縮放 x, z 取值範圍，會改變波型</param>
         /// <param name="height_scale">縮放 PerlinNoise 計算值，會改變波型</param>
-        /// <param name="offset"></param>
-        /// <returns></returns>
+        /// <param name="offset">在這組參數下的 fBM 的樣本平均</param>
+        /// <returns>在目標海拔上下波動的數值，波型與 fBM 相同</returns>
         public static float getAltitude(float x, float z, float altitude, int octaves, float scale, float height_scale, float offset = 0f)
         {
-            float height = 0f;
-            float frequncy = 1f;
-
-            // 音階，一個八度（octave）對應著頻率上的加倍或減半。
-            for (int i = 0; i < octaves; i++)
-            {
-                height += Mathf.PerlinNoise(x * scale * frequncy, z * scale * frequncy) * height_scale;
-                frequncy *= 2f;
-            }
+            float height = fBM(x, z, octaves, scale, height_scale, height_offset: 0f);
 
             // 扣除海拔平均值，可使數值在該海拔上下波動            
             return altitude + height - offset;
         }
 
+        /// <summary>
+        /// 取得當前參數下的 PerlinNoise 數值平均數
+        /// </summary>
+        /// <param name="min_x">X 取樣最小值</param>
+        /// <param name="max_x">X 取樣最大值</param>
+        /// <param name="min_y">Y 取樣最小值</param>
+        /// <param name="max_y">Y 取樣最大值</param>
+        /// <param name="scale">PerlinNoise 縮放比例，fBM 中的 octaves * height_scale</param>
+        /// <param name="n_sample">取樣點數</param>
+        /// <returns></returns>
         public static float getPerlinMean(float min_x, float max_x, float min_y, float max_y, float scale, int n_sample = 100)
         {
             float total = 0f, x, y;
