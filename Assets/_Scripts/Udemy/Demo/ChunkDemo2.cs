@@ -16,7 +16,12 @@ namespace udemy
         public int height = 2;
         public int depth = 2;
 
-        Chunk chunk;
+        [Header("Perlin Setting")]
+        [SerializeField] int octaves = 8;
+        [SerializeField] float scale = 0.001f;
+        [SerializeField] float height_scale = 10f;
+
+        Chunk1 chunk;
 
         // Start is called before the first frame update
         void Start()
@@ -25,13 +30,13 @@ namespace udemy
             MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
             renderer.material = atlas;
 
-            chunk = new Chunk();
+            chunk = new Chunk1();
             chunk.width = width;
             chunk.height = height;
             chunk.depth = depth;
 
             chunk.location = Vector3Int.zero;
-            chunk.blocks = new Block[width, height, depth];
+            chunk.blocks = new Block2[width, height, depth];
             buildChunk();
             int x, y, z;
 
@@ -39,7 +44,7 @@ namespace udemy
             List<Mesh> input_mesh_datas = new List<Mesh>();
             int vertex_index_offset = 0, triangle_index_offset = 0, idx = 0;
             int n_vertex, n_triangle, block_idx;
-            Block block;
+            Block2 block;
 
             ProcessMeshDataJob jobs = new ProcessMeshDataJob();
             jobs.vertex_index_offsets = new NativeArray<int>(n_mesh, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -53,7 +58,7 @@ namespace udemy
                     {
                         //block_idx = x + width * (y + depth * z);
                         block_idx = Utils.xyzToFlat(x, y, z, width, depth);
-                        block = new Block(block_type: chunk.block_types[block_idx], offset: new Vector3Int(x, y, z), chunk);
+                        block = new Block2(block_type: chunk.block_types[block_idx], offset: new Vector3Int(x, y, z), chunk);
                         chunk.blocks[x, y, z] = block;
 
                         if(block.mesh != null)
@@ -140,10 +145,21 @@ namespace udemy
         {
             int n_block = width * depth * height;
             chunk.block_types = new BlockType[n_block];
+            float altitude_offset = Strata.getPerlinMean(scale: octaves * height_scale);
+            Vector3Int xyz;
 
             for (int i = 0; i < n_block; i++)
             {
-                chunk.block_types[i] = BlockType.DIRT;
+                xyz = Utils.flatToVector3Int(i, width, height);
+
+                if (xyz.y > Strata.getAltitude(xyz.x, xyz.z, altitude: height - 2, octaves, scale, height_scale, altitude_offset))
+                {
+                    chunk.block_types[i] = BlockType.AIR;
+                }
+                else
+                {
+                    chunk.block_types[i] = BlockType.DIRT;
+                }
             }
         }
     }

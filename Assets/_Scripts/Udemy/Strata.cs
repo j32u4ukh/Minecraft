@@ -1,8 +1,4 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace udemy
 {
@@ -25,14 +21,15 @@ namespace udemy
             this.probability = probability;
         }
 
-        public float fBM(float x, float z)
-        {
-            return fBM(x, z, octaves, scale, height_scale, height_offset);
-        }
+        //public float fBM(float x, float z)
+        //{
+        //    return fBM(x, z, octaves, scale, height_scale, height_offset);
+        //}
 
         /// <summary>
         /// 疊加多組 PerlinNoise，並利用其他參數，在相同位置 (x, z) 上獲取不同的 PerlinNoise
         /// reference: https://thebookofshaders.com/13/?lan=ch
+        /// 若不修改預設值，則與原始 PerlinNoise 相同
         /// </summary>
         /// <param name="x">X 座標</param>
         /// <param name="z">Z 座標</param>
@@ -41,7 +38,7 @@ namespace udemy
         /// <param name="height_scale">縮放 PerlinNoise 計算值，會改變波型</param>
         /// <param name="height_offset">疊加完多組 PerlinNoise 後，最後在加上的高度偏移量，不會改變波型</param>
         /// <returns> 分形布朗運動（Fractal Brownian Motion） </returns>
-        public static float fBM(float x, float z, int octaves, float scale, float height_scale, float height_offset)
+        public static float fBM(float x, float z, int octaves = 1, float scale = 1f, float height_scale = 1f, float height_offset = 0f)
         {
             float total = 0f;
             float frequncy = 1f;
@@ -69,7 +66,7 @@ namespace udemy
         /// <returns>在目標海拔上下波動的數值，波型與 fBM 相同</returns>
         public static float getAltitude(float x, float z, float altitude, int octaves, float scale, float height_scale, float offset = 0f)
         {
-            float height = fBM(x, z, octaves, scale, height_scale, height_offset: 0f);
+            float height = fBM(x, z, octaves, scale, height_scale);
 
             // 扣除海拔平均值，可使數值在該海拔上下波動            
             return altitude + height - offset;
@@ -85,18 +82,22 @@ namespace udemy
         /// <param name="scale">PerlinNoise 縮放比例，fBM 中的 octaves * height_scale</param>
         /// <param name="n_sample">取樣點數</param>
         /// <returns></returns>
-        public static float getPerlinMean(float min_x, float max_x, float min_y, float max_y, float scale, int n_sample = 100)
+        public static float getPerlinMean(float min_x = -100f, float max_x = 100f, float min_y = -100f, float max_y = 100f, float scale = 1f, int n_sample = 10)
         {
             float total = 0f, x, y;
+            int i, j;
 
-            for(int i = 0; i < n_sample; i++)
+            for (i = 0; i < n_sample; i++)
             {
-                x = Random.Range(min_x, max_x);
-                y = Random.Range(min_y, max_y);
-                total += (Mathf.PerlinNoise(x, y) * scale);
+                for (j = 0; j < n_sample; j++)
+                {
+                    x = Mathf.Lerp(min_x, max_x, (float)i / n_sample);
+                    y = Mathf.Lerp(min_y, max_y, (float)j / n_sample);
+                    total += (Mathf.PerlinNoise(x, y) * scale);
+                }
             }
 
-            return total / n_sample;
+            return total / (n_sample * n_sample);
         }
     }
 }
