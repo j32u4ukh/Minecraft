@@ -58308,6 +58308,7 @@ GameObject:
   - component: {fileID: 1276527366}
   - component: {fileID: 1276527365}
   - component: {fileID: 1276527367}
+  - component: {fileID: 1276527368}
   m_Layer: 0
   m_Name: WorldDemo
   m_TagString: Untagged
@@ -58359,7 +58360,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1276527364}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 01fe42ad6cb140648893d5c9f081274e, type: 3}
   m_Name: 
@@ -58369,6 +58370,25 @@ MonoBehaviour:
   fpc: {fileID: 1226959247}
   loading_bar: {fileID: 242925208}
   surface_setting: {fileID: 11400000, guid: d7b30f8eb2d9cc9499aafa551613e6eb, type: 2}
+  last_position: {x: 0, y: 0, z: 0}
+--- !u!114 &1276527368
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1276527364}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0b7efa9630d5bd45a249c72ea2d3369, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  chunk_prefab: {fileID: 8462583276562152735, guid: 7fe3ccf06f8654943a3c376d82ff803d, type: 3}
+  main_camera: {fileID: 1803130323}
+  fpc: {fileID: 1226959247}
+  loading_bar: {fileID: 242925208}
+  surface_setting: {fileID: 11400000, guid: d7b30f8eb2d9cc9499aafa551613e6eb, type: 2}
+  last_position: {x: 0, y: 0, z: 0}
 --- !u!1 &1276813066
 GameObject:
   m_ObjectHideFlags: 0

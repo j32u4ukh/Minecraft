@@ -87,7 +87,7 @@ namespace udemy
             }
 
             mesh = MeshUtils.mergeMeshes(meshes);
-            mesh.name = "Cube_0_0_0";
+            mesh.name = $"Cube_{offset.x}_{offset.y}_{offset.z}";
         }
 
         bool hasSolidNeighbour(float x, float y, float z, BlockType block_type)
@@ -99,8 +99,8 @@ namespace udemy
                 return false;
             }
 
-            int block_idx = Utils.xyzToFlat((int)x, (int)y, (int)z, 
-                                            width: chunk.width, 
+            int block_idx = Utils.xyzToFlat((int)x, (int)y, (int)z,
+                                            width: chunk.width,
                                             depth: chunk.depth);
 
             if (chunk.block_types[block_idx] == block_type)
