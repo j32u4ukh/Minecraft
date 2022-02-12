@@ -22,18 +22,14 @@ namespace udemy
         // 將三維的 blocks 的 BlockType 攤平成一個陣列，可加快存取速度
         public BlockType[] block_types;
 
+        // 將三維的 blocks 的 CrackState 攤平成一個陣列，可加快存取速度
+        //public CrackState[] crack_states;
+
+        DefineBlockJob define_block_job;
+
         public Vector3Int location;
 
         public MeshRenderer mesh_renderer;
-
-        // fBM 2D
-        public StrataSetting surface_setting;
-        public StrataSetting stone_setting;
-        public StrataSetting diamond_top_setting;
-        public StrataSetting diamond_bottom_setting;
-
-        // fBM 3D
-        public ClusterSetting cave_setting;
 
         public void build(Vector3Int dimensions, Vector3Int location)
         {
@@ -55,9 +51,9 @@ namespace udemy
             int n_vertex, n_triangle, block_idx;
             Block block;
 
-            ProcessMeshDataJob jobs = new ProcessMeshDataJob();
-            jobs.vertex_index_offsets = new NativeArray<int>(n_mesh, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            jobs.triangle_index_offsets = new NativeArray<int>(n_mesh, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            ProcessMeshDataJob job = new ProcessMeshDataJob();
+            job.vertex_index_offsets = new NativeArray<int>(n_mesh, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            job.triangle_index_offsets = new NativeArray<int>(n_mesh, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
             for (z = 0; z < depth; z++)
             {
@@ -76,8 +72,8 @@ namespace udemy
                         {
                             input_mesh_datas.Add(block.mesh);
 
-                            jobs.vertex_index_offsets[idx] = vertex_index_offset;
-                            jobs.triangle_index_offsets[idx] = triangle_index_offset;
+                            job.vertex_index_offsets[idx] = vertex_index_offset;
+                            job.triangle_index_offsets[idx] = triangle_index_offset;
 
                             n_vertex = block.mesh.vertexCount;
                             n_triangle = (int)block.mesh.GetIndexCount(0);
@@ -91,16 +87,16 @@ namespace udemy
             }
 
             // input_mesh_datas -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
-            jobs.input_mesh_datas = Mesh.AcquireReadOnlyMeshData(input_mesh_datas);
+            job.input_mesh_datas = Mesh.AcquireReadOnlyMeshData(input_mesh_datas);
 
             // Mesh.AllocateWritableMeshData 分配一個可寫的網格數據，然後通過 jobs 進行頂點操作，
             Mesh.MeshDataArray output_mesh_datas = Mesh.AllocateWritableMeshData(1);
 
             // inputMeshes -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
-            jobs.output_mesh_data = output_mesh_datas[0];
+            job.output_mesh_data = output_mesh_datas[0];
 
             //jobs.output_mesh_data.SetIndexBufferParams(triangle_index_offset, IndexFormat.UInt32);
-            jobs.setIndexBufferParams(n_triangle: triangle_index_offset);
+            job.setIndexBufferParams(n_triangle: triangle_index_offset);
 
             //jobs.output_mesh_data.SetVertexBufferParams(
             //    vertex_index_offset,
@@ -108,7 +104,7 @@ namespace udemy
             //    new VertexAttributeDescriptor(VertexAttribute.Normal, stream: 1),
             //    new VertexAttributeDescriptor(VertexAttribute.TexCoord0, stream: 2),
             //    new VertexAttributeDescriptor(VertexAttribute.TexCoord1, stream: 3));
-            jobs.setVertexBufferParams(n_vertex: vertex_index_offset);
+            job.setVertexBufferParams(n_vertex: vertex_index_offset);
 
             /* 在正確的時間調用 Schedule 和 Complete
              * 一旦你擁有了一個 job 所需的數據，盡可能快地在 job 上調用 Schedule，在你需要它的執行結果之前不要調用 Complete。
@@ -118,7 +114,7 @@ namespace udemy
              * 
              * job 擁有一個 Run 方法，你可以用它來替代 Schedule 從而讓主線程立刻執行這個 job。你可以使用它來達到調試目的。
              */
-            JobHandle handle = jobs.Schedule(input_mesh_datas.Count, 4);
+            JobHandle handle = job.Schedule(input_mesh_datas.Count, 4);
             Mesh mesh = new Mesh();
             mesh.name = $"Chunk_{location.x}_{location.y}_{location.z}";
 
@@ -138,16 +134,16 @@ namespace udemy
              */
             handle.Complete();
 
-            jobs.output_mesh_data.subMeshCount = 1;
-            jobs.output_mesh_data.SetSubMesh(0, sm);
+            job.output_mesh_data.subMeshCount = 1;
+            job.output_mesh_data.SetSubMesh(0, sm);
 
             // 通過 Mesh.ApplyAndDisposeWritableMeshData 接口賦值回 Mesh
             // inputMeshes -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
             Mesh.ApplyAndDisposeWritableMeshData(output_mesh_datas, new[] { mesh });
 
-            jobs.input_mesh_datas.Dispose();
-            jobs.vertex_index_offsets.Dispose();
-            jobs.triangle_index_offsets.Dispose();
+            job.input_mesh_datas.Dispose();
+            job.vertex_index_offsets.Dispose();
+            job.triangle_index_offsets.Dispose();
             mesh.RecalculateBounds();
 
             filter.mesh = mesh;
@@ -160,59 +156,38 @@ namespace udemy
         {
             int n_block = width * depth * height;
             block_types = new BlockType[n_block];
-            float surface_offset = surface_setting.getOffset();
-            float stone_offset = stone_setting.getOffset();
-            float diamond_top_offset = diamond_top_setting.getOffset();
-            float diamond_bottom_offset = diamond_bottom_setting.getOffset();
-            Vector3Int xyz;
 
-            int surface_height, stone_height, diamond_top_height, diamond_bottom_height;
-            int dig_cave;
+            NativeArray<BlockType> block_type_array = new NativeArray<BlockType>(block_types, Allocator.Persistent);
+            //NativeArray<CrackState> crack_state_array = new NativeArray<CrackState>(crack_states, Allocator.Persistent);
 
-            for (int i = 0; i < n_block; i++)
+            //var randomArray = new Unity.Mathematics.Random[n_block];
+            //var seed = new System.Random();
+
+            //for (int i = 0; i < blockCount; i++)
+            //{
+            //    randomArray[i] = new Unity.Mathematics.Random((uint)seed.Next());
+            //}
+
+            //RandomArray = new NativeArray<Unity.Mathematics.Random>(randomArray, Allocator.Persistent);
+
+            DefineBlockJob job = new DefineBlockJob()
             {
-                xyz = Utils.flatToVector3Int(i, width, height) + location;
-                surface_height = (int)surface_setting.getAltitude(xyz.x, xyz.z, offset: surface_offset);
-                stone_height = (int)stone_setting.getAltitude(xyz.x, xyz.z, offset: stone_offset);
-                diamond_top_height = (int)diamond_top_setting.getAltitude(xyz.x, xyz.z, offset: diamond_top_offset);
-                diamond_bottom_height = (int)diamond_bottom_setting.getAltitude(xyz.x, xyz.z, offset: diamond_bottom_offset);
+                block_types = block_type_array,
+                width = width,
+                height = height,
+                location = location
+            };
 
-                dig_cave = (int)cave_setting.fBM3D(xyz.x, xyz.y, xyz.z);
+            JobHandle handle = job.Schedule(n_block, 64);
 
-                if (xyz.y == 0)
-                {
-                    block_types[i] = BlockType.BEDROCK;
-                    continue;
-                }
+            // Schedule 執行完才會執行這一行，若不加 jobHandle.Complete()，則會在背景繼續執行，也執行下方程式碼
+            handle.Complete();
 
-                // TODO: 目前的洞穴可能會挖到地表，且因沒有考慮到是否是地表，因而造成地表為泥土而非草地
-                if (dig_cave < cave_setting.boundary)
-                {
-                    block_types[i] = BlockType.AIR;
-                    continue;
-                }
-
-                if (xyz.y == surface_height)
-                {
-                    block_types[i] = BlockType.GRASSSIDE;
-                }
-                else if ((diamond_bottom_height < xyz.y) && (xyz.y < diamond_top_height) && (Random.Range(0f, 1f) < diamond_top_setting.probability))
-                {
-                    block_types[i] = BlockType.DIAMOND;
-                }
-                else if ((xyz.y < stone_height) && (Random.Range(0f, 1f) <= stone_setting.probability))
-                {
-                    block_types[i] = BlockType.STONE;
-                }
-                else if (xyz.y < surface_height)
-                {
-                    block_types[i] = BlockType.DIRT;
-                }
-                else
-                {
-                    block_types[i] = BlockType.AIR;
-                }
-            }
+            job.block_types.CopyTo(block_types);
+            //job.hData.CopyTo(healthData);
+            block_type_array.Dispose();
+            //healthTypes.Dispose();
+            //RandomArray.Dispose();
         }
 
         public BlockType getBlockType(int index)
@@ -243,6 +218,134 @@ namespace udemy
      * 參考：https://zhuanlan.zhihu.com/p/58125078
      */
 
+    // DefineBlockJob：根據海拔與位置等資訊，決定 Block 的類型與位置。再交由 ProcessMeshDataJob 處理如何呈現。
+    struct DefineBlockJob : IJobParallelFor
+    {
+        public NativeArray<BlockType> block_types;
+        //public NativeArray<CrackState> crack_states;
+        public int width;
+        public int height;
+        public Vector3Int location;
+
+        // TODO: 原本每次開起的隨機數都會相同，是因為給 Unity.Mathematics.Random 的 seed 都是 1，因此只須傳入隨機的 seed，並在 Execute(int i) 外部建立 Unity.Mathematics.Random 物件即可
+        //public NativeArray<Unity.Mathematics.Random> randoms;
+
+        Vector3Int xyz;
+        int surface_height, stone_height, diamond_top_height, diamond_bottom_height;
+        int dig_cave;
+
+        public void Execute(int i)
+        {
+            //int x = i % width + (int)location.x;
+            //int y = (i / width) % height + (int)location.y;
+            //int z = i / (width * height) + (int)location.z;
+
+            xyz = Utils.flatToVector3Int(i, width, height) + location;
+
+            //var random = randoms[i];
+
+            
+            surface_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
+                                             octaves: World.surface_strata.octaves,
+                                             scale: World.surface_strata.scale,
+                                             height_scale: World.surface_strata.height_scale,
+                                             height_offset: World.surface_strata.height_offset);
+
+            stone_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
+                                           octaves: World.stone_strata.octaves,
+                                           scale: World.stone_strata.scale,
+                                           height_scale: World.stone_strata.height_scale,
+                                           height_offset: World.stone_strata.height_offset);
+
+            diamond_top_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
+                                                 octaves: World.diamond_top_strata.octaves,
+                                                 scale: World.diamond_top_strata.scale,
+                                                 height_scale: World.diamond_top_strata.height_scale,
+                                                 height_offset: World.diamond_top_strata.height_offset);
+
+            diamond_bottom_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
+                                                    octaves: World.diamond_bottom_strata.octaves,
+                                                    scale: World.diamond_bottom_strata.scale,
+                                                    height_scale: World.diamond_bottom_strata.height_scale,
+                                                    height_offset: World.diamond_bottom_strata.height_offset);
+
+            int WATER_LINE = 16;
+
+            //crack_states[i] = CrackState.None;
+
+            if (xyz.y == 0)
+            {
+                block_types[i] = BlockType.BEDROCK;
+                return;
+            }
+
+            // TODO: 目前的洞穴可能會挖到地表，且因沒有考慮到是否是地表，因而造成地表為泥土而非草地
+            //if (dig_cave < cave_setting.boundary)
+            //{
+            //    block_types[i] = BlockType.AIR;
+            //    return;
+            //}
+
+            if (xyz.y == surface_height)
+            {
+                //if (desertBiome < World.biomeSettings.probability)
+                //{
+                //    block_types[i] = BlockType.SAND;
+
+                //    if (random.NextFloat(1) <= 0.1)
+                //    {
+                //        block_types[i] = BlockType.CACTUS;
+                //    }
+                //}
+                //else if (plantTree < World.treeSettings.probability)
+                //{
+                //    block_types[i] = BlockType.FOREST;
+
+                //    if (random.NextFloat(1) <= 0.1)
+                //    {
+                //        // Execute 當中一次處理一個 Block，因此這裡僅放置樹基，而非直接種一棵樹
+                //        block_types[i] = BlockType.WOODBASE;
+                //    }
+                //}
+                //else
+                //{
+                //    block_types[i] = BlockType.GRASSSIDE;
+                //}
+
+                // TODO: temp, delete after testing
+                block_types[i] = BlockType.GRASSSIDE;
+            }
+
+            //else if ((diamond_bottom_height < xyz.y) && (xyz.y < diamond_top_height) && (random.NextFloat(1) < diamond_top_setting.probability))
+            //{
+            //    block_types[i] = BlockType.DIAMOND;
+            //}
+
+            //else if ((xyz.y < stone_height) && (random.NextFloat(1) < stone_setting.probability))
+            //{
+            //    block_types[i] = BlockType.STONE;
+            //}
+
+            else if (xyz.y < surface_height)
+            {
+                block_types[i] = BlockType.DIRT;
+            }
+
+            // TODO: 實際數值要根據地形高低來做調整
+            // TODO: 如何確保水是自己一個區塊，而非隨機的散佈在地圖中？大概要像樹一樣，使用 fBM3D
+            else if (xyz.y < WATER_LINE)
+            {
+                block_types[i] = BlockType.WATER;
+            }
+
+            else
+            {
+                block_types[i] = BlockType.AIR;
+            }
+        }
+    }
+
+    // ProcessMeshDataJob：根據 Block 的類型與位置等，計算所需貼圖與位置
     // ProcessMeshDataJob 用於將多個 Mesh 合併為單一個 Mesh，作用同 MeshUtils.mergeMeshes，但是使用了 Job System 會更有效率
     // BurstCompile 需使用 .NET 4.0 以上
     [BurstCompile]
@@ -371,165 +474,5 @@ namespace udemy
         }
     }
 
-    struct CalculateBlockTypes : IJobParallelFor
-    {
-        public NativeArray<BlockType> block_types;
-        public NativeArray<CrackState> crack_states;
-        public int width;
-        public int height;
-        public Vector3Int location;
-
-        // fBM 2D
-        public StrataSetting surface_setting;
-        public StrataSetting stone_setting;
-        public StrataSetting diamond_top_setting;
-        public StrataSetting diamond_bottom_setting;
-
-        // fBM 3D
-        public ClusterSetting cave_setting;
-
-        // offset of strata
-        public float surface_offset;
-        public float stone_offset;
-        public float diamond_top_offset;
-        public float diamond_bottom_offset;
-
-        // TODO: 原本每次開起的隨機數都會相同，是因為給 Unity.Mathematics.Random 的 seed 都是 1，因此只須傳入隨機的 seed，並在 Execute(int i) 外部建立 Unity.Mathematics.Random 物件即可
-        public NativeArray<Unity.Mathematics.Random> randoms;
-
-        Vector3Int xyz;
-        int surface_height, stone_height, diamond_top_height, diamond_bottom_height;
-        int dig_cave;
-
-        public void Execute(int i)
-        {
-            //int x = i % width + (int)location.x;
-            //int y = (i / width) % height + (int)location.y;
-            //int z = i / (width * height) + (int)location.z;
-
-            xyz = Utils.flatToVector3Int(i, width, height) + location;
-            surface_height = (int)surface_setting.getAltitude(xyz.x, xyz.z, offset: surface_offset);
-            stone_height = (int)stone_setting.getAltitude(xyz.x, xyz.z, offset: stone_offset);
-            diamond_top_height = (int)diamond_top_setting.getAltitude(xyz.x, xyz.z, offset: diamond_top_offset);
-            diamond_bottom_height = (int)diamond_bottom_setting.getAltitude(xyz.x, xyz.z, offset: diamond_bottom_offset);
-
-            dig_cave = (int)cave_setting.fBM3D(xyz.x, xyz.y, xyz.z);
-
-            var random = randoms[i];
-
-            //float surfaceHeight = (int)Strata.fBM(x, z,
-            //                                         World.surfaceSettings.octaves,
-            //                                         World.surfaceSettings.scale,
-            //                                         World.surfaceSettings.heightScale,
-            //                                         World.surfaceSettings.heightOffset);
-
-            //float stoneHeight = (int)Strata.fBM(x, z,
-            //                                       World.stoneSettings.octaves,
-            //                                       World.stoneSettings.scale,
-            //                                       World.stoneSettings.heightScale,
-            //                                       World.stoneSettings.heightOffset);
-
-            //float diamondTHeight = (int)Strata.fBM(x, z,
-            //                                          World.diamondTSettings.octaves,
-            //                                          World.diamondTSettings.scale,
-            //                                          World.diamondTSettings.heightScale,
-            //                                          World.diamondTSettings.heightOffset);
-
-            //float diamondBHeight = (int)Strata.fBM(x, z,
-            //                                          World.diamondBSettings.octaves,
-            //                                          World.diamondBSettings.scale,
-            //                                          World.diamondBSettings.heightScale,
-            //                                          World.diamondBSettings.heightOffset);
-
-            //float digCave = (int)Cluster.fBM3D(x, y, z,
-            //                                     World.caveSettings.octaves,
-            //                                     World.caveSettings.scale,
-            //                                     World.caveSettings.heightScale,
-            //                                     World.caveSettings.heightOffset);
-
-            //float plantTree = (int)Cluster.fBM3D(x, y, z,
-            //                                       World.treeSettings.octaves,
-            //                                       World.treeSettings.scale,
-            //                                       World.treeSettings.heightScale,
-            //                                       World.treeSettings.heightOffset);
-
-            //float desertBiome = (int)Cluster.fBM3D(x, y, z,
-            //                                         World.biomeSettings.octaves,
-            //                                         World.biomeSettings.scale,
-            //                                         World.biomeSettings.heightScale,
-            //                                         World.biomeSettings.heightOffset);
-
-            int WATER_LINE = 16;
-
-            crack_states[i] = CrackState.None;
-
-            if (xyz.y == 0)
-            {
-                block_types[i] = BlockType.BEDROCK;
-                return;
-            }
-
-            // TODO: 目前的洞穴可能會挖到地表，且因沒有考慮到是否是地表，因而造成地表為泥土而非草地
-            if (dig_cave < cave_setting.boundary)
-            {
-                block_types[i] = BlockType.AIR;
-                return;
-            }
-
-            if (xyz.y == surface_height && xyz.y >= WATER_LINE)
-            {
-                //if (desertBiome < World.biomeSettings.probability)
-                //{
-                //    block_types[i] = BlockType.SAND;
-
-                //    if (random.NextFloat(1) <= 0.1)
-                //    {
-                //        block_types[i] = BlockType.CACTUS;
-                //    }
-                //}
-                //else if (plantTree < World.treeSettings.probability)
-                //{
-                //    block_types[i] = BlockType.FOREST;
-
-                //    if (random.NextFloat(1) <= 0.1)
-                //    {
-                //        // Execute 當中一次處理一個 Block，因此這裡僅放置樹基，而非直接種一棵樹
-                //        block_types[i] = BlockType.WOODBASE;
-                //    }
-                //}
-                //else
-                //{
-                //    block_types[i] = BlockType.GRASSSIDE;
-                //}
-            }
-
-            else if ((diamond_bottom_height < xyz.y) && (xyz.y < diamond_top_height) && (random.NextFloat(1) < diamond_top_setting.probability))
-            {
-                block_types[i] = BlockType.DIAMOND;
-            }
-
-            else if ((xyz.y < stone_height) && (random.NextFloat(1) < stone_setting.probability))
-            {
-                block_types[i] = BlockType.STONE;
-            }
-
-            else if (xyz.y < surface_height)
-            {
-                block_types[i] = BlockType.DIRT;
-            }
-
-            // TODO: 實際數值要根據地形高低來做調整
-            // TODO: 如何確保水是自己一個區塊，而非隨機的散佈在地圖中？大概要像樹一樣，使用 fBM3D
-            else if (xyz.y < WATER_LINE)
-            {
-                block_types[i] = BlockType.WATER;
-            }
-
-            else
-            {
-                block_types[i] = BlockType.AIR;
-            }
-        }
-    }
 }
 

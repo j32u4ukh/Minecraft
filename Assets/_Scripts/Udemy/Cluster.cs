@@ -6,19 +6,35 @@ namespace udemy
 {
     public struct Cluster
     {
-        public float height_scale;
-        public float scale;
+        // 疊加 PerlinNoise 層數
         public int octaves;
+
+        // 縮放取樣點的座標
+        public float scale;
+
+        // 縮放波型的震幅
+        public float height_scale;
+
+        // 高度偏移量
         public float height_offset;
 
         // 邊界定義數值
         public float boundary;
 
-        public Cluster(float height_scale, float scale, int octaves, float height_offset, float boundary)
+        public Cluster(ClusterSetting setting)
         {
-            this.height_scale = height_scale;
-            this.scale = scale;
+            this = new Cluster(octaves: setting.octaves, 
+                               scale: setting.scale, 
+                               height_scale: setting.height_scale, 
+                               height_offset: setting.altitude, 
+                               boundary: setting.boundary);
+        }
+
+        public Cluster(int octaves, float scale, float height_scale, float height_offset, float boundary)
+        {
             this.octaves = octaves;
+            this.scale = scale;
+            this.height_scale = height_scale;
             this.height_offset = height_offset;
             this.boundary = boundary;
         }

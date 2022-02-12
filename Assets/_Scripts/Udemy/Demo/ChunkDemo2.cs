@@ -145,14 +145,15 @@ namespace udemy
         {
             int n_block = width * depth * height;
             chunk.block_types = new BlockType[n_block];
-            float altitude_offset = Strata.getPerlinMean(scale: octaves * height_scale);
+            Strata surface_strata = new Strata(octaves: octaves, scale: scale, height_scale: height_scale);
+            surface_strata.setAltitude(altitude: height - 2);
             Vector3Int xyz;
 
             for (int i = 0; i < n_block; i++)
             {
                 xyz = Utils.flatToVector3Int(i, width, height);
 
-                if (xyz.y > Strata.getAltitude(xyz.x, xyz.z, altitude: height - 2, octaves, scale, height_scale, altitude_offset))
+                if (xyz.y > surface_strata.fBM(xyz.x, xyz.z))
                 {
                     chunk.block_types[i] = BlockType.AIR;
                 }

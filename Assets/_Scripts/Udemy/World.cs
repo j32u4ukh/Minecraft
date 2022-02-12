@@ -5,9 +5,10 @@ using UnityEngine.UI;
 
 namespace udemy
 {
-    public class WorldDemo3 : MonoBehaviour
+    public class World : MonoBehaviour
     {
-        public static Vector3Int world_dimesions = new Vector3Int(4, 4, 4);
+        public static Vector3Int world_dimesions = new Vector3Int(15, 5, 15);
+        public static Vector3Int extra_world_dimesions = new Vector3Int(5, 5, 5);
         public static Vector3Int chunk_dimensions = new Vector3Int(10, 10, 10);
         
         public GameObject chunk_prefab;
@@ -16,7 +17,23 @@ namespace udemy
         public GameObject fpc;
         public Slider loading_bar;
 
+        #region fBM 2D
         public StrataSetting surface_setting;
+        public static Strata surface_strata;
+
+        public StrataSetting stone_setting;
+        public static Strata stone_strata;
+
+        public StrataSetting diamond_top_setting;
+        public static Strata diamond_top_strata;
+
+        public StrataSetting diamond_bottom_setting;
+        public static Strata diamond_bottom_strata; 
+        #endregion
+
+        // fBM 3D
+        public ClusterSetting cave_setting;
+        public static Cluster cave_cluster;
 
         Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
         HashSet<Vector2Int> chunk_columns = new HashSet<Vector2Int>();
@@ -36,6 +53,14 @@ namespace udemy
         void Start() 
         {
             loading_bar.maxValue = world_dimesions.x * world_dimesions.z;
+
+            surface_strata = new Strata(surface_setting);
+            stone_strata = new Strata(stone_setting);
+            diamond_top_strata = new Strata(diamond_top_setting);
+            diamond_bottom_strata = new Strata(diamond_bottom_setting);
+
+            cave_cluster = new Cluster(cave_setting);
+
             StartCoroutine(buildWorld());
         }
 
@@ -62,8 +87,8 @@ namespace udemy
             // Place the player in the center of map
             int xpos = chunk_dimensions.x * world_dimesions.x / 2;
             int zpos = chunk_dimensions.z * world_dimesions.z / 2;
-            float offset = surface_setting.getOffset();
-            int ypos = (int)surface_setting.getAltitude(xpos, zpos, offset: offset) + 10;
+            int ypos = (int)surface_strata.fBM(xpos, zpos) + 10;
+
             fpc.transform.position = new Vector3(xpos, ypos, zpos);
             fpc.SetActive(true);
             last_position = new Vector3Int(xpos, ypos, zpos);
@@ -72,7 +97,35 @@ namespace udemy
             // 啟動 taskCoordinator，依序執行被分派的任務
             StartCoroutine(taskCoordinator());
 
+            StartCoroutine(buildExtraWorld());
+
             StartCoroutine(updateWorld());
+        }
+
+        IEnumerator buildExtraWorld()
+        {
+            int z_start = world_dimesions.z;
+            int z_end = world_dimesions.z + extra_world_dimesions.z;
+            int x_start = world_dimesions.x;
+            int x_end = world_dimesions.x + extra_world_dimesions.x;
+
+            for (int z = z_start; z < z_end; z++)
+            {
+                for (int x = 0; x < x_end; x++)
+                {
+                    buildChunkColumn(chunk_dimensions.x * x, chunk_dimensions.z * z, visiable: true);
+                    yield return null;
+                }
+            }
+
+            for (int z = 0; z < z_end; z++)
+            {
+                for (int x = x_start; x < x_end; x++)
+                {
+                    buildChunkColumn(chunk_dimensions.x * x, chunk_dimensions.z * z, visiable: true);
+                    yield return null;
+                }
+            }
         }
 
         /// <summary>
@@ -80,12 +133,12 @@ namespace udemy
         /// </summary>
         /// <param name="col_x">ChunkColumn 的 X 座標</param>
         /// <param name="col_z">ChunkColumn 的 Z 座標</param>
-        void buildChunkColumn(int col_x, int col_z)
+        void buildChunkColumn(int col_x, int col_z, bool visiable = true)
         {
             // 若是已建立過的 ChunkColumn，則再次使其呈現即可
             if (chunk_columns.Contains(new Vector2Int(col_x, col_z)))
             {
-                displayChunkColumn(col_x, col_z, enabled: true);
+                displayChunkColumn(col_x, col_z, visiable: visiable);
             }
 
             // 若沒建立過位於 (col_x, col_z) 的 ChunkColumn，則產生並加入管理
@@ -108,6 +161,7 @@ namespace udemy
 
                     chunk = chunk_obj.GetComponent<Chunk>();
                     chunk.build(dimensions: chunk_dimensions, location: location);
+                    chunk.mesh_renderer.enabled = visiable;
 
                     chunks.Add(location, chunk);
                 }
@@ -214,14 +268,14 @@ namespace udemy
                 {
                     // 隱藏 ChunkColumn，因為太遠看不到 
                     // 實際上是 Z 值，但 Vector2Int 本身屬性為 y
-                    displayChunkColumn(column_position.x, column_position.y, enabled: false);
+                    displayChunkColumn(column_position.x, column_position.y, visiable: false);
                 }
             }
 
             yield return null;
         }
 
-        void displayChunkColumn(int col_x, int col_z, bool enabled = true)
+        void displayChunkColumn(int col_x, int col_z, bool visiable = true)
         {
             Vector3Int pos;
 
@@ -232,7 +286,7 @@ namespace udemy
 
                 if (chunks.ContainsKey(pos))
                 {
-                    chunks[pos].mesh_renderer.enabled = enabled;
+                    chunks[pos].mesh_renderer.enabled = visiable;
                 }
             }
         }

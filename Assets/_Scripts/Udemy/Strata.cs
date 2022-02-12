@@ -4,27 +4,54 @@ namespace udemy
 {
     public struct Strata
     {
-        public float height_scale;
-        public float scale;
+        // 疊加 PerlinNoise 層數
         public int octaves;
+
+        // 縮放取樣點的座標
+        public float scale;
+
+        // 縮放波型的震幅
+        public float height_scale;
+
+        // 高度偏移量
         public float height_offset;
 
         // 用於地層中某些礦物的出現機率，與 PerlinNoise 或 fBM 本身無關
         public float probability;
 
-        public Strata(float height_scale, float scale, int octaves, float height_offset, float probability)
+        public Strata(StrataSetting setting, float min_x = -100f, float max_x = 100f, float min_y = -100f, float max_y = 100f, int n_sample = 10)
         {
-            this.height_scale = height_scale;
-            this.scale = scale;
+            this = new Strata(octaves: setting.octaves, 
+                              scale: setting.scale, 
+                              height_scale: setting.height_scale, 
+                              height_offset: setting.altitude - getPerlinMean(min_x: min_x, max_x: max_x, 
+                                                                              min_y: min_y, max_y: max_y,
+                                                                              scale: setting.octaves * setting.height_scale, 
+                                                                              n_sample: n_sample), 
+                              probability: setting.probability);
+        }
+
+        public Strata(int octaves = 1, float scale = 1f, float height_scale = 1f, float height_offset = 0f, float probability = 1f)
+        {
             this.octaves = octaves;
+            this.scale = scale;
+            this.height_scale = height_scale;
             this.height_offset = height_offset;
             this.probability = probability;
         }
 
-        //public float fBM(float x, float z)
-        //{
-        //    return fBM(x, z, octaves, scale, height_scale, height_offset);
-        //}
+        public void setAltitude(float altitude, float min_x = -100f, float max_x = 100f, float min_y = -100f, float max_y = 100f, int n_sample = 10)
+        {
+            height_offset = altitude - getPerlinMean(min_x: min_x, max_x: max_x,
+                                                     min_y: min_y, max_y: max_y,
+                                                     scale: octaves * height_scale,
+                                                     n_sample: n_sample);
+        }
+
+        public float fBM(float x, float z)
+        {
+            return fBM(x, z, octaves, scale, height_scale, height_offset);
+        }
 
         /// <summary>
         /// 疊加多組 PerlinNoise，並利用其他參數，在相同位置 (x, z) 上獲取不同的 PerlinNoise
@@ -51,25 +78,6 @@ namespace udemy
             }
 
             return total + height_offset;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="x">X 座標</param>
-        /// <param name="z">Z 座標</param>
-        /// <param name="altitude">目標海拔</param>
-        /// <param name="octaves">疊加 PerlinNoise 的組數，會改變波型</param>
-        /// <param name="scale">縮放 x, z 取值範圍，會改變波型</param>
-        /// <param name="height_scale">縮放 PerlinNoise 計算值，會改變波型</param>
-        /// <param name="offset">在這組參數下的 fBM 的樣本平均</param>
-        /// <returns>在目標海拔上下波動的數值，波型與 fBM 相同</returns>
-        public static float getAltitude(float x, float z, float altitude, int octaves, float scale, float height_scale, float offset = 0f)
-        {
-            float height = fBM(x, z, octaves, scale, height_scale);
-
-            // 扣除海拔平均值，可使數值在該海拔上下波動            
-            return altitude + height - offset;
         }
 
         /// <summary>

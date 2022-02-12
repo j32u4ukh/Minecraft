@@ -5,16 +5,16 @@ namespace udemy
     [CreateAssetMenu(fileName = "New ClusterSetting", menuName = "Cluster", order = 0)]
     public class ClusterSetting : ScriptableObject
     {
-        [Header("縮放波型的震幅")]
-        public float height_scale = 2;
+        [Header("疊加 PerlinNoise 層數")]
+        [Min(1)]
+        public int octaves = 1;
 
         [Header("縮放取樣點的座標")]
         [Range(0.0f, 1.0f)]
         public float scale = 0.5f;
 
-        [Header("疊加 PerlinNoise 層數")]
-        [Min(1)]
-        public int octaves = 1;
+        [Header("縮放波型的震幅")]
+        public float height_scale = 2;
 
         [Header("目標海拔高度")]
         public float altitude = 1f;
