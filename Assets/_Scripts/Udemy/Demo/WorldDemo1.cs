@@ -36,7 +36,7 @@ namespace udemy
                                                              y * chunk_dimensions.y,
                                                              z * chunk_dimensions.z);
                         Chunk1 chunk = chunk_obj.GetComponent<Chunk1>();
-                        chunk.createChunk(dimensions: chunk_dimensions, location: location);
+                        chunk.build(dimensions: chunk_dimensions, location: location);
                         loading_bar.value++;
                         yield return null;
                     }

@@ -24,25 +24,29 @@ namespace udemy
 
         public Vector3Int location;
 
+        public MeshRenderer mesh_renderer;
+
+        // fBM 2D
         public StrataSetting surface_setting;
         public StrataSetting stone_setting;
         public StrataSetting diamond_top_setting;
         public StrataSetting diamond_bottom_setting;
 
+        // fBM 3D
         public ClusterSetting cave_setting;
 
-        public void createChunk(Vector3Int dimensions, Vector3Int location)
+        public void build(Vector3Int dimensions, Vector3Int location)
         {
             MeshFilter filter = gameObject.AddComponent<MeshFilter>();
-            MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
-            renderer.material = atlas;
+            mesh_renderer = gameObject.AddComponent<MeshRenderer>();
+            mesh_renderer.material = atlas;
 
             this.location = location;
             width = dimensions.x;
             height = dimensions.y;
             depth = dimensions.z;
             blocks = new Block2[width, height, depth];
-            buildChunk();
+            initChunk();
             int x, y, z;
 
             int n_mesh = width * height * depth;
@@ -152,7 +156,7 @@ namespace udemy
             collider.sharedMesh = mesh;
         }
 
-        void buildChunk()
+        void initChunk()
         {
             int n_block = width * depth * height;
             block_types = new BlockType[n_block];
