@@ -21,7 +21,7 @@ namespace udemy
         public BlockType[] block_types;
 
         // 將三維的 blocks 的 CrackState 攤平成一個陣列，可加快存取速度
-        //public CrackState[] crack_states;
+        public CrackState[] crack_states;
 
         public Vector3Int location;
 
@@ -38,9 +38,10 @@ namespace udemy
 
             n_block = width * height * depth;
             block_types = new BlockType[n_block];
+            crack_states = new CrackState[n_block];
 
             NativeArray<BlockType> block_type_array = new NativeArray<BlockType>(block_types, Allocator.Persistent);
-            //NativeArray<CrackState> crack_state_array = new NativeArray<CrackState>(crack_states, Allocator.Persistent);
+            NativeArray<CrackState> crack_state_array = new NativeArray<CrackState>(crack_states, Allocator.Persistent);
 
             Unity.Mathematics.Random[] randoms = new Unity.Mathematics.Random[n_block];
             System.Random seed = new System.Random();
@@ -55,6 +56,7 @@ namespace udemy
             DefineBlockJob job = new DefineBlockJob()
             {
                 block_types = block_type_array,
+                crack_states = crack_state_array,
                 randoms = random_array,
 
                 width = width,
@@ -68,9 +70,10 @@ namespace udemy
             handle.Complete();
 
             job.block_types.CopyTo(block_types);
-            //job.hData.CopyTo(healthData);
+            job.crack_states.CopyTo(crack_states);
+
             block_type_array.Dispose();
-            //healthTypes.Dispose();
+            crack_state_array.Dispose();
             random_array.Dispose();
         }
 
@@ -102,8 +105,9 @@ namespace udemy
                         //block_idx = x + width * (y + depth * z);
                         block_idx = Utils.xyzToFlat(x, y, z, width, depth);
                         block = new Block3(block_type: block_types[block_idx],
-                                          offset: new Vector3Int(x, y, z) + location,
-                                          chunk: this);
+                                           crack_state: crack_states[block_idx],
+                                           offset: new Vector3Int(x, y, z) + location,
+                                           chunk: this);
                         blocks[x, y, z] = block;
 
                         if (block.mesh != null)

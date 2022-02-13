@@ -73,6 +73,7 @@ namespace udemy
                 // 主要用在 Block 當中，而 meshes 為自行傳入的 List<Mesh>，應該不會有空值
                 if (meshes[i] == null)
                 {
+                    Debug.LogError($"[MeshUtils] mergeMeshes | meshes[{i}] == null");
                     continue;
                 }
 

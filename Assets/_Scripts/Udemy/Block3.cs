@@ -123,7 +123,7 @@ namespace udemy
         public Mesh mesh;
         Chunk2 chunk;
 
-        public Block3(BlockType block_type, Vector3Int offset, Chunk2 chunk)
+        public Block3(BlockType block_type, CrackState crack_state, Vector3Int offset, Chunk2 chunk)
         {
             this.chunk = chunk;
 
@@ -132,7 +132,7 @@ namespace udemy
                 return;
             }
 
-            List<Quad1> quads = new List<Quad1>();
+            List<Quad2> quads = new List<Quad2>();
             Vector3Int local_position = offset - chunk.location;
 
             //quads.Add(new Quad(block_type, BlockSide.Bottom, offset));
@@ -148,11 +148,11 @@ namespace udemy
             {
                 if (block_type == BlockType.GRASSSIDE)
                 {
-                    quads.Add(new Quad1(BlockType.DIRT, BlockSide.Bottom, offset));
+                    quads.Add(new Quad2(BlockType.DIRT, crack_state, BlockSide.Bottom, offset));
                 }
                 else
                 {
-                    quads.Add(new Quad1(block_type, BlockSide.Bottom, offset));
+                    quads.Add(new Quad2(block_type, crack_state, BlockSide.Bottom, offset));
                 }
             }
 
@@ -160,32 +160,32 @@ namespace udemy
             {
                 if (block_type == BlockType.GRASSSIDE)
                 {
-                    quads.Add(new Quad1(BlockType.GRASSTOP, BlockSide.Top, offset));
+                    quads.Add(new Quad2(BlockType.GRASSTOP, crack_state, BlockSide.Top, offset));
                 }
                 else
                 {
-                    quads.Add(new Quad1(block_type, BlockSide.Top, offset));
+                    quads.Add(new Quad2(block_type, crack_state, BlockSide.Top, offset));
                 }
             }
 
             if (!hasSolidNeighbour(local_position.x - 1, local_position.y, local_position.z, block_type))
             {
-                quads.Add(new Quad1(block_type, BlockSide.Left, offset));
+                quads.Add(new Quad2(block_type, crack_state, BlockSide.Left, offset));
             }
 
             if (!hasSolidNeighbour(local_position.x + 1, local_position.y, local_position.z, block_type))
             {
-                quads.Add(new Quad1(block_type, BlockSide.Right, offset));
+                quads.Add(new Quad2(block_type, crack_state, BlockSide.Right, offset));
             }
 
             if (!hasSolidNeighbour(local_position.x, local_position.y, local_position.z + 1, block_type))
             {
-                quads.Add(new Quad1(block_type, BlockSide.Front, offset));
+                quads.Add(new Quad2(block_type, crack_state, BlockSide.Front, offset));
             }
 
             if (!hasSolidNeighbour(local_position.x, local_position.y, local_position.z - 1, block_type))
             {
-                quads.Add(new Quad1(block_type, BlockSide.Back, offset));
+                quads.Add(new Quad2(block_type, crack_state, BlockSide.Back, offset));
             }
 
             if (quads.Count == 0)
@@ -195,7 +195,7 @@ namespace udemy
 
             List<Mesh> meshes = new List<Mesh>();
 
-            foreach (Quad1 quad in quads)
+            foreach (Quad2 quad in quads)
             {
                 meshes.Add(quad.mesh);
             }

@@ -222,7 +222,7 @@ namespace udemy
     struct DefineBlockJob : IJobParallelFor
     {
         public NativeArray<BlockType> block_types;
-        //public NativeArray<CrackState> crack_states;
+        public NativeArray<CrackState> crack_states;
 
         // TODO: 原本每次開起的隨機數都會相同，是因為給 Unity.Mathematics.Random 的 seed 都是 1，因此只須傳入隨機的 seed，並在 Execute(int i) 外部建立 Unity.Mathematics.Random 物件即可
         public NativeArray<Unity.Mathematics.Random> randoms;
@@ -274,7 +274,7 @@ namespace udemy
 
             int WATER_LINE = 16;
 
-            //crack_states[i] = CrackState.None;
+            crack_states[i] = CrackState.None;
 
             if (xyz.y == 0)
             {

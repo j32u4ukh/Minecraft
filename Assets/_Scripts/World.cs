@@ -400,7 +400,7 @@ public class World : MonoBehaviour
         buildType = (MeshUtils.BlockType)type;
     }
 
-     public void SetBlockType(MeshUtils.BlockType type)
+    public void SetBlockType(MeshUtils.BlockType type)
      {
         buildType = type;
      }

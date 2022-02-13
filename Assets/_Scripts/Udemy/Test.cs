@@ -10,19 +10,11 @@ namespace udemy
         // Start is called before the first frame update
         void Start()
         {
-            int x, z, len = 10000;
-            float value = 0f;
-            
-            for (x = 0; x < len; x++)
-            {
-                for (z = 0; z < len; z++)
-                {
-                    value += Mathf.PerlinNoise(x, z);
-                }
-            }
+            Vector3Int v = new Vector3Int(3, 4, 5);
+            print(v);
 
-            value /= (len * len);
-            print($"mean: {value}");
+            v.y += 10;
+            print(v);
         }
     }
 }

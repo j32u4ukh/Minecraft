@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,7 +15,7 @@ namespace udemy
         public GameObject chunk_prefab;
 
         public GameObject main_camera;
-        public GameObject fpc;
+        public Player player;
         public Slider loading_bar;
 
         #region fBM 2D
@@ -66,6 +67,7 @@ namespace udemy
 
         private void Update()
         {
+            // TODO: 移到 Player 當中管理，利用事件通知 World 哪些方塊被移除，哪些方塊又被新增
             // 左鍵(0)：挖掘方塊；右鍵(1)：放置方塊
             if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
             {
@@ -74,26 +76,43 @@ namespace udemy
 
                 if (Physics.Raycast(ray, out hit, 10f))
                 {
+                    Chunk2 chunk = hit.collider.GetComponent<Chunk2>();
+                    //Chunk chunk = hit.collider.gameObject.transform.parent.GetComponent<Chunk>();
                     Vector3 hit_block;
 
+                    // 左鍵(0)：挖掘方塊
                     if (Input.GetMouseButtonDown(0))
                     {
                         hit_block = hit.point - hit.normal / 2.0f;
                     }
+
+                    // 右鍵(1)：放置方塊
                     else
                     {
                         hit_block = hit.point + hit.normal / 2.0f;
                     }
 
-                    //Debug.Log($"Block location: {hit_block}");
-                    Chunk2 chunk = hit.collider.GetComponent<Chunk2>();
-                    //Chunk chunk = hit.collider.gameObject.transform.parent.GetComponent<Chunk>();
+                    // Debug.Log($"Block location: {hit_block}");
                     int bx = (int)(Mathf.Round(hit_block.x) - chunk.location.x);
                     int by = (int)(Mathf.Round(hit_block.y) - chunk.location.y);
                     int bz = (int)(Mathf.Round(hit_block.z) - chunk.location.z);
+                    int i;
 
-                    int i = Utils.xyzToFlat(bx, by, bz, chunk_dimensions.x, chunk_dimensions.z);
-                    chunk.block_types[i] = BlockType.AIR;
+                    // 左鍵(0)：挖掘方塊
+                    if (Input.GetMouseButtonDown(0))
+                    {
+                        i = Utils.xyzToFlat(bx, by, bz, chunk_dimensions.x, chunk_dimensions.z);
+                        chunk.block_types[i] = BlockType.AIR;
+                    }
+
+                    // 右鍵(1)：放置方塊
+                    else
+                    {
+                        Tuple<Vector3Int, Vector3Int> chunk_block_index = getChunkBlockIndex(chunk.location, bx, by, bz);
+                        chunk = chunks[chunk_block_index.Item1];
+                        i = Utils.vector3IntToFlat(chunk_block_index.Item2, chunk_dimensions.x, chunk_dimensions.z);
+                        chunk.block_types[i] = player.getBlockType();
+                    }
 
                     redrawChunk(chunk);
 
@@ -170,8 +189,8 @@ namespace udemy
             int zpos = chunk_dimensions.z * world_dimesions.z / 2;
             int ypos = (int)surface_strata.fBM(xpos, zpos) + 10;
 
-            fpc.transform.position = new Vector3(xpos, ypos, zpos);
-            fpc.SetActive(true);
+            player.transform.position = new Vector3(xpos, ypos, zpos);
+            player.gameObject.SetActive(true);
             last_position = new Vector3Int(xpos, ypos, zpos);
             loading_bar.gameObject.SetActive(false);
 
@@ -282,11 +301,11 @@ namespace udemy
             while (true)
             {
                 // 當玩家移動距離離上一次世界生成點 lastBuildPosition 大過一個 chunk 的距離時
-                if ((last_position - fpc.transform.position).magnitude > chunk_dimensions.x)
+                if ((last_position - player.transform.position).magnitude > chunk_dimensions.x)
                 {
-                    last_position = Vector3Int.CeilToInt(fpc.transform.position);
-                    posx = (int)(fpc.transform.position.x / chunk_dimensions.x) * chunk_dimensions.x;
-                    posz = (int)(fpc.transform.position.z / chunk_dimensions.z) * chunk_dimensions.z;
+                    last_position = Vector3Int.CeilToInt(player.transform.position);
+                    posx = (int)(player.transform.position.x / chunk_dimensions.x) * chunk_dimensions.x;
+                    posz = (int)(player.transform.position.z / chunk_dimensions.z) * chunk_dimensions.z;
                     
                     task_queue.Enqueue(buildColumnRecursive(posx, posz, sight_unit));
                     task_queue.Enqueue(hideColumns(posx, posz));
@@ -344,13 +363,13 @@ namespace udemy
         /// <returns></returns>
         IEnumerator hideColumns(int x, int z)
         {
-            Vector2Int fpc_position = new Vector2Int(x, z);
+            Vector2Int player_position = new Vector2Int(x, z);
             float sight_distance = sight_unit * chunk_dimensions.x;
 
             foreach (Vector2Int column_position in chunk_columns)
             {
                 // 若 ChunkColumn 距離玩家過遠
-                if ((column_position - fpc_position).magnitude >= sight_distance)
+                if ((column_position - player_position).magnitude >= sight_distance)
                 {
                     // 隱藏 ChunkColumn，因為太遠看不到 
                     // 實際上是 Z 值，但 Vector2Int 本身屬性為 y
@@ -383,6 +402,60 @@ namespace udemy
             DestroyImmediate(chunk.GetComponent<MeshRenderer>());
             DestroyImmediate(chunk.GetComponent<Collider>());
             chunk.build();
+        }
+
+        /// <summary>
+        /// 當點擊方塊所屬 Chunk，和目標方塊所屬 Chunk 不同時，方塊位置的座標會發生索引值超出。
+        /// 處理 Chunk 邊界對 Block 索引值的處理，當超出當前 Chunk 時，指向下一個 Chunk 並修正 Block 索引值。
+        /// </summary>
+        /// <param name="chunk_index">點擊方塊所屬 Chunk 的位置</param>
+        /// <param name="bx">目標方塊位置的 X 座標</param>
+        /// <param name="by">目標方塊位置的 Y 座標</param>
+        /// <param name="bz">目標方塊位置的 Z 座標</param>
+        /// <returns>(updated chunk index, updated block index)</returns>
+        public Tuple<Vector3Int, Vector3Int> getChunkBlockIndex(Vector3Int chunk_index, int bx, int by, int bz)
+        {
+            Chunk2 chunk = chunks[chunk_index];
+            Vector3Int location = new Vector3Int(chunk.location.x, chunk.location.y, chunk.location.z);
+
+            if (bx == chunk_dimensions.x)
+            {
+                //location = new Vector3Int(chunk.location.x + chunk_dimensions.x, chunk.location.y, chunk.location.z);
+                location.x += chunk_dimensions.x;
+                bx = 0;
+            }
+            else if (bx == -1)
+            {
+                //location = new Vector3Int(chunk.location.x - chunk_dimensions.x, chunk.location.y, chunk.location.z);
+                location.x -= chunk_dimensions.x;
+                bx = chunk_dimensions.x - 1;
+            }
+            else if (by == chunk_dimensions.y)
+            {
+                //location = new Vector3Int(chunk.location.x, chunk.location.y + chunk_dimensions.y, chunk.location.z);
+                location.y += chunk_dimensions.y;
+                by = 0;
+            }
+            else if (by == -1)
+            {
+                //location = new Vector3Int(chunk.location.x, chunk.location.y - chunk_dimensions.y, chunk.location.z);
+                location.y -= chunk_dimensions.y;
+                by = chunk_dimensions.y - 1;
+            }
+            else if (bz == chunk_dimensions.z)
+            {
+                //location = new Vector3Int(chunk.location.x, chunk.location.y, chunk.location.z + chunk_dimensions.z);
+                location.z += chunk_dimensions.z;
+                bz = 0;
+            }
+            else if (bz == -1)
+            {
+                //location = new Vector3Int(chunk.location.x, chunk.location.y, chunk.location.z - chunk_dimensions.z);
+                location.z -= chunk_dimensions.z;
+                bz = chunk_dimensions.z - 1;
+            }
+
+            return new Tuple<Vector3Int, Vector3Int>(location, new Vector3Int(bx, by, bz));
         }
     }
 }
