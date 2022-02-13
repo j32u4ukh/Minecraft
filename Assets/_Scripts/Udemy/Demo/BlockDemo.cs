@@ -15,18 +15,18 @@ namespace udemy
             MeshRenderer renderer = gameObject.AddComponent<MeshRenderer>();
             renderer.material = atlas;
 
-            List<Quad> quads = new List<Quad>();
+            List<Quad1> quads = new List<Quad1>();
             Vector3 offset = new Vector3(0, 0, 0);
-            quads.Add(new Quad(BlockType.DIRT, BlockSide.Bottom, offset));
-            quads.Add(new Quad(BlockType.GRASSTOP, BlockSide.Top, offset));
-            quads.Add(new Quad(BlockType.GRASSSIDE, BlockSide.Left, offset));
-            quads.Add(new Quad(BlockType.GRASSSIDE, BlockSide.Right, offset));
-            quads.Add(new Quad(BlockType.GRASSSIDE, BlockSide.Front, offset));
-            quads.Add(new Quad(BlockType.GRASSSIDE, BlockSide.Back, offset));
+            quads.Add(new Quad1(BlockType.DIRT, BlockSide.Bottom, offset));
+            quads.Add(new Quad1(BlockType.GRASSTOP, BlockSide.Top, offset));
+            quads.Add(new Quad1(BlockType.GRASSSIDE, BlockSide.Left, offset));
+            quads.Add(new Quad1(BlockType.GRASSSIDE, BlockSide.Right, offset));
+            quads.Add(new Quad1(BlockType.GRASSSIDE, BlockSide.Front, offset));
+            quads.Add(new Quad1(BlockType.GRASSSIDE, BlockSide.Back, offset));
 
             List<Mesh> meshes = new List<Mesh>();
 
-            foreach(Quad quad in quads)
+            foreach(Quad1 quad in quads)
             {
                 meshes.Add(quad.mesh);
             }

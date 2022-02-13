@@ -242,34 +242,34 @@ namespace udemy
             random = randoms[i];
 
             surface_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
-                                             octaves: World.surface_strata.octaves,
-                                             scale: World.surface_strata.scale,
-                                             height_scale: World.surface_strata.height_scale,
-                                             height_offset: World.surface_strata.height_offset);
+                                             octaves: WorldDemo3.surface_strata.octaves,
+                                             scale: WorldDemo3.surface_strata.scale,
+                                             height_scale: WorldDemo3.surface_strata.height_scale,
+                                             height_offset: WorldDemo3.surface_strata.height_offset);
 
             stone_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
-                                           octaves: World.stone_strata.octaves,
-                                           scale: World.stone_strata.scale,
-                                           height_scale: World.stone_strata.height_scale,
-                                           height_offset: World.stone_strata.height_offset);
+                                           octaves: WorldDemo3.stone_strata.octaves,
+                                           scale: WorldDemo3.stone_strata.scale,
+                                           height_scale: WorldDemo3.stone_strata.height_scale,
+                                           height_offset: WorldDemo3.stone_strata.height_offset);
 
             diamond_top_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
-                                                 octaves: World.diamond_top_strata.octaves,
-                                                 scale: World.diamond_top_strata.scale,
-                                                 height_scale: World.diamond_top_strata.height_scale,
-                                                 height_offset: World.diamond_top_strata.height_offset);
+                                                 octaves: WorldDemo3.diamond_top_strata.octaves,
+                                                 scale: WorldDemo3.diamond_top_strata.scale,
+                                                 height_scale: WorldDemo3.diamond_top_strata.height_scale,
+                                                 height_offset: WorldDemo3.diamond_top_strata.height_offset);
 
             diamond_bottom_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
-                                                    octaves: World.diamond_bottom_strata.octaves,
-                                                    scale: World.diamond_bottom_strata.scale,
-                                                    height_scale: World.diamond_bottom_strata.height_scale,
-                                                    height_offset: World.diamond_bottom_strata.height_offset);
+                                                    octaves: WorldDemo3.diamond_bottom_strata.octaves,
+                                                    scale: WorldDemo3.diamond_bottom_strata.scale,
+                                                    height_scale: WorldDemo3.diamond_bottom_strata.height_scale,
+                                                    height_offset: WorldDemo3.diamond_bottom_strata.height_offset);
 
             dig_cave = (int)Cluster.fBM3D(x: xyz.x, y: xyz.y, z: xyz.z, 
-                                          octaves: World.cave_cluster.octaves, 
-                                          scale: World.cave_cluster.scale, 
-                                          height_scale: World.cave_cluster.height_scale, 
-                                          height_offset: World.cave_cluster.height_offset);
+                                          octaves: WorldDemo3.cave_cluster.octaves, 
+                                          scale: WorldDemo3.cave_cluster.scale, 
+                                          height_scale: WorldDemo3.cave_cluster.height_scale, 
+                                          height_offset: WorldDemo3.cave_cluster.height_offset);
 
 
             int WATER_LINE = 16;
@@ -283,7 +283,7 @@ namespace udemy
             }
 
             // TODO: 目前的洞穴可能會挖到地表，且因沒有考慮到是否是地表，因而造成地表為泥土而非草地
-            if (dig_cave < World.cave_cluster.boundary)
+            if (dig_cave < WorldDemo3.cave_cluster.boundary)
             {
                 block_types[i] = BlockType.AIR;
                 return;
@@ -319,12 +319,12 @@ namespace udemy
                 block_types[i] = BlockType.GRASSSIDE;
             }
 
-            else if ((diamond_bottom_height < xyz.y) && (xyz.y < diamond_top_height) && (random.NextFloat(1) <= World.diamond_top_strata.probability))
+            else if ((diamond_bottom_height < xyz.y) && (xyz.y < diamond_top_height) && (random.NextFloat(1) <= WorldDemo3.diamond_top_strata.probability))
             {
                 block_types[i] = BlockType.DIAMOND;
             }
 
-            else if ((xyz.y < stone_height) && (random.NextFloat(1) <= World.stone_strata.probability))
+            else if ((xyz.y < stone_height) && (random.NextFloat(1) <= WorldDemo3.stone_strata.probability))
             {
                 block_types[i] = BlockType.STONE;
             }

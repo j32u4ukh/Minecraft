@@ -18,7 +18,7 @@ namespace udemy
                 return;
             }
 
-            List<Quad> quads = new List<Quad>();
+            List<Quad1> quads = new List<Quad1>();
             Vector3Int local_position = offset - chunk.location;
 
             //quads.Add(new Quad(block_type, BlockSide.Bottom, offset));
@@ -34,11 +34,11 @@ namespace udemy
             {
                 if (block_type == BlockType.GRASSSIDE)
                 {
-                    quads.Add(new Quad(BlockType.DIRT, BlockSide.Bottom, offset));
+                    quads.Add(new Quad1(BlockType.DIRT, BlockSide.Bottom, offset));
                 }
                 else
                 {
-                    quads.Add(new Quad(block_type, BlockSide.Bottom, offset));
+                    quads.Add(new Quad1(block_type, BlockSide.Bottom, offset));
                 }
             }
 
@@ -46,32 +46,32 @@ namespace udemy
             {
                 if (block_type == BlockType.GRASSSIDE)
                 {
-                    quads.Add(new Quad(BlockType.GRASSTOP, BlockSide.Top, offset));
+                    quads.Add(new Quad1(BlockType.GRASSTOP, BlockSide.Top, offset));
                 }
                 else
                 {
-                    quads.Add(new Quad(block_type, BlockSide.Top, offset));
+                    quads.Add(new Quad1(block_type, BlockSide.Top, offset));
                 }
             }
 
             if (!hasSolidNeighbour(local_position.x - 1, local_position.y, local_position.z, block_type))
             {
-                quads.Add(new Quad(block_type, BlockSide.Left, offset));
+                quads.Add(new Quad1(block_type, BlockSide.Left, offset));
             }
 
             if (!hasSolidNeighbour(local_position.x + 1, local_position.y, local_position.z, block_type))
             {
-                quads.Add(new Quad(block_type, BlockSide.Right, offset));
+                quads.Add(new Quad1(block_type, BlockSide.Right, offset));
             }
 
             if (!hasSolidNeighbour(local_position.x, local_position.y, local_position.z + 1, block_type))
             {
-                quads.Add(new Quad(block_type, BlockSide.Front, offset));
+                quads.Add(new Quad1(block_type, BlockSide.Front, offset));
             }
 
             if (!hasSolidNeighbour(local_position.x, local_position.y, local_position.z - 1, block_type))
             {
-                quads.Add(new Quad(block_type, BlockSide.Back, offset));
+                quads.Add(new Quad1(block_type, BlockSide.Back, offset));
             }
 
             if (quads.Count == 0)
@@ -81,7 +81,121 @@ namespace udemy
 
             List<Mesh> meshes = new List<Mesh>();
 
-            foreach (Quad quad in quads)
+            foreach (Quad1 quad in quads)
+            {
+                meshes.Add(quad.mesh);
+            }
+
+            mesh = MeshUtils.mergeMeshes(meshes);
+            mesh.name = $"Cube_{offset.x}_{offset.y}_{offset.z}";
+        }
+
+        bool hasSolidNeighbour(float x, float y, float z, BlockType block_type)
+        {
+            if (x < 0 || chunk.width <= x ||
+                y < 0 || chunk.height <= y ||
+                z < 0 || chunk.depth <= z)
+            {
+                return false;
+            }
+
+            int block_idx = Utils.xyzToFlat((int)x, (int)y, (int)z,
+                                            width: chunk.width,
+                                            depth: chunk.depth);
+
+            if (chunk.block_types[block_idx] == block_type)
+            {
+                return true;
+            }
+
+            if (chunk.block_types[block_idx] == BlockType.AIR ||
+                chunk.block_types[block_idx] == BlockType.WATER)
+            {
+                return false;
+            }
+
+            return true;
+        }
+    }
+
+    public class Block3
+    {
+        public Mesh mesh;
+        Chunk2 chunk;
+
+        public Block3(BlockType block_type, Vector3Int offset, Chunk2 chunk)
+        {
+            this.chunk = chunk;
+
+            if (block_type == BlockType.AIR)
+            {
+                return;
+            }
+
+            List<Quad1> quads = new List<Quad1>();
+            Vector3Int local_position = offset - chunk.location;
+
+            //quads.Add(new Quad(block_type, BlockSide.Bottom, offset));
+            //quads.Add(new Quad(block_type, BlockSide.Top, offset));
+            //quads.Add(new Quad(block_type, BlockSide.Left, offset));
+            //quads.Add(new Quad(block_type, BlockSide.Right, offset));
+            //quads.Add(new Quad(block_type, BlockSide.Front, offset));
+            //quads.Add(new Quad(block_type, BlockSide.Back, offset));
+
+            /* 利用 hasSolidNeighbour 檢查各個方向是否還有下一格，因此傳入的座標為該方向下一格 Block 的座標 */
+
+            if (!hasSolidNeighbour(local_position.x, local_position.y - 1, local_position.z, block_type))
+            {
+                if (block_type == BlockType.GRASSSIDE)
+                {
+                    quads.Add(new Quad1(BlockType.DIRT, BlockSide.Bottom, offset));
+                }
+                else
+                {
+                    quads.Add(new Quad1(block_type, BlockSide.Bottom, offset));
+                }
+            }
+
+            if (!hasSolidNeighbour(local_position.x, local_position.y + 1, local_position.z, block_type))
+            {
+                if (block_type == BlockType.GRASSSIDE)
+                {
+                    quads.Add(new Quad1(BlockType.GRASSTOP, BlockSide.Top, offset));
+                }
+                else
+                {
+                    quads.Add(new Quad1(block_type, BlockSide.Top, offset));
+                }
+            }
+
+            if (!hasSolidNeighbour(local_position.x - 1, local_position.y, local_position.z, block_type))
+            {
+                quads.Add(new Quad1(block_type, BlockSide.Left, offset));
+            }
+
+            if (!hasSolidNeighbour(local_position.x + 1, local_position.y, local_position.z, block_type))
+            {
+                quads.Add(new Quad1(block_type, BlockSide.Right, offset));
+            }
+
+            if (!hasSolidNeighbour(local_position.x, local_position.y, local_position.z + 1, block_type))
+            {
+                quads.Add(new Quad1(block_type, BlockSide.Front, offset));
+            }
+
+            if (!hasSolidNeighbour(local_position.x, local_position.y, local_position.z - 1, block_type))
+            {
+                quads.Add(new Quad1(block_type, BlockSide.Back, offset));
+            }
+
+            if (quads.Count == 0)
+            {
+                return;
+            }
+
+            List<Mesh> meshes = new List<Mesh>();
+
+            foreach (Quad1 quad in quads)
             {
                 meshes.Add(quad.mesh);
             }
@@ -132,7 +246,7 @@ namespace udemy
                 return;
             }
 
-            List<Quad> quads = new List<Quad>();
+            List<Quad1> quads = new List<Quad1>();
             Vector3Int local_position = offset - chunk.location;
 
             //quads.Add(new Quad(block_type, BlockSide.Bottom, offset));
@@ -148,11 +262,11 @@ namespace udemy
             {
                 if (block_type == BlockType.GRASSSIDE)
                 {
-                    quads.Add(new Quad(BlockType.DIRT, BlockSide.Bottom, offset));
+                    quads.Add(new Quad1(BlockType.DIRT, BlockSide.Bottom, offset));
                 }
                 else
                 {
-                    quads.Add(new Quad(block_type, BlockSide.Bottom, offset));
+                    quads.Add(new Quad1(block_type, BlockSide.Bottom, offset));
                 }
             }
 
@@ -160,32 +274,32 @@ namespace udemy
             {
                 if (block_type == BlockType.GRASSSIDE)
                 {
-                    quads.Add(new Quad(BlockType.GRASSTOP, BlockSide.Top, offset));
+                    quads.Add(new Quad1(BlockType.GRASSTOP, BlockSide.Top, offset));
                 }
                 else
                 {
-                    quads.Add(new Quad(block_type, BlockSide.Top, offset));
+                    quads.Add(new Quad1(block_type, BlockSide.Top, offset));
                 }
             }
 
             if (!hasSolidNeighbour(local_position.x - 1, local_position.y, local_position.z, block_type))
             {
-                quads.Add(new Quad(block_type, BlockSide.Left, offset));
+                quads.Add(new Quad1(block_type, BlockSide.Left, offset));
             }
 
             if (!hasSolidNeighbour(local_position.x + 1, local_position.y, local_position.z, block_type))
             {
-                quads.Add(new Quad(block_type, BlockSide.Right, offset));
+                quads.Add(new Quad1(block_type, BlockSide.Right, offset));
             }
 
             if (!hasSolidNeighbour(local_position.x, local_position.y, local_position.z + 1, block_type))
             {
-                quads.Add(new Quad(block_type, BlockSide.Front, offset));
+                quads.Add(new Quad1(block_type, BlockSide.Front, offset));
             }
 
             if (!hasSolidNeighbour(local_position.x, local_position.y, local_position.z - 1, block_type))
             {
-                quads.Add(new Quad(block_type, BlockSide.Back, offset));
+                quads.Add(new Quad1(block_type, BlockSide.Back, offset));
             }
 
             if (quads.Count == 0)
@@ -195,7 +309,7 @@ namespace udemy
 
             List<Mesh> meshes = new List<Mesh>();
 
-            foreach (Quad quad in quads)
+            foreach (Quad1 quad in quads)
             {
                 meshes.Add(quad.mesh);
             }
@@ -238,17 +352,17 @@ namespace udemy
 
         public Block1(BlockType block_type, Vector3Int offset)
         {
-            List<Quad> quads = new List<Quad>();
-            quads.Add(new Quad(block_type, BlockSide.Bottom, offset));
-            quads.Add(new Quad(block_type, BlockSide.Top, offset));
-            quads.Add(new Quad(block_type, BlockSide.Left, offset));
-            quads.Add(new Quad(block_type, BlockSide.Right, offset));
-            quads.Add(new Quad(block_type, BlockSide.Front, offset));
-            quads.Add(new Quad(block_type, BlockSide.Back, offset));
+            List<Quad1> quads = new List<Quad1>();
+            quads.Add(new Quad1(block_type, BlockSide.Bottom, offset));
+            quads.Add(new Quad1(block_type, BlockSide.Top, offset));
+            quads.Add(new Quad1(block_type, BlockSide.Left, offset));
+            quads.Add(new Quad1(block_type, BlockSide.Right, offset));
+            quads.Add(new Quad1(block_type, BlockSide.Front, offset));
+            quads.Add(new Quad1(block_type, BlockSide.Back, offset));
 
             List<Mesh> meshes = new List<Mesh>();
 
-            foreach (Quad quad in quads)
+            foreach (Quad1 quad in quads)
             {
                 meshes.Add(quad.mesh);
             }

@@ -5,9 +5,9 @@ using UnityEngine.UI;
 
 namespace udemy
 {
-    public class World : MonoBehaviour
+    public class WorldDemo3 : MonoBehaviour
     {
-        public static Vector3Int world_dimesions = new Vector3Int(15, 5, 15);
+        public static Vector3Int world_dimesions = new Vector3Int(5, 5, 5);
         public static Vector3Int extra_world_dimesions = new Vector3Int(5, 5, 5);
         public static Vector3Int chunk_dimensions = new Vector3Int(10, 10, 10);
         
@@ -35,7 +35,7 @@ namespace udemy
         public ClusterSetting cave_setting;
         public static Cluster cave_cluster;
 
-        Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
+        Dictionary<Vector3Int, Chunk2> chunks = new Dictionary<Vector3Int, Chunk2>();
         HashSet<Vector2Int> chunk_columns = new HashSet<Vector2Int>();
 
         // 為什麼要利用 Queue 來管理這些建造和隱藏 ChunkColumn 的任務？是為了強調任務的順序性，以避免後面的小任務比前面的大任務還要快結束嗎？
@@ -62,6 +62,87 @@ namespace udemy
             cave_cluster = new Cluster(cave_setting);
 
             StartCoroutine(buildWorld());
+        }
+
+        private void Update()
+        {
+            // 左鍵(0)：挖掘方塊；右鍵(1)：放置方塊
+            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
+            {
+                RaycastHit hit;
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+
+                if (Physics.Raycast(ray, out hit, 10f))
+                {
+                    Vector3 hit_block;
+
+                    if (Input.GetMouseButtonDown(0))
+                    {
+                        hit_block = hit.point - hit.normal / 2.0f;
+                    }
+                    else
+                    {
+                        hit_block = hit.point + hit.normal / 2.0f;
+                    }
+
+                    //Debug.Log($"Block location: {hit_block}");
+                    Chunk2 chunk = hit.collider.GetComponent<Chunk2>();
+                    //Chunk chunk = hit.collider.gameObject.transform.parent.GetComponent<Chunk>();
+                    int bx = (int)(Mathf.Round(hit_block.x) - chunk.location.x);
+                    int by = (int)(Mathf.Round(hit_block.y) - chunk.location.y);
+                    int bz = (int)(Mathf.Round(hit_block.z) - chunk.location.z);
+
+                    int i = Utils.xyzToFlat(bx, by, bz, chunk_dimensions.x, chunk_dimensions.z);
+                    chunk.block_types[i] = BlockType.AIR;
+
+                    redrawChunk(chunk);
+
+                    //var blockNeighbour = GetWorldNeighbour(new Vector3Int(bx, by, bz), Vector3Int.CeilToInt(chunk.location));
+                    //chunk = chunks[blockNeighbour.Item2];
+
+                    ////int i = bx + chunkDimensions.x * (by + chunkDimensions.z * bz);
+                    //int i = ToFlat(blockNeighbour.Item1);
+
+                    //if (Input.GetMouseButtonDown(0))
+                    //{
+                    //    // TODO: 教學中為了避免 health 為 -1 的方塊被刪除，因此加了這個判斷，但其實根本沒必要。health 從 NOCRACK(10) 開始往上加，本來就不可能加到 -1
+                    //    if (MeshUtils.blockTypeHealth[(int)chunk.chunkData[i]] != -1)
+                    //    {
+                    //        // 第一次敲擊時觸發，一段時間後檢查是否已被敲掉，否則修復自己 health 恢復成 NOCRACK
+                    //        if (chunk.healthData[i] == MeshUtils.BlockType.NOCRACK)
+                    //        {
+                    //            StartCoroutine(HealBlock(c: chunk, blockIndex: i));
+                    //        }
+
+                    //        chunk.healthData[i]++;
+
+                    //        if (chunk.healthData[i] == MeshUtils.BlockType.NOCRACK + MeshUtils.blockTypeHealth[(int)chunk.chunkData[i]])
+                    //        {
+                    //            chunk.chunkData[i] = MeshUtils.BlockType.AIR;
+                    //            chunk.healthData[i] = MeshUtils.BlockType.NOCRACK;
+
+                    //            // 上方方塊是否掉落檢查
+                    //            Vector3Int nBlock = FromFlat(i);
+                    //            var neghbourBlock = GetWorldNeighbour(new Vector3Int(nBlock.x, nBlock.y + 1, nBlock.z), Vector3Int.CeilToInt(chunk.location));
+                    //            Vector3Int block = neghbourBlock.Item1;
+                    //            int neighboutBlockIndex = ToFlat(block);
+                    //            Chunk neighbourChunk = chunks[neghbourBlock.Item2];
+                    //            StartCoroutine(Drop(neighbourChunk, neighboutBlockIndex));
+                    //        }
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    chunk.chunkData[i] = buildType;
+                    //    thisChunk.healthData[i] = MeshUtils.BlockType.NOCRACK;
+
+                    //    // 方塊是否掉落檢查
+                    //    StartCoroutine(Drop(thisChunk, i));
+                    //}
+
+                    //RedrawChunk(thisChunk);
+                }
+            }
         }
 
         IEnumerator buildWorld()
@@ -97,9 +178,11 @@ namespace udemy
             // 啟動 taskCoordinator，依序執行被分派的任務
             StartCoroutine(taskCoordinator());
 
-            StartCoroutine(buildExtraWorld());
+            // NOTE: 暫且關閉此功能，以利開發其他機制
+            // 將 IEnumerator 添加到 buildQueue 當中
+            //StartCoroutine(updateWorld());
 
-            StartCoroutine(updateWorld());
+            StartCoroutine(buildExtraWorld());
         }
 
         IEnumerator buildExtraWorld()
@@ -146,7 +229,7 @@ namespace udemy
             {
                 GameObject chunk_obj;
                 Vector3Int location;
-                Chunk chunk;
+                Chunk2 chunk;
 
                 // 依序建立同一個 ChunkColumn 裡面的 Chunk
                 for (int y = 0; y < world_dimesions.y; y++)
@@ -159,8 +242,9 @@ namespace udemy
                     chunk_obj = Instantiate(chunk_prefab);
                     chunk_obj.name = $"Chunk_{location.x}_{location.y}_{location.z}";
 
-                    chunk = chunk_obj.GetComponent<Chunk>();
-                    chunk.build(dimensions: chunk_dimensions, location: location);
+                    chunk = chunk_obj.GetComponent<Chunk2>();
+                    chunk.init(dimensions: chunk_dimensions, location: location);
+                    chunk.build();
                     chunk.mesh_renderer.enabled = visiable;
 
                     chunks.Add(location, chunk);
@@ -173,6 +257,8 @@ namespace udemy
         /// <summary>
         /// 依序執行 task_queue 當中的任務
         /// Coordinator: 協調員
+        /// TODO: 任務優先順序應為：1. enable 已建構的 ChunkColumn 2. 生成新的 ChunkColumn 3. 隱藏遠方 ChunkColumn
+        /// TODO: 維護鄰近 ChunkColumn 座標列表，若要 enable 或要新生成的 ChunkColumn 又已不在清單中，或許可以跳出 Coroutine 以避免無效作業
         /// </summary>
         /// <returns></returns>
         IEnumerator taskCoordinator()
@@ -289,6 +375,14 @@ namespace udemy
                     chunks[pos].mesh_renderer.enabled = visiable;
                 }
             }
+        }
+
+        void redrawChunk(Chunk2 chunk)
+        {
+            DestroyImmediate(chunk.GetComponent<MeshFilter>());
+            DestroyImmediate(chunk.GetComponent<MeshRenderer>());
+            DestroyImmediate(chunk.GetComponent<Collider>());
+            chunk.build();
         }
     }
 }
