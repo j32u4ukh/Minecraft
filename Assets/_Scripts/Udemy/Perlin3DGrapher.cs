@@ -70,7 +70,7 @@ namespace udemy
                 }
             }
 
-            print($"n_enable: {n_enable}");
+            //print($"n_enable: {n_enable}");
         }
 
         void createCubes()

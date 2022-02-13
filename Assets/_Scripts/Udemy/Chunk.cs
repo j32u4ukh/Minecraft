@@ -25,8 +25,6 @@ namespace udemy
         // 將三維的 blocks 的 CrackState 攤平成一個陣列，可加快存取速度
         //public CrackState[] crack_states;
 
-        DefineBlockJob define_block_job;
-
         public Vector3Int location;
 
         public MeshRenderer mesh_renderer;
@@ -160,19 +158,21 @@ namespace udemy
             NativeArray<BlockType> block_type_array = new NativeArray<BlockType>(block_types, Allocator.Persistent);
             //NativeArray<CrackState> crack_state_array = new NativeArray<CrackState>(crack_states, Allocator.Persistent);
 
-            //var randomArray = new Unity.Mathematics.Random[n_block];
-            //var seed = new System.Random();
+            Unity.Mathematics.Random[] randoms = new Unity.Mathematics.Random[n_block];
+            System.Random seed = new System.Random();
 
-            //for (int i = 0; i < blockCount; i++)
-            //{
-            //    randomArray[i] = new Unity.Mathematics.Random((uint)seed.Next());
-            //}
+            for (int i = 0; i < n_block; i++)
+            {
+                randoms[i] = new Unity.Mathematics.Random((uint)seed.Next());
+            }
 
-            //RandomArray = new NativeArray<Unity.Mathematics.Random>(randomArray, Allocator.Persistent);
+            NativeArray<Unity.Mathematics.Random> random_array = new NativeArray<Unity.Mathematics.Random>(randoms, Allocator.Persistent);
 
             DefineBlockJob job = new DefineBlockJob()
             {
                 block_types = block_type_array,
+                randoms = random_array,
+
                 width = width,
                 height = height,
                 location = location
@@ -187,7 +187,7 @@ namespace udemy
             //job.hData.CopyTo(healthData);
             block_type_array.Dispose();
             //healthTypes.Dispose();
-            //RandomArray.Dispose();
+            random_array.Dispose();
         }
 
         public BlockType getBlockType(int index)
@@ -223,28 +223,24 @@ namespace udemy
     {
         public NativeArray<BlockType> block_types;
         //public NativeArray<CrackState> crack_states;
+
+        // TODO: 原本每次開起的隨機數都會相同，是因為給 Unity.Mathematics.Random 的 seed 都是 1，因此只須傳入隨機的 seed，並在 Execute(int i) 外部建立 Unity.Mathematics.Random 物件即可
+        public NativeArray<Unity.Mathematics.Random> randoms;
+
         public int width;
         public int height;
         public Vector3Int location;
 
-        // TODO: 原本每次開起的隨機數都會相同，是因為給 Unity.Mathematics.Random 的 seed 都是 1，因此只須傳入隨機的 seed，並在 Execute(int i) 外部建立 Unity.Mathematics.Random 物件即可
-        //public NativeArray<Unity.Mathematics.Random> randoms;
-
         Vector3Int xyz;
+        Unity.Mathematics.Random random;
         int surface_height, stone_height, diamond_top_height, diamond_bottom_height;
         int dig_cave;
 
         public void Execute(int i)
         {
-            //int x = i % width + (int)location.x;
-            //int y = (i / width) % height + (int)location.y;
-            //int z = i / (width * height) + (int)location.z;
-
             xyz = Utils.flatToVector3Int(i, width, height) + location;
+            random = randoms[i];
 
-            //var random = randoms[i];
-
-            
             surface_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
                                              octaves: World.surface_strata.octaves,
                                              scale: World.surface_strata.scale,
@@ -269,6 +265,13 @@ namespace udemy
                                                     height_scale: World.diamond_bottom_strata.height_scale,
                                                     height_offset: World.diamond_bottom_strata.height_offset);
 
+            dig_cave = (int)Cluster.fBM3D(x: xyz.x, y: xyz.y, z: xyz.z, 
+                                          octaves: World.cave_cluster.octaves, 
+                                          scale: World.cave_cluster.scale, 
+                                          height_scale: World.cave_cluster.height_scale, 
+                                          height_offset: World.cave_cluster.height_offset);
+
+
             int WATER_LINE = 16;
 
             //crack_states[i] = CrackState.None;
@@ -280,11 +283,11 @@ namespace udemy
             }
 
             // TODO: 目前的洞穴可能會挖到地表，且因沒有考慮到是否是地表，因而造成地表為泥土而非草地
-            //if (dig_cave < cave_setting.boundary)
-            //{
-            //    block_types[i] = BlockType.AIR;
-            //    return;
-            //}
+            if (dig_cave < World.cave_cluster.boundary)
+            {
+                block_types[i] = BlockType.AIR;
+                return;
+            }
 
             if (xyz.y == surface_height)
             {
@@ -316,15 +319,15 @@ namespace udemy
                 block_types[i] = BlockType.GRASSSIDE;
             }
 
-            //else if ((diamond_bottom_height < xyz.y) && (xyz.y < diamond_top_height) && (random.NextFloat(1) < diamond_top_setting.probability))
-            //{
-            //    block_types[i] = BlockType.DIAMOND;
-            //}
+            else if ((diamond_bottom_height < xyz.y) && (xyz.y < diamond_top_height) && (random.NextFloat(1) <= World.diamond_top_strata.probability))
+            {
+                block_types[i] = BlockType.DIAMOND;
+            }
 
-            //else if ((xyz.y < stone_height) && (random.NextFloat(1) < stone_setting.probability))
-            //{
-            //    block_types[i] = BlockType.STONE;
-            //}
+            else if ((xyz.y < stone_height) && (random.NextFloat(1) <= World.stone_strata.probability))
+            {
+                block_types[i] = BlockType.STONE;
+            }
 
             else if (xyz.y < surface_height)
             {
