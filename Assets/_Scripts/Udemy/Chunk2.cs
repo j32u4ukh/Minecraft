@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Jobs;
@@ -10,9 +12,9 @@ namespace udemy
     {
         public Material atlas;
 
-        public int width = 2;
-        public int height = 2;
-        public int depth = 2;
+        public int WIDTH = 2;
+        public int HEIGHT = 2;
+        public int DEPTH = 2;
         int n_block;
 
         public Block3[,,] blocks;
@@ -27,16 +29,19 @@ namespace udemy
 
         public MeshRenderer mesh_renderer;
 
+        // For HealBlock
+        private WaitForSeconds heal_block_buffer = new WaitForSeconds(3.0f);
+
         public void init(Vector3Int dimensions, Vector3Int location)
         {
             this.location = location;
 
-            width = dimensions.x;
-            height = dimensions.y;
-            depth = dimensions.z;
-            blocks = new Block3[width, height, depth];
+            WIDTH = dimensions.x;
+            HEIGHT = dimensions.y;
+            DEPTH = dimensions.z;
+            blocks = new Block3[WIDTH, HEIGHT, DEPTH];
 
-            n_block = width * height * depth;
+            n_block = WIDTH * HEIGHT * DEPTH;
             block_types = new BlockType[n_block];
             crack_states = new CrackState[n_block];
 
@@ -59,8 +64,8 @@ namespace udemy
                 crack_states = crack_state_array,
                 randoms = random_array,
 
-                width = width,
-                height = height,
+                width = WIDTH,
+                height = HEIGHT,
                 location = location
             };
 
@@ -96,14 +101,14 @@ namespace udemy
             job.vertex_index_offsets = new NativeArray<int>(n_block, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             job.triangle_index_offsets = new NativeArray<int>(n_block, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
-            for (z = 0; z < depth; z++)
+            for (z = 0; z < DEPTH; z++)
             {
-                for (y = 0; y < height; y++)
+                for (y = 0; y < HEIGHT; y++)
                 {
-                    for (x = 0; x < width; x++)
+                    for (x = 0; x < WIDTH; x++)
                     {
                         //block_idx = x + width * (y + depth * z);
-                        block_idx = Utils.xyzToFlat(x, y, z, width, depth);
+                        block_idx = Utils.xyzToFlat(x, y, z, WIDTH, DEPTH);
                         block = new Block3(block_type: block_types[block_idx],
                                            crack_state: crack_states[block_idx],
                                            offset: new Vector3Int(x, y, z) + location,
@@ -195,11 +200,142 @@ namespace udemy
             collider.sharedMesh = mesh;
         }
 
+        /// <summary>
+        /// 當 新增 或 破壞 方塊後，呼叫此函式，以重新繪製 Chunk
+        /// </summary>
+        public void rebuild()
+        {
+            DestroyImmediate(gameObject.GetComponent<MeshFilter>());
+            DestroyImmediate(mesh_renderer);
+            DestroyImmediate(gameObject.GetComponent<Collider>());
+            build();
+        }
+
         public BlockType getBlockType(int index)
         {
             return block_types[index];
         }
+
+        /// <summary>
+        /// 當點擊方塊所屬 Chunk，和目標方塊所屬 Chunk 不同時，方塊位置的座標會發生索引值超出。
+        /// 處理 Chunk 邊界對 Block 索引值的處理，當超出當前 Chunk 時，指向下一個 Chunk 並修正 Block 索引值。
+        /// NOTE: 這裡未考慮到 世界 的大小
+        /// </summary>
+        /// <param name="bx">目標方塊位置的 X 座標</param>
+        /// <param name="by">目標方塊位置的 Y 座標</param>
+        /// <param name="bz">目標方塊位置的 Z 座標</param>
+        /// <returns>(已校正 chunk 位置, 已校正 block 索引值)</returns>
+        public Tuple<Vector3Int, Vector3Int> getChunkBlockLocation(int bx, int by, int bz)
+        {
+            Vector3Int chunk_location = new Vector3Int(location.x, location.y, location.z);
+
+            if (bx == WIDTH)
+            {
+                chunk_location.x += WIDTH;
+                bx = 0;
+            }
+            else if (bx == -1)
+            {
+                chunk_location.x -= WIDTH;
+                bx = WIDTH - 1;
+            }
+            else if (by == HEIGHT)
+            {
+                chunk_location.y += HEIGHT;
+                by = 0;
+            }
+            else if (by == -1)
+            {
+                chunk_location.y -= HEIGHT;
+                by = HEIGHT - 1;
+            }
+            else if (bz == DEPTH)
+            {
+                chunk_location.z += DEPTH;
+                bz = 0;
+            }
+            else if (bz == -1)
+            {
+                chunk_location.z -= DEPTH;
+                bz = DEPTH - 1;
+            }
+
+            return new Tuple<Vector3Int, Vector3Int>(chunk_location, new Vector3Int(bx, by, bz));
+        }
+
+        public void placeBlock(int index, BlockType block_type)
+        {
+            block_types[index] = block_type;
+            crack_states[index] = CrackState.None;
+        }
+
+        /// <summary>
+        /// 敲擊某塊方塊時，累加破壞程度
+        /// 若破壞程度與方塊強度相當，才會真的破壞掉
+        /// </summary>
+        /// <param name="index">方塊索引值</param>
+        /// <returns>該方塊是否被破壞</returns>
+        public bool crackBlock(int index)
+        {
+            // 若無法破壞，直接返回
+            if (!isCrackable(index))
+            {
+                return false;
+            }
+
+            // 第一次敲擊時觸發，一段時間後檢查是否已被敲掉，否則修復自己 crack_state 恢復成 CrackState.None
+            if (crack_states[index].Equals(CrackState.None))
+            {
+                StartCoroutine(healBlock(index));
+            }
+
+            // 累加破壞程度
+            crack_states[index]++;
+
+            // 若 破壞程度 與 方塊強度 相當
+            if (isCracked(index))
+            {
+                // 實際破壞該方塊
+                block_types[index] = BlockType.AIR;
+                crack_states[index] = CrackState.None;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 破壞程度(CrackState) 與 方塊強度(Strenth) 相當，才能真的破壞掉
+        /// </summary>
+        /// <param name="index">方塊索引值</param>
+        /// <returns>是否被破壞了</returns>
+        public bool isCracked(int index)
+        {
+            return crack_states[index].Equals((CrackState)MeshUtils.getStrenth(block_types[index]));
+        }
+
+        /// <summary>
+        /// 若為基岩等類型的方塊，強度設置為 -1，表示無法破壞。
+        /// 其他的則無限制。
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns>該方塊是否可以破壞</returns>
+        public bool isCrackable(int index)
+        {
+            return MeshUtils.getStrenth(block_types[index]) != -1;
+        }
+
+        // 一段時間後檢查是否已被敲掉，否則修復自己 health 恢復成 NOCRACK
+        public IEnumerator healBlock(int index)
+        {
+            yield return heal_block_buffer;
+
+            if(block_types[index] != BlockType.AIR)
+            {
+                crack_states[index] = CrackState.None;
+                rebuild();
+            }
+        }
     }
-
-
 }

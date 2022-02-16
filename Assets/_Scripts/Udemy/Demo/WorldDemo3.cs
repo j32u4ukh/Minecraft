@@ -102,19 +102,24 @@ namespace udemy
                     if (Input.GetMouseButtonDown(0))
                     {
                         i = Utils.xyzToFlat(bx, by, bz, chunk_dimensions.x, chunk_dimensions.z);
-                        chunk.block_types[i] = BlockType.AIR;
+
+                        // 累加破壞程度(若破壞程度與方塊強度相當，才會真的破壞掉)
+                        chunk.crackBlock(index: i);
                     }
 
                     // 右鍵(1)：放置方塊
                     else
                     {
-                        Tuple<Vector3Int, Vector3Int> chunk_block_index = getChunkBlockIndex(chunk.location, bx, by, bz);
-                        chunk = chunks[chunk_block_index.Item1];
-                        i = Utils.vector3IntToFlat(chunk_block_index.Item2, chunk_dimensions.x, chunk_dimensions.z);
-                        chunk.block_types[i] = player.getBlockType();
+                        // TODO: 考慮 世界 的大小，取得的 chunk 不一定存在於 chunks 當中
+                        Tuple<Vector3Int, Vector3Int> chunk_block_location = chunk.getChunkBlockLocation(bx, by, bz);
+                        chunk = chunks[chunk_block_location.Item1];
+                        i = Utils.vector3IntToFlat(chunk_block_location.Item2, chunk_dimensions.x, chunk_dimensions.z);
+
+                        chunk.placeBlock(index: i, block_type: player.getBlockType());
                     }
 
-                    redrawChunk(chunk);
+                    // 當 新增 或 破壞 方塊後，重新繪製 Chunk
+                    chunk.rebuild();
 
                     //var blockNeighbour = GetWorldNeighbour(new Vector3Int(bx, by, bz), Vector3Int.CeilToInt(chunk.location));
                     //chunk = chunks[blockNeighbour.Item2];

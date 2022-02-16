@@ -22,10 +22,10 @@ namespace udemy
 
     public enum CrackState
     {
-        None,
-        Crack1, 
-        Crack2, 
-        Crack3, 
-        Crack4
+        None = 0,
+        Crack1 = 1, 
+        Crack2 = 2, 
+        Crack3 = 3, 
+        Crack4 = 4
     }
 }

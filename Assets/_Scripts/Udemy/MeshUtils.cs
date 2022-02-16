@@ -45,6 +45,20 @@ namespace udemy
         // Coordinate of crack which is queried 
         private static Dictionary<CrackState, Vector2[,]> crack_to_coordinate = new Dictionary<CrackState, Vector2[,]>();
 
+        // 定義各種方塊需要敲擊幾次才會被移除(-1 表示無法被破壞)
+        private static Dictionary<BlockType, int> block_strength = new Dictionary<BlockType, int>() {
+            { BlockType.GRASSTOP, 2 },
+            { BlockType.GRASSSIDE, 2 },
+            { BlockType.DIRT, 1 },
+            { BlockType.WATER, 1 },
+            { BlockType.STONE, 4 },
+            { BlockType.SAND, 3 },
+            { BlockType.GOLD, 4 },
+            { BlockType.BEDROCK, -1 },
+            { BlockType.REDSTONE, 3 },
+            { BlockType.DIAMOND, 4 },
+        };
+
         /// <summary>
         /// Merge multi meshes into one mesh.
         /// TODO: unit test
@@ -183,6 +197,16 @@ namespace udemy
                 { new Vector2(left, bottom), new Vector2(left, top) },
                 { new Vector2(right, bottom), new Vector2(right, top) }
             };
+        }
+
+        /// <summary>
+        /// 各種方塊需要敲擊幾次才會被移除(-1 表示無法被破壞)
+        /// </summary>
+        /// <param name="block_type"></param>
+        /// <returns>所需敲擊次數</returns>
+        public static int getStrenth(BlockType block_type)
+        {
+            return block_strength[block_type];
         }
     }
 }

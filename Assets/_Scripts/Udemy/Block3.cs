@@ -206,16 +206,16 @@ namespace udemy
 
         bool hasSolidNeighbour(float x, float y, float z, BlockType block_type)
         {
-            if (x < 0 || chunk.width <= x ||
-                y < 0 || chunk.height <= y ||
-                z < 0 || chunk.depth <= z)
+            if (x < 0 || chunk.WIDTH <= x ||
+                y < 0 || chunk.HEIGHT <= y ||
+                z < 0 || chunk.DEPTH <= z)
             {
                 return false;
             }
 
             int block_idx = Utils.xyzToFlat((int)x, (int)y, (int)z,
-                                            width: chunk.width,
-                                            depth: chunk.depth);
+                                            width: chunk.WIDTH,
+                                            depth: chunk.DEPTH);
 
             if (chunk.block_types[block_idx] == block_type)
             {

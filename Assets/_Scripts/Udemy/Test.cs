@@ -10,11 +10,7 @@ namespace udemy
         // Start is called before the first frame update
         void Start()
         {
-            Vector3Int v = new Vector3Int(3, 4, 5);
-            print(v);
-
-            v.y += 10;
-            print(v);
+            print(CrackState.Crack3.Equals((CrackState)3));
         }
     }
 }
