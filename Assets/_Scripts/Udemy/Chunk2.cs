@@ -221,11 +221,6 @@ namespace udemy
             mesh_renderer.enabled = visiable;
         }
 
-        public BlockType getBlockType(int index)
-        {
-            return block_types[index];
-        }
-
         /// <summary>
         /// 當點擊方塊所屬 Chunk，和目標方塊所屬 Chunk 不同時，方塊位置的座標會發生索引值超出。
         /// 處理 Chunk 邊界對 Block 索引值的處理，當超出當前 Chunk 時，指向下一個 Chunk 並修正 Block 索引值。
@@ -271,6 +266,26 @@ namespace udemy
             }
 
             return new Tuple<Vector3Int, Vector3Int>(chunk_location, new Vector3Int(bx, by, bz));
+        }
+
+        public void setBlockType(int index, BlockType block_type)
+        {
+            block_types[index] = block_type;
+        }
+
+        public BlockType getBlockType(int index)
+        {
+            return block_types[index];
+        }
+
+        public void setCrackState(int index, CrackState crack_state = CrackState.None)
+        {
+            crack_states[index] = crack_state;
+        }
+
+        public CrackState getCrackState(int index)
+        {
+            return crack_states[index];
         }
 
         public void placeBlock(int index, BlockType block_type)

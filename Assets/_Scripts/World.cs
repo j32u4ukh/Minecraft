@@ -282,7 +282,7 @@ public class World : MonoBehaviour
     }
 
     // 一段時間後檢查是否已被敲掉，否則修復自己 health 恢復成 NOCRACK
-    public IEnumerator Drop(Chunk c, int blockIndex, int strength = 3)
+    public IEnumerator Drop(Chunk c, int blockIndex, int spread = 3)
     {
         // 檢查當前方塊是否會掉落
         if(!MeshUtils.canDrop.Contains(c.chunkData[blockIndex]))
@@ -334,10 +334,10 @@ public class World : MonoBehaviour
             }
             else if (MeshUtils.canFlow.Contains(c.chunkData[blockIndex]))
             {
-                FlowIntoNeighbour(thisBlock, Vector3Int.CeilToInt(c.location), Vector3Int.forward, strength - 1);
-                FlowIntoNeighbour(thisBlock, Vector3Int.CeilToInt(c.location), Vector3Int.back, strength - 1);
-                FlowIntoNeighbour(thisBlock, Vector3Int.CeilToInt(c.location), Vector3Int.left, strength - 1);
-                FlowIntoNeighbour(thisBlock, Vector3Int.CeilToInt(c.location), Vector3Int.right, strength - 1);
+                FlowIntoNeighbour(thisBlock, Vector3Int.CeilToInt(c.location), Vector3Int.forward, spread - 1);
+                FlowIntoNeighbour(thisBlock, Vector3Int.CeilToInt(c.location), Vector3Int.back, spread - 1);
+                FlowIntoNeighbour(thisBlock, Vector3Int.CeilToInt(c.location), Vector3Int.left, spread - 1);
+                FlowIntoNeighbour(thisBlock, Vector3Int.CeilToInt(c.location), Vector3Int.right, spread - 1);
                 yield break;
             }
             else
@@ -350,17 +350,17 @@ public class World : MonoBehaviour
     /// <summary>
     /// 讓水等物件流向四周
     /// TODO: 應該不只 FlowIntoNeighbour 與 Drop 之間遞迴呼叫，還要 FlowIntoNeighbour 遞迴呼叫自身，
-    /// 只是前者的衰退速度應該會較快，相較於 FlowIntoNeighbour 每次 strength 減一
+    /// 只是前者的衰退速度應該會較快，相較於 FlowIntoNeighbour 每次 spread 減一
     /// </summary>
     /// <param name="blockPosition"></param>
     /// <param name="chunkPosition"></param>
     /// <param name="neighbourDirection"></param>
-    /// <param name="strength">流動距離(程度)</param>
-    public void FlowIntoNeighbour(Vector3Int blockPosition, Vector3Int chunkPosition, Vector3Int neighbourDirection, int strength)
+    /// <param name="spread">流動距離(程度)</param>
+    public void FlowIntoNeighbour(Vector3Int blockPosition, Vector3Int chunkPosition, Vector3Int neighbourDirection, int spread)
     {
-        strength--;
+        spread--;
 
-        if(strength <= 0)
+        if(spread <= 0)
         {
             return;
         }
@@ -383,7 +383,7 @@ public class World : MonoBehaviour
             RedrawChunk(neighbourChunk);
 
             // TODO: 此函式進來時就已經減一，遞迴呼叫時又再減一次，應該是重複做了？
-            StartCoroutine(Drop(c: neighbourChunk, blockIndex: neighbourBlockIndex, strength: strength--));
+            StartCoroutine(Drop(c: neighbourChunk, blockIndex: neighbourBlockIndex, spread: spread--));
         }
     }
 
