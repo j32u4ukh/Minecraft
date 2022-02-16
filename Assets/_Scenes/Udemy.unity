@@ -11456,6 +11456,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0b7efa9630d5bd45a249c72ea2d3369, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  load_file: 0
   chunk_prefab: {fileID: 8462583276562152735, guid: 7fe3ccf06f8654943a3c376d82ff803d, type: 3}
   main_camera: {fileID: 1803130323}
   player: {fileID: 0}
@@ -59086,6 +59087,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0b7efa9630d5bd45a249c72ea2d3369, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  load_file: 1
   chunk_prefab: {fileID: 8462583276562152735, guid: 936b89ef06a51944c9cbbaea1443f670, type: 3}
   main_camera: {fileID: 1803130323}
   player: {fileID: 1226862383}

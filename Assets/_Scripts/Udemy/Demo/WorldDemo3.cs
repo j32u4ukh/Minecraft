@@ -11,7 +11,7 @@ namespace udemy
         public static Vector3Int world_dimesions = new Vector3Int(5, 5, 5);
         public static Vector3Int extra_world_dimesions = new Vector3Int(5, 5, 5);
         public static Vector3Int chunk_dimensions = new Vector3Int(10, 10, 10);
-        
+        public bool load_file = false;
         public GameObject chunk_prefab;
 
         public GameObject main_camera;
@@ -29,14 +29,14 @@ namespace udemy
         public static Strata diamond_top_strata;
 
         public StrataSetting diamond_bottom_setting;
-        public static Strata diamond_bottom_strata; 
+        public static Strata diamond_bottom_strata;
         #endregion
 
         // fBM 3D
         public ClusterSetting cave_setting;
         public static Cluster cave_cluster;
 
-        Dictionary<Vector3Int, Chunk2> chunks = new Dictionary<Vector3Int, Chunk2>();
+        public Dictionary<Vector3Int, Chunk2> chunks = new Dictionary<Vector3Int, Chunk2>();
         HashSet<Vector2Int> chunk_columns = new HashSet<Vector2Int>();
 
         // 為什麼要利用 Queue 來管理這些建造和隱藏 ChunkColumn 的任務？是為了強調任務的順序性，以避免後面的小任務比前面的大任務還要快結束嗎？
@@ -51,10 +51,8 @@ namespace udemy
         // For updateWorld
         WaitForSeconds update_world_buffer = new WaitForSeconds(0.5f);
 
-        void Start() 
+        void Start()
         {
-            loading_bar.maxValue = world_dimesions.x * world_dimesions.z;
-
             surface_strata = new Strata(surface_setting);
             stone_strata = new Strata(stone_setting);
             diamond_top_strata = new Strata(diamond_top_setting);
@@ -62,7 +60,14 @@ namespace udemy
 
             cave_cluster = new Cluster(cave_setting);
 
-            StartCoroutine(buildWorld());
+            if (load_file)
+            {
+                StartCoroutine(loadWorldFromFile());
+            }
+            else
+            {
+                StartCoroutine(buildWorld());
+            }
         }
 
         private void Update()
@@ -167,10 +172,19 @@ namespace udemy
                     //RedrawChunk(thisChunk);
                 }
             }
+
+            if (Input.GetKey(KeyCode.RightControl))
+            {
+                if (Input.GetKeyDown(KeyCode.RightAlt))
+                {
+                    saveWorldToFile();
+                }
+            }
         }
 
         IEnumerator buildWorld()
         {
+            loading_bar.maxValue = world_dimesions.x * world_dimesions.z;
             int x, z, column_z;
 
             for (z = 0; z < world_dimesions.z; z++)
@@ -245,23 +259,17 @@ namespace udemy
             // 若是已建立過的 ChunkColumn，則再次使其呈現即可
             if (chunk_columns.Contains(new Vector2Int(col_x, col_z)))
             {
-                displayChunkColumn(col_x, col_z, visiable: visiable);
+                setChunkColumnVisiable(col_x, col_z, visiable: visiable);
             }
 
             // 若沒建立過位於 (col_x, col_z) 的 ChunkColumn，則產生並加入管理
             else
             {
                 GameObject chunk_obj;
-                Vector3Int location;
                 Chunk2 chunk;
 
-                // 依序建立同一個 ChunkColumn 裡面的 Chunk
-                for (int y = 0; y < world_dimesions.y; y++)
+                foreach(Vector3Int location in iterChunkColumnLocation(col_x, col_z))
                 {
-                    // y: Chunk 的索引值
-                    // y * chunk_dimensions.y: Chunk 的實際座標(和索引值差了 chunk_dimensions.y 倍)
-                    location = new Vector3Int(col_x, y * chunk_dimensions.y, col_z);
-
                     // 產生 Chunk 物件
                     chunk_obj = Instantiate(chunk_prefab);
                     chunk_obj.name = $"Chunk_{location.x}_{location.y}_{location.z}";
@@ -378,89 +386,165 @@ namespace udemy
                 {
                     // 隱藏 ChunkColumn，因為太遠看不到 
                     // 實際上是 Z 值，但 Vector2Int 本身屬性為 y
-                    displayChunkColumn(column_position.x, column_position.y, visiable: false);
+                    setChunkColumnVisiable(column_position.x, column_position.y, visiable: false);
                 }
             }
 
             yield return null;
         }
 
-        void displayChunkColumn(int col_x, int col_z, bool visiable = true)
+        void setChunkColumnVisiable(int col_x, int col_z, bool visiable = true)
         {
-            Vector3Int pos;
+            IEnumerable<Chunk2> chunk_column = iterChunkColumn(col_x, col_z);
 
-            for (int y = 0; y < world_dimesions.y; y++)
+            foreach(Chunk2 chunk in chunk_column)
             {
-                // Chunk position
-                pos = new Vector3Int(col_x, y * chunk_dimensions.y, col_z);
+                chunk.setVisiable(visiable);
+            }
+        }
 
-                if (chunks.ContainsKey(pos))
+        IEnumerable<Chunk2> iterChunkColumn(int col_x, int col_z)
+        {
+            IEnumerable<Vector3Int> locations = iterChunkColumnLocation(col_x, col_z);
+
+            foreach (Vector3Int location in locations)
+            {
+                if (chunks.ContainsKey(location))
                 {
-                    chunks[pos].mesh_renderer.enabled = visiable;
+                    yield return chunks[location];
                 }
             }
         }
 
-        void redrawChunk(Chunk2 chunk)
+        IEnumerable<Vector3Int> iterChunkColumnLocation(int col_x, int col_z)
         {
-            DestroyImmediate(chunk.GetComponent<MeshFilter>());
-            DestroyImmediate(chunk.GetComponent<MeshRenderer>());
-            DestroyImmediate(chunk.GetComponent<Collider>());
-            chunk.build();
+            for (int y = 0; y < world_dimesions.y; y++)
+            {
+                // Chunk position
+                yield return new Vector3Int(col_x, y * chunk_dimensions.y, col_z);
+            }
         }
 
-        /// <summary>
-        /// 當點擊方塊所屬 Chunk，和目標方塊所屬 Chunk 不同時，方塊位置的座標會發生索引值超出。
-        /// 處理 Chunk 邊界對 Block 索引值的處理，當超出當前 Chunk 時，指向下一個 Chunk 並修正 Block 索引值。
-        /// </summary>
-        /// <param name="chunk_index">點擊方塊所屬 Chunk 的位置</param>
-        /// <param name="bx">目標方塊位置的 X 座標</param>
-        /// <param name="by">目標方塊位置的 Y 座標</param>
-        /// <param name="bz">目標方塊位置的 Z 座標</param>
-        /// <returns>(updated chunk index, updated block index)</returns>
-        public Tuple<Vector3Int, Vector3Int> getChunkBlockIndex(Vector3Int chunk_index, int bx, int by, int bz)
+        void saveWorldToFile()
         {
-            Chunk2 chunk = chunks[chunk_index];
-            Vector3Int location = new Vector3Int(chunk.location.x, chunk.location.y, chunk.location.z);
+            WorldData1 wd = new WorldData1();
 
-            if (bx == chunk_dimensions.x)
+            // 共有 n_chunk 個 Chunk 
+            int n_chunk = chunks.Count, loaction_index = 0, data_index = 0;
+            wd.chunk_locations = new int[n_chunk * 3];
+            wd.chunk_datas = new int[n_chunk * chunk_dimensions.x * chunk_dimensions.y * chunk_dimensions.z];
+            Vector3Int location;
+
+            foreach (KeyValuePair<Vector3Int, Chunk2> item in chunks)
             {
-                //location = new Vector3Int(chunk.location.x + chunk_dimensions.x, chunk.location.y, chunk.location.z);
-                location.x += chunk_dimensions.x;
-                bx = 0;
-            }
-            else if (bx == -1)
-            {
-                //location = new Vector3Int(chunk.location.x - chunk_dimensions.x, chunk.location.y, chunk.location.z);
-                location.x -= chunk_dimensions.x;
-                bx = chunk_dimensions.x - 1;
-            }
-            else if (by == chunk_dimensions.y)
-            {
-                //location = new Vector3Int(chunk.location.x, chunk.location.y + chunk_dimensions.y, chunk.location.z);
-                location.y += chunk_dimensions.y;
-                by = 0;
-            }
-            else if (by == -1)
-            {
-                //location = new Vector3Int(chunk.location.x, chunk.location.y - chunk_dimensions.y, chunk.location.z);
-                location.y -= chunk_dimensions.y;
-                by = chunk_dimensions.y - 1;
-            }
-            else if (bz == chunk_dimensions.z)
-            {
-                //location = new Vector3Int(chunk.location.x, chunk.location.y, chunk.location.z + chunk_dimensions.z);
-                location.z += chunk_dimensions.z;
-                bz = 0;
-            }
-            else if (bz == -1)
-            {
-                //location = new Vector3Int(chunk.location.x, chunk.location.y, chunk.location.z - chunk_dimensions.z);
-                location.z -= chunk_dimensions.z;
-                bz = chunk_dimensions.z - 1;
+                location = item.Key;
+
+                wd.chunk_locations[loaction_index] = location.x;
+                wd.chunk_locations[loaction_index + 1] = location.y;
+                wd.chunk_locations[loaction_index + 2] = location.z;
+                loaction_index += 3;
+
+                foreach (BlockType block_type in item.Value.block_types)
+                {
+                    wd.chunk_datas[data_index] = (int)block_type;
+                    data_index++;
+                }
             }
 
-            return new Tuple<Vector3Int, Vector3Int>(location, new Vector3Int(bx, by, bz));
+            wd.setPlayerPosition(position: player.transform.position);
+
+            WorldRecorder1.save(wd);
+        }
+
+        IEnumerator loadWorldFromFile()
+        {
+            WorldData1 wd = WorldRecorder1.load();
+
+            if (wd == null)
+            {
+                StartCoroutine(buildWorld());
+                yield break;
+            }
+
+            chunks.Clear();
+            chunk_columns.Clear();
+            int b, c, n_chunk = wd.chunk_locations.Length / 3, loaction_index = 0, index = 0;
+            int n_block = chunk_dimensions.x * chunk_dimensions.y * chunk_dimensions.z;
+            Vector3Int pos;
+            GameObject obj;
+            Chunk2 chunk;
+
+            loading_bar.maxValue = n_chunk;
+
+            for (c = 0; c < n_chunk; c++)
+            {
+                pos = new Vector3Int(wd.chunk_locations[loaction_index],
+                                     wd.chunk_locations[loaction_index + 1],
+                                     wd.chunk_locations[loaction_index + 2]);
+                loaction_index += 3;
+
+                obj = Instantiate(chunk_prefab);
+                obj.name = $"Chunk_{pos.x}_{pos.y}_{pos.z}";
+                chunk = obj.GetComponent<Chunk2>();
+                chunk.block_types = new BlockType[n_block];
+                chunk.crack_states = new CrackState[n_block];
+
+                for (b = 0; b < n_block; b++)
+                {
+                    chunk.block_types[b] = (BlockType)wd.chunk_datas[index];
+                    chunk.crack_states[b] = CrackState.None;
+                    index++;
+                }
+
+                chunk.locate(dimensions: chunk_dimensions, location: pos);
+                chunk.build();
+
+                chunk_columns.Add(new Vector2Int(pos.x, pos.z));
+                chunks.Add(pos, chunk);
+
+                loading_bar.value++;
+                yield return null;
+            }
+
+            player.transform.position = wd.getPlayerPosition();
+            main_camera.SetActive(false);
+            loading_bar.gameObject.SetActive(false);
+            player.gameObject.SetActive(true);
+            last_position = Vector3Int.CeilToInt(player.transform.position);
+
+            // 依序執行 buildQueue 當中的 IEnumerator
+            StartCoroutine(taskCoordinator());
+
+            // 將 IEnumerator 添加到 buildQueue 當中
+            //StartCoroutine(UpdateWorld());
+        }
+    }
+
+    [Serializable]
+    public class WorldData1
+    {
+        // 每個 chunk_location 分別有 3 個數值 (x, y, z)，共有 n_chunk * 3 個數值 
+        public int[] chunk_locations;
+
+        // 每個 Chunk 分別有 chunk_dimensions.x * chunk_dimensions.y * chunk_dimensions.z 個數值
+        // 共有 n_chunk * chunk_dimensions.x * chunk_dimensions.y * chunk_dimensions.z 個數值 
+        public int[] chunk_datas;
+
+        // 玩家位置
+        public int player_x;
+        public int player_y;
+        public int player_z;
+
+        public void setPlayerPosition(Vector3 position)
+        {
+            player_x = (int)position.x;
+            player_y = (int)position.y;
+            player_z = (int)position.z;
+        }
+
+        public Vector3 getPlayerPosition()
+        {
+            return new Vector3(player_x, player_y, player_z);
         }
     }
 }

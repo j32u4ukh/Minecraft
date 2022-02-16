@@ -34,14 +34,8 @@ namespace udemy
 
         public void init(Vector3Int dimensions, Vector3Int location)
         {
-            this.location = location;
+            locate(dimensions, location);
 
-            WIDTH = dimensions.x;
-            HEIGHT = dimensions.y;
-            DEPTH = dimensions.z;
-            blocks = new Block3[WIDTH, HEIGHT, DEPTH];
-
-            n_block = WIDTH * HEIGHT * DEPTH;
             block_types = new BlockType[n_block];
             crack_states = new CrackState[n_block];
 
@@ -80,6 +74,17 @@ namespace udemy
             block_type_array.Dispose();
             crack_state_array.Dispose();
             random_array.Dispose();
+        }
+
+        public void locate(Vector3Int dimensions, Vector3Int location)
+        {
+            this.location = location;
+
+            WIDTH = dimensions.x;
+            HEIGHT = dimensions.y;
+            DEPTH = dimensions.z;
+            blocks = new Block3[WIDTH, HEIGHT, DEPTH];
+            n_block = WIDTH * HEIGHT * DEPTH;
         }
 
         public void build()
@@ -209,6 +214,11 @@ namespace udemy
             DestroyImmediate(mesh_renderer);
             DestroyImmediate(gameObject.GetComponent<Collider>());
             build();
+        }
+
+        public void setVisiable(bool visiable)
+        {
+            mesh_renderer.enabled = visiable;
         }
 
         public BlockType getBlockType(int index)

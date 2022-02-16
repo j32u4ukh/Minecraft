@@ -10,7 +10,33 @@ namespace udemy
         // Start is called before the first frame update
         void Start()
         {
-            print(CrackState.Crack3.Equals((CrackState)3));
+            Data data = new Data(2, 5);
+            outTest(data);
+            print(data.count);
+        }
+
+        void outTest(Data data)
+        {
+            data.count = 5;
+        }
+    }
+
+    class Data
+    {
+        public int count;
+        public int[] values;
+
+        public Data(params int[] values)
+        {
+            count = values.Length;
+            this.values = values;
+            //this.values = new int[values.Length];
+            //int i, len = values.Length;
+
+            //for(i = 0; i < len; i++)
+            //{
+            //    this.values[i] = values[i];
+            //}
         }
     }
 }
