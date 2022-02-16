@@ -59,6 +59,10 @@ namespace udemy
             { BlockType.DIAMOND, 4 },
         };
 
+        private static HashSet<BlockType> drop_blocks = new HashSet<BlockType>() { BlockType.SAND, BlockType.WATER };
+
+        private static HashSet<BlockType> spread_blocks = new HashSet<BlockType>() { BlockType.WATER };
+
         /// <summary>
         /// Merge multi meshes into one mesh.
         /// TODO: unit test
@@ -208,5 +212,18 @@ namespace udemy
         {
             return block_strength[block_type];
         }
+
+        public static bool canDrop(BlockType block_type)
+        {
+            return drop_blocks.Contains(block_type);
+        }
+
+        public static bool canSpread(BlockType block_type)
+        {
+            return spread_blocks.Contains(block_type);
+        }
+
+
+
     }
 }

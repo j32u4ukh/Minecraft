@@ -114,10 +114,10 @@ namespace udemy
                         // 累加破壞程度(若破壞程度與方塊強度相當，才會真的破壞掉)
                         if(chunk.crackBlock(index: i))
                         {
-                            Tuple<Vector3Int, Vector3Int> chunk_block_location = chunk.getChunkBlockLocation(bx, by, bz);
+                            //Tuple<Vector3Int, Vector3Int> chunk_block_location = chunk.getChunkBlockLocation(bx, by, bz);
 
                             // 考慮當前方塊的上方一格是否會觸發掉落機制
-                            dropBlockAbove(chunk: chunks[chunk_block_location.Item1], block_position: chunk_block_location.Item2);
+                            dropBlockAbove(chunk: chunk, block_position: new Vector3Int(bx, by, bz));
                         }
                     }
 
@@ -126,12 +126,16 @@ namespace udemy
                     {
                         // TODO: 考慮 世界 的大小，取得的 chunk 不一定存在於 chunks 當中
                         Tuple<Vector3Int, Vector3Int> chunk_block_location = chunk.getChunkBlockLocation(bx, by, bz);
-                        chunk = chunks[chunk_block_location.Item1];
-                        i = Utils.vector3IntToFlat(chunk_block_location.Item2, chunk_dimensions.x, chunk_dimensions.z);
 
-                        chunk.placeBlock(index: i, block_type: player.getBlockType());
+                        if (chunks.ContainsKey(chunk_block_location.Item1))
+                        {
+                            chunk = chunks[chunk_block_location.Item1];
+                            i = Utils.vector3IntToFlat(chunk_block_location.Item2, chunk_dimensions.x, chunk_dimensions.z);
 
-                        StartCoroutine(dropBlock(chunk: chunk, block_index: i));
+                            chunk.placeBlock(index: i, block_type: player.getBlockType());
+
+                            StartCoroutine(dropBlock(chunk: chunk, block_index: i));
+                        }
                     }
 
                     // 當 新增 或 破壞 方塊後，重新繪製 Chunk
@@ -414,9 +418,11 @@ namespace udemy
             }
         }
 
-        IEnumerator dropBlock(Chunk2 chunk, int block_index)
+        IEnumerator dropBlock(Chunk2 chunk, int block_index, int spread = 2)
         {
-            if(chunk.getBlockType(block_index) != BlockType.SAND)
+            BlockType block_type = chunk.getBlockType(block_index);
+
+            if (!MeshUtils.canDrop(block_type: block_type))
             {
                 yield break;
             }
@@ -424,9 +430,9 @@ namespace udemy
             yield return falling_buffer;
 
             Vector3Int block_position;
-            Tuple<Vector3Int, Vector3Int> location_below, location_above;
-            Chunk2 chunk_below, chunk_above;
-            int block_below_index, block_above_index;
+            Tuple<Vector3Int, Vector3Int> location_below;
+            Chunk2 chunk_below;
+            int block_below_index;
 
             while (true)
             {
@@ -438,16 +444,26 @@ namespace udemy
                 location_below = chunk.getChunkBlockLocation(bx: block_position.x, 
                                                              by: block_position.y - 1, 
                                                              bz: block_position.z);
-                chunk_below = chunks[location_below.Item1];
-                block_below_index = Utils.vector3IntToFlat(v: location_below.Item2, 
+
+                if (chunks.ContainsKey(location_below.Item1))
+                {
+                    chunk_below = chunks[location_below.Item1];
+                    block_below_index = Utils.vector3IntToFlat(v: location_below.Item2,
                                                            width: chunk_dimensions.x,
                                                            depth: chunk_dimensions.z);
+                }
+                else
+                {
+                    chunk_below = null;
+                    block_below_index = -1;
+                }
 
+                // NOTE: 當方塊掉往的 Chunk 尚未被建構，可能發生 chunk_below == null
                 // 檢查下方是否有掉落空間
-                if (chunk_below.getBlockType(block_below_index).Equals(BlockType.AIR))
+                if (chunk_below != null && chunk_below.getBlockType(block_below_index).Equals(BlockType.AIR))
                 {
                     // 更新下方方塊
-                    chunk_below.setBlockType(index: block_below_index, block_type: BlockType.SAND);
+                    chunk_below.setBlockType(index: block_below_index, block_type: block_type);
                     chunk_below.setCrackState(index: block_below_index);
 
                     // 更新當前方塊
@@ -470,10 +486,48 @@ namespace udemy
                     block_index = block_below_index;
                     chunk = chunk_below;
                 }
+                else if (MeshUtils.canSpread(block_type: block_type))
+                {
+                    spreadBlock(chunk, block_position, Vector3Int.forward, spread);
+                    spreadBlock(chunk, block_position, Vector3Int.back, spread);
+                    spreadBlock(chunk, block_position, Vector3Int.left, spread);
+                    spreadBlock(chunk, block_position, Vector3Int.right, spread);
+                    yield break;
+                }
                 else
                 {
                     yield break;
                 }
+            }
+        }
+
+        void spreadBlock(Chunk2 chunk, Vector3Int block_position, Vector3Int direction, int spread = 2)
+        {
+            spread--;
+
+            if (spread < 0)
+            {
+                return;
+            }
+
+            Tuple<Vector3Int, Vector3Int> location = chunk.getChunkBlockLocation(block_position + direction);
+
+            if (!chunks.ContainsKey(location.Item1))
+            {
+                return;
+            }
+
+            Chunk2 neighbor_chunk = chunks[location.Item1];
+            int block_neighbor_index = Utils.vector3IntToFlat(location.Item2, width: chunk_dimensions.x, depth: chunk_dimensions.z);
+
+            if (neighbor_chunk.getBlockType(block_neighbor_index).Equals(BlockType.AIR))
+            {
+                int block_index = Utils.vector3IntToFlat(block_position, width: chunk_dimensions.x, depth: chunk_dimensions.z);
+                neighbor_chunk.setBlockType(index: block_neighbor_index, chunk.getBlockType(block_index));
+                neighbor_chunk.setCrackState(index: block_neighbor_index);
+                neighbor_chunk.rebuild();
+
+                StartCoroutine(dropBlock(chunk: neighbor_chunk, block_index: block_neighbor_index, spread: spread));
             }
         }
 
@@ -487,12 +541,16 @@ namespace udemy
             Tuple<Vector3Int, Vector3Int>  location_above = chunk.getChunkBlockLocation(bx: block_position.x,
                                                                                         by: block_position.y + 1,
                                                                                         bz: block_position.z);
-            Chunk2 chunk_above = chunks[location_above.Item1];
-            int block_above_index = Utils.vector3IntToFlat(v: location_above.Item2,
-                                                           width: chunk_dimensions.x,
-                                                           depth: chunk_dimensions.z);
 
-            StartCoroutine(dropBlock(chunk_above, block_above_index));
+            if (chunks.ContainsKey(location_above.Item1))
+            {
+                Chunk2 chunk_above = chunks[location_above.Item1];
+                int block_above_index = Utils.vector3IntToFlat(v: location_above.Item2,
+                                                               width: chunk_dimensions.x,
+                                                               depth: chunk_dimensions.z);
+
+                StartCoroutine(dropBlock(chunk_above, block_above_index));
+            }
         }
 
         IEnumerable<Chunk2> iterChunkColumn(int col_x, int col_z)

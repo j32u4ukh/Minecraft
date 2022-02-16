@@ -221,6 +221,11 @@ namespace udemy
             mesh_renderer.enabled = visiable;
         }
 
+        public Tuple<Vector3Int, Vector3Int> getChunkBlockLocation(Vector3Int block_position)
+        {
+            return getChunkBlockLocation(bx: block_position.x, by: block_position.y, bz: block_position.z);
+        }
+
         /// <summary>
         /// 當點擊方塊所屬 Chunk，和目標方塊所屬 Chunk 不同時，方塊位置的座標會發生索引值超出。
         /// 處理 Chunk 邊界對 Block 索引值的處理，當超出當前 Chunk 時，指向下一個 Chunk 並修正 Block 索引值。
