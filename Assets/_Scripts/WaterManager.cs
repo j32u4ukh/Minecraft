@@ -15,8 +15,8 @@ public class WaterManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        this.gameObject.transform.position = new Vector3(player.transform.position.x,
-                                                         0,
-                                                         player.transform.position.z);
+        transform.position = new Vector3(player.transform.position.x, 
+                                         0,
+                                         player.transform.position.z);
     }
 }

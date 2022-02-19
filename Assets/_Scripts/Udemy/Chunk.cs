@@ -168,7 +168,7 @@ namespace udemy
 
             NativeArray<Unity.Mathematics.Random> random_array = new NativeArray<Unity.Mathematics.Random>(randoms, Allocator.Persistent);
 
-            DefineBlockJob job = new DefineBlockJob()
+            DefineBlockJob1 job = new DefineBlockJob1()
             {
                 block_types = block_type_array,
                 randoms = random_array,
@@ -217,136 +217,6 @@ namespace udemy
      * Burst 是一個新的基於 LLVM 的後端編譯器技術，它會使事情對於你更加簡單。它獲取 C# job 並利用你平台的特定功能產生高度優化的機器碼。
      * 參考：https://zhuanlan.zhihu.com/p/58125078
      */
-
-    // DefineBlockJob：根據海拔與位置等資訊，決定 Block 的類型與位置。再交由 ProcessMeshDataJob 處理如何呈現。
-    struct DefineBlockJob : IJobParallelFor
-    {
-        public NativeArray<BlockType> block_types;
-        public NativeArray<CrackState> crack_states;
-
-        // TODO: 原本每次開起的隨機數都會相同，是因為給 Unity.Mathematics.Random 的 seed 都是 1，因此只須傳入隨機的 seed，並在 Execute(int i) 外部建立 Unity.Mathematics.Random 物件即可
-        public NativeArray<Unity.Mathematics.Random> randoms;
-
-        public int width;
-        public int height;
-        public Vector3Int location;
-
-        Vector3Int xyz;
-        Unity.Mathematics.Random random;
-        int surface_height, stone_height, diamond_top_height, diamond_bottom_height;
-        int dig_cave;
-
-        public void Execute(int i)
-        {
-            xyz = Utils.flatToVector3Int(i, width, height) + location;
-            random = randoms[i];
-
-            surface_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
-                                             octaves: WorldDemo3.surface_strata.octaves,
-                                             scale: WorldDemo3.surface_strata.scale,
-                                             height_scale: WorldDemo3.surface_strata.height_scale,
-                                             height_offset: WorldDemo3.surface_strata.height_offset);
-
-            stone_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
-                                           octaves: WorldDemo3.stone_strata.octaves,
-                                           scale: WorldDemo3.stone_strata.scale,
-                                           height_scale: WorldDemo3.stone_strata.height_scale,
-                                           height_offset: WorldDemo3.stone_strata.height_offset);
-
-            diamond_top_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
-                                                 octaves: WorldDemo3.diamond_top_strata.octaves,
-                                                 scale: WorldDemo3.diamond_top_strata.scale,
-                                                 height_scale: WorldDemo3.diamond_top_strata.height_scale,
-                                                 height_offset: WorldDemo3.diamond_top_strata.height_offset);
-
-            diamond_bottom_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
-                                                    octaves: WorldDemo3.diamond_bottom_strata.octaves,
-                                                    scale: WorldDemo3.diamond_bottom_strata.scale,
-                                                    height_scale: WorldDemo3.diamond_bottom_strata.height_scale,
-                                                    height_offset: WorldDemo3.diamond_bottom_strata.height_offset);
-
-            dig_cave = (int)Cluster.fBM3D(x: xyz.x, y: xyz.y, z: xyz.z, 
-                                          octaves: WorldDemo3.cave_cluster.octaves, 
-                                          scale: WorldDemo3.cave_cluster.scale, 
-                                          height_scale: WorldDemo3.cave_cluster.height_scale, 
-                                          height_offset: WorldDemo3.cave_cluster.height_offset);
-
-
-            int WATER_LINE = 16;
-
-            crack_states[i] = CrackState.None;
-
-            if (xyz.y == 0)
-            {
-                block_types[i] = BlockType.BEDROCK;
-                return;
-            }
-
-            // TODO: 目前的洞穴可能會挖到地表，且因沒有考慮到是否是地表，因而造成地表為泥土而非草地
-            if (dig_cave < WorldDemo3.cave_cluster.boundary)
-            {
-                block_types[i] = BlockType.AIR;
-                return;
-            }
-
-            if (xyz.y == surface_height)
-            {
-                //if (desertBiome < World.biomeSettings.probability)
-                //{
-                //    block_types[i] = BlockType.SAND;
-
-                //    if (random.NextFloat(1) <= 0.1)
-                //    {
-                //        block_types[i] = BlockType.CACTUS;
-                //    }
-                //}
-                //else if (plantTree < World.treeSettings.probability)
-                //{
-                //    block_types[i] = BlockType.FOREST;
-
-                //    if (random.NextFloat(1) <= 0.1)
-                //    {
-                //        // Execute 當中一次處理一個 Block，因此這裡僅放置樹基，而非直接種一棵樹
-                //        block_types[i] = BlockType.WOODBASE;
-                //    }
-                //}
-                //else
-                //{
-                //    block_types[i] = BlockType.GRASSSIDE;
-                //}
-
-                // TODO: temp, delete after testing
-                block_types[i] = BlockType.GRASSSIDE;
-            }
-
-            else if ((diamond_bottom_height < xyz.y) && (xyz.y < diamond_top_height) && (random.NextFloat(1) <= WorldDemo3.diamond_top_strata.probability))
-            {
-                block_types[i] = BlockType.DIAMOND;
-            }
-
-            else if ((xyz.y < stone_height) && (random.NextFloat(1) <= WorldDemo3.stone_strata.probability))
-            {
-                block_types[i] = BlockType.STONE;
-            }
-
-            else if (xyz.y < surface_height)
-            {
-                block_types[i] = BlockType.DIRT;
-            }
-
-            // TODO: 實際數值要根據地形高低來做調整
-            // TODO: 如何確保水是自己一個區塊，而非隨機的散佈在地圖中？大概要像樹一樣，使用 fBM3D
-            else if (xyz.y < WATER_LINE)
-            {
-                block_types[i] = BlockType.WATER;
-            }
-
-            else
-            {
-                block_types[i] = BlockType.AIR;
-            }
-        }
-    }
 
     // ProcessMeshDataJob：根據 Block 的類型與位置等，計算所需貼圖與位置
     // ProcessMeshDataJob 用於將多個 Mesh 合併為單一個 Mesh，作用同 MeshUtils.mergeMeshes，但是使用了 Job System 會更有效率

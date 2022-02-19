@@ -24,7 +24,7 @@ public struct PerlinSettings
 
 public class World : MonoBehaviour
 {
-    public static Vector3Int worldDimesions = new Vector3Int(15, 15, 15);
+    public static Vector3Int worldDimesions = new Vector3Int(5, 5, 5);
     public static Vector3Int extraWorldDimesions = new Vector3Int(5, 5, 5);
     public static Vector3Int chunkDimensions = new Vector3Int(10, 10, 10);
     public bool laodFromFile = false;

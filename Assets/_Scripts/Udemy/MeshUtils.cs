@@ -10,20 +10,23 @@ namespace udemy
 {
     public static class MeshUtils
     {
+        public static readonly float UV_SIZE = 0.0625f;
+
         // Dict<BlockType, Tuple(x, y)> -> (x, y) 再利用 Vector2[] getBlockUVs(int x, int y) 取得 UV 邊界座標
         private static readonly Dictionary<BlockType, Tuple<int, int>> block_anchor = new Dictionary<BlockType, Tuple<int, int>>()
         {
             {BlockType.GRASSTOP, new Tuple<int, int>(2, 6) },
             {BlockType.GRASSSIDE, new Tuple<int, int>(3, 15) },
             {BlockType.DIRT, new Tuple<int, int>(2, 15) },
-            {BlockType.WATER, new Tuple<int, int>(2, 4) },
+            {BlockType.WATER, new Tuple<int, int>(14, 2) },
             {BlockType.STONE, new Tuple<int, int>(0, 15) },
             {BlockType.SAND, new Tuple<int, int>(2, 14) },
             {BlockType.LEAVES, new Tuple<int, int>(1, 6) },
             {BlockType.WOOD, new Tuple<int, int>(4, 14) },
             {BlockType.WOODBASE, new Tuple<int, int>(4, 14) },
             {BlockType.FOREST, new Tuple<int, int>(4, 13) },
-            {BlockType.CACTUS, new Tuple<int, int>(2, 5) },
+            {BlockType.CACTUS, new Tuple<int, int>(6, 11) },
+            {BlockType.CACTUSBASE, new Tuple<int, int>(4, 13) },
             {BlockType.GOLD, new Tuple<int, int>(0, 13) },
             {BlockType.BEDROCK, new Tuple<int, int>(5, 13) },
             {BlockType.REDSTONE, new Tuple<int, int>(3, 12) },
@@ -57,6 +60,11 @@ namespace udemy
             { BlockType.BEDROCK, -1 },
             { BlockType.REDSTONE, 3 },
             { BlockType.DIAMOND, 4 },
+            { BlockType.WOOD, 2 },
+            { BlockType.WOODBASE, 2 },
+            { BlockType.CACTUS, 1 },
+            { BlockType.CACTUSBASE, 1 },
+            { BlockType.LEAVES, 1 },
         };
 
         private static HashSet<BlockType> drop_blocks = new HashSet<BlockType>() { BlockType.SAND, BlockType.WATER };
@@ -193,9 +201,8 @@ namespace udemy
         ///                                        (RightBottom 10, RightTop  11))</returns>
         private static Vector2[,] getUVCoordinate(int x, int y)
         {
-            const float SIZE = 0.0625f;
-            float left = SIZE * x, right = SIZE * (x + 1);
-            float bottom = SIZE * y, top = SIZE * (y + 1);
+            float left = UV_SIZE * x, right = UV_SIZE * (x + 1);
+            float bottom = UV_SIZE * y, top = UV_SIZE * (y + 1);
 
             return new Vector2[,] {
                 { new Vector2(left, bottom), new Vector2(left, top) },
@@ -210,7 +217,14 @@ namespace udemy
         /// <returns>所需敲擊次數</returns>
         public static int getStrenth(BlockType block_type)
         {
-            return block_strength[block_type];
+            if (block_strength.ContainsKey(block_type))
+            {
+                return block_strength[block_type];
+            }
+            else
+            {
+                return 1;
+            }
         }
 
         public static bool canDrop(BlockType block_type)
@@ -222,8 +236,5 @@ namespace udemy
         {
             return spread_blocks.Contains(block_type);
         }
-
-
-
     }
 }

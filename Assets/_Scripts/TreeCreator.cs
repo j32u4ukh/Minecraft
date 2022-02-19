@@ -6,12 +6,33 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class TreeCreator : MonoBehaviour
 {
-    public Vector3 dimensions = new Vector3(3, 6, 3);
-    public GameObject[,,] allCubes;
-    public string blockDetails = "";
-    int halfX;
-    int halfZ;
+    public Vector3Int dimensions = new Vector3Int(3, 6, 3);
+    public GameObject[,,] cubes;
+    public string block_detail = "";
+    int half_x;
+    int half_z;
 
+    void OnValidate()
+    {
+        Draw();
+    }
+
+    void Draw()
+    {
+        MeshRenderer[] cubes = GetComponentsInChildren<MeshRenderer>();
+
+        if (cubes.Length == 0)
+        {
+            CreateCubes();
+        }
+
+        if (cubes.Length == 0)
+        {
+            return;
+        }
+    }
+
+    // 建立初始方塊
     void CreateCubes()
     {
         for (int z = 0; z < dimensions.z; z++)
@@ -21,20 +42,22 @@ public class TreeCreator : MonoBehaviour
                 for (int x = 0; x < dimensions.x; x++)
                 {
                     GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                    cube.name = x+"|"+y+"|"+z;
-                    cube.transform.parent = this.transform;
+                    cube.name = $"{x}|{y}|{z}";
+                    cube.transform.parent = transform;
                     cube.transform.position = new Vector3(x, y, z);
                 }
             }
         }
     }
 
-    public void GetDetails()
+    public void getDetails()
     {
-        GetCubes();
-        blockDetails = "";
-        halfX = (int)dimensions.x / 2;
-        halfZ = (int)dimensions.z / 2;
+        getCubes();
+
+        block_detail = "";
+        half_x = dimensions.x / 2;
+        half_z = dimensions.z / 2;
+
         for (int z = 0; z < dimensions.z; z++)
         {
             for (int y = 0; y < dimensions.y; y++)
@@ -42,60 +65,61 @@ public class TreeCreator : MonoBehaviour
                 for (int x = 0; x < dimensions.x; x++)
                 {
                     //(new Vector3Int(0, 1, 0), MeshUtils.BlockType.WOOD)
-                    if (allCubes[x, y, z] == null) continue;
-                    Debug.Log(allCubes[x, y, z].GetComponent<Renderer>().sharedMaterial);
-                    if (allCubes[x,y,z].GetComponent<Renderer>().sharedMaterial.ToString().Contains("trunk"))
-                        blockDetails += "(new Vector3Int(" + (x - halfX) + "," + y + "," + (z - halfZ) + "), MeshUtils.BlockType.WOOD),\n";
-                    else
-                        blockDetails += "(new Vector3Int(" + (x - halfX) + "," + y + "," + (z - halfZ) + "), MeshUtils.BlockType.LEAVES),\n";
+                    if (cubes[x, y, z] == null) 
+                    {
+                        continue;
+                    }
+
+                    Debug.Log(cubes[x, y, z].GetComponent<Renderer>().sharedMaterial);
+
+                    if (cubes[x, y, z].GetComponent<Renderer>().sharedMaterial.ToString().Contains("trunk"))
+                    {
+                        //block_detail += "(new Vector3Int(" + (x - half_x) + "," + y + "," + (z - half_z) + "), MeshUtils.BlockType.WOOD),\n";
+                        block_detail += $"(new Vector3Int({x - half_x},{y},{z - half_z}), BlockType.WOOD),\n";
+
+                    }
+                    else 
+                    {
+                        block_detail += $"(new Vector3Int({x - half_x},{y},{z - half_z}), BlockType.LEAVES),\n";
+                    }
 
                 }
             }
         }
     }
 
-    public void ReAlignBlocks()
+    public void reAlignBlocks()
     {
-        GetCubes();
+        getCubes();
+
         for (int z = 0; z < dimensions.z; z++)
         {
             for (int y = 0; y < dimensions.y; y++)
             {
                 for (int x = 0; x < dimensions.x; x++)
                 {
-                    if(allCubes[x,y,z] != null)
-                        allCubes[x, y, z].transform.position = new Vector3(x, y, z);
+                    if (cubes[x, y, z] != null) 
+                    {
+                        cubes[x, y, z].transform.position = new Vector3(x, y, z);
+                    }
                 }
             }
         }
     }
 
-    void GetCubes()
+    void getCubes()
     {
-        allCubes = new GameObject[(int)dimensions.x, (int)dimensions.y, (int)dimensions.z];
+        cubes = new GameObject[dimensions.x, dimensions.y, dimensions.z];
+        
         for (int z = 0; z < dimensions.z; z++)
         {
             for (int y = 0; y < dimensions.y; y++)
             {
                 for (int x = 0; x < dimensions.x; x++)
                 {
-                    allCubes[x, y, z] = GameObject.Find(x + "|" + y + "|" + z);
+                    cubes[x, y, z] = GameObject.Find($"{x}|{y}|{z}");
                 }
             }
         }
-    }
-
-    void Draw()
-    {
-        MeshRenderer[] cubes = this.GetComponentsInChildren<MeshRenderer>();
-        if (cubes.Length == 0)
-            CreateCubes();
-
-        if (cubes.Length == 0) return;
-    }
-
-    void OnValidate()
-    {
-        Draw();
     }
 }

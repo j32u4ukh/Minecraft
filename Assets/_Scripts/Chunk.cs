@@ -29,8 +29,8 @@ public class Chunk : MonoBehaviour
 
     public MeshRenderer meshRendererSolid;
     public MeshRenderer meshRendererFluid;
-    GameObject solidMesh;
-    GameObject fluidMesh;
+    GameObject mesh_obj_solid;
+    GameObject mesh_obj_fluid;
 
     CalculateBlockTypes calculateBlockTypes;
     JobHandle jobHandle;
@@ -299,42 +299,42 @@ public class Chunk : MonoBehaviour
 
         // TODO: 可將此處的 mrs, mrf 用全域的 meshRendererSolid, meshRendererFluid 取代
         // 固體(Solid)方塊 Mesh
-        MeshFilter mfs;
-        MeshRenderer mrs;
+        MeshFilter mesh_filter_solid;
+        MeshRenderer mesh_renderer_solid;
 
         // 流體(Fluid)方塊 Mesh
-        MeshFilter mff;
-        MeshRenderer mrf;
+        MeshFilter mesh_filter_fluid;
+        MeshRenderer mesh_renderer_fluid;
 
-        if(solidMesh == null)
+        if(mesh_obj_solid == null)
         {
-            solidMesh = new GameObject("Solid");
-            solidMesh.transform.parent = transform;
-            mfs = solidMesh.AddComponent<MeshFilter>();
-            mrs = solidMesh.AddComponent<MeshRenderer>();
-            meshRendererSolid = mrs;
-            mrs.material = atlas;
+            mesh_obj_solid = new GameObject("Solid");
+            mesh_obj_solid.transform.parent = transform;
+            mesh_filter_solid = mesh_obj_solid.AddComponent<MeshFilter>();
+            mesh_renderer_solid = mesh_obj_solid.AddComponent<MeshRenderer>();
+            meshRendererSolid = mesh_renderer_solid;
+            mesh_renderer_solid.material = atlas;
         }
         else
         {
-            mfs = solidMesh.GetComponent<MeshFilter>();
-            DestroyImmediate(solidMesh.GetComponent<Collider>());
+            mesh_filter_solid = mesh_obj_solid.GetComponent<MeshFilter>();
+            DestroyImmediate(mesh_obj_solid.GetComponent<Collider>());
         }
 
-        if(fluidMesh == null)
+        if(mesh_obj_fluid == null)
         {
-            fluidMesh = new GameObject("Fluid");
-            fluidMesh.transform.parent = transform;
-            mff = fluidMesh.AddComponent<MeshFilter>();
-            mrf = fluidMesh.AddComponent<MeshRenderer>();
-            fluidMesh.AddComponent<UVScroller>();
-            meshRendererFluid = mrf;
-            mrf.material = fluid;
+            mesh_obj_fluid = new GameObject("Fluid");
+            mesh_obj_fluid.transform.parent = transform;
+            mesh_filter_fluid = mesh_obj_fluid.AddComponent<MeshFilter>();
+            mesh_renderer_fluid = mesh_obj_fluid.AddComponent<MeshRenderer>();
+            mesh_obj_fluid.AddComponent<UVScroller>();
+            meshRendererFluid = mesh_renderer_fluid;
+            mesh_renderer_fluid.material = fluid;
         }
         else
         {
-            mff = fluidMesh.GetComponent<MeshFilter>();
-            DestroyImmediate(fluidMesh.GetComponent<Collider>());
+            mesh_filter_fluid = mesh_obj_fluid.GetComponent<MeshFilter>();
+            DestroyImmediate(mesh_obj_fluid.GetComponent<Collider>());
         }
 
         blocks = new Block[width, height, depth];
@@ -456,21 +456,19 @@ public class Chunk : MonoBehaviour
             // (pass: 0)載入固體方塊 Mesh
             if (pass == 0)
             {
-                mfs.mesh = newMesh;
-                MeshCollider collider = solidMesh.AddComponent<MeshCollider>();
-                collider.sharedMesh = mfs.mesh;
+                mesh_filter_solid.mesh = newMesh;
+                MeshCollider collider = mesh_obj_solid.AddComponent<MeshCollider>();
+                collider.sharedMesh = mesh_filter_solid.mesh;
             }
 
             // (pass: 1)載入流體方塊 Mesh
             else
             {
-                mff.mesh = newMesh;
-                MeshCollider collider = fluidMesh.AddComponent<MeshCollider>();
-                fluidMesh.layer = 4;
-                collider.sharedMesh = mff.mesh;
+                mesh_filter_fluid.mesh = newMesh;
+                MeshCollider collider = mesh_obj_fluid.AddComponent<MeshCollider>();
+                mesh_obj_fluid.layer = 4;
+                collider.sharedMesh = mesh_filter_fluid.mesh;
             }
-
-            
         }        
     }
 

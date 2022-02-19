@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace udemy
 {
-    public class Quad2
+    public class Quad
     {
         public Mesh mesh;
 
@@ -12,10 +12,10 @@ namespace udemy
         // ((LeftBottom 00, RightBottom 01), 
         //  (LeftTop    10, RightTop    11))
         // 頂點選取順序為 (00, 01, 11), (11, 10, 00)，根據左手座標系形成兩個三角形，組合成一個正方形
-        public Quad2(BlockType block_type, CrackState crack_state, BlockSide side, Vector3 offset)
+        public Quad(BlockType block_type, CrackState crack_state, BlockSide side, Vector3 offset)
         {
             mesh = new Mesh();
-            mesh.name = "ScriptedMesh";
+            mesh.name = "ScriptedQuad";
 
             // 數值參考 Cube
             Vector3[] vertices, normals;

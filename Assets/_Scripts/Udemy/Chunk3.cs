@@ -8,16 +8,17 @@ using UnityEngine.Rendering;
 
 namespace udemy
 {
-    public class Chunk2 : MonoBehaviour
+    public class Chunk3 : MonoBehaviour
     {
-        public Material atlas;
+        public Material solid_material;
+        public Material material_fluid;
 
         public int WIDTH = 2;
         public int HEIGHT = 2;
         public int DEPTH = 2;
         int n_block;
 
-        public Block3[,,] blocks;
+        public Block4[,,] blocks;
 
         // 將三維的 blocks 的 BlockType 攤平成一個陣列，可加快存取速度
         public BlockType[] block_types;
@@ -27,7 +28,11 @@ namespace udemy
 
         public Vector3Int location;
 
-        public MeshRenderer mesh_renderer;
+        private MeshRenderer solid_mesh_renderer;
+        private GameObject solid_mesh_obj;
+
+        private MeshRenderer fluid_mesh_renderer;
+        private GameObject fluid_mesh_obj;
 
         // For HealBlock
         private WaitForSeconds heal_block_buffer = new WaitForSeconds(3.0f);
@@ -64,19 +69,19 @@ namespace udemy
         };
 
         (Vector3Int, BlockType)[] cactus_design = new (Vector3Int, BlockType)[] {
-            (new Vector3Int(0,0,0), BlockType.WOOD),
-            (new Vector3Int(0,1,0), BlockType.GRASSTOP),
-            (new Vector3Int(-2,2,0), BlockType.GRASSTOP),
-            (new Vector3Int(-1,2,0), BlockType.GRASSTOP),
-            (new Vector3Int(0,2,0), BlockType.GRASSTOP),
-            (new Vector3Int(-2,3,0), BlockType.GRASSTOP),
-            (new Vector3Int(0,3,0), BlockType.GRASSTOP),
-            (new Vector3Int(1,3,0), BlockType.GRASSTOP),
-            (new Vector3Int(2,3,0), BlockType.GRASSTOP),
-            (new Vector3Int(-2,4,0), BlockType.GRASSTOP),
-            (new Vector3Int(0,4,0), BlockType.GRASSTOP),
-            (new Vector3Int(2,4,0), BlockType.GRASSTOP),
-            (new Vector3Int(0,5,0), BlockType.GRASSTOP)
+            (new Vector3Int(0,0,0), BlockType.CACTUS),
+            (new Vector3Int(0,1,0), BlockType.CACTUS),
+            (new Vector3Int(-2,2,0), BlockType.CACTUS),
+            (new Vector3Int(-1,2,0), BlockType.CACTUS),
+            (new Vector3Int(0,2,0), BlockType.CACTUS),
+            (new Vector3Int(-2,3,0), BlockType.CACTUS),
+            (new Vector3Int(0,3,0), BlockType.CACTUS),
+            (new Vector3Int(1,3,0), BlockType.CACTUS),
+            (new Vector3Int(2,3,0), BlockType.CACTUS),
+            (new Vector3Int(-2,4,0), BlockType.CACTUS),
+            (new Vector3Int(0,4,0), BlockType.CACTUS),
+            (new Vector3Int(2,4,0), BlockType.CACTUS),
+            (new Vector3Int(0,5,0), BlockType.CACTUS)
         };
 
         public void init(Vector3Int dimensions, Vector3Int location)
@@ -99,7 +104,7 @@ namespace udemy
 
             NativeArray<Unity.Mathematics.Random> random_array = new NativeArray<Unity.Mathematics.Random>(randoms, Allocator.Persistent);
 
-            DefineBlockJob1 job = new DefineBlockJob1()
+            DefineBlockJob2 job = new DefineBlockJob2()
             {
                 block_types = block_type_array,
                 crack_states = crack_state_array,
@@ -121,8 +126,6 @@ namespace udemy
             block_type_array.Dispose();
             crack_state_array.Dispose();
             random_array.Dispose();
-
-            //buildTrees1();
         }
 
         public void locate(Vector3Int dimensions, Vector3Int location)
@@ -132,24 +135,227 @@ namespace udemy
             WIDTH = dimensions.x;
             HEIGHT = dimensions.y;
             DEPTH = dimensions.z;
-            blocks = new Block3[WIDTH, HEIGHT, DEPTH];
+            blocks = new Block4[WIDTH, HEIGHT, DEPTH];
             n_block = WIDTH * HEIGHT * DEPTH;
         }
 
         public void build()
         {
-            // 當 Chunk 下的 Block 發生變化，需要重繪 Chunk 時，MeshFilter 會被刪除，因此每次都需要重新添加
-            MeshFilter filter = gameObject.AddComponent<MeshFilter>();
+            // 固體(Solid)方塊 Mesh
+            MeshFilter solid_mesh_filter;
+            //MeshRenderer solid_mesh_renderer;
 
-            // 當 Chunk 下的 Block 發生變化，需要重繪 Chunk 時，MeshRenderer 會被刪除，因此每次都需要重新添加
-            mesh_renderer = gameObject.AddComponent<MeshRenderer>();
-            mesh_renderer.material = atlas;
-            
+            // 流體(Fluid)方塊 Mesh
+            MeshFilter fluid_mesh_filter;
+            //MeshRenderer fluid_mesh_renderer;
+
+            if (solid_mesh_obj == null)
+            {
+                solid_mesh_obj = new GameObject("Solid");
+                solid_mesh_obj.transform.parent = transform;
+                solid_mesh_filter = solid_mesh_obj.AddComponent<MeshFilter>();
+                solid_mesh_renderer = solid_mesh_obj.AddComponent<MeshRenderer>();
+                solid_mesh_renderer.material = solid_material;
+            }
+            else
+            {
+                solid_mesh_filter = solid_mesh_obj.GetComponent<MeshFilter>();
+                DestroyImmediate(solid_mesh_obj.GetComponent<Collider>());
+            }
+
+            if (fluid_mesh_obj == null)
+            {
+                fluid_mesh_obj = new GameObject("Fluid");
+                fluid_mesh_obj.transform.parent = transform;
+                fluid_mesh_filter = fluid_mesh_obj.AddComponent<MeshFilter>();
+                fluid_mesh_renderer = fluid_mesh_obj.AddComponent<MeshRenderer>();
+                fluid_mesh_obj.AddComponent<UVScroller>();
+                fluid_mesh_renderer.material = material_fluid;
+            }
+            else
+            {
+                fluid_mesh_filter = fluid_mesh_obj.GetComponent<MeshFilter>();
+                DestroyImmediate(fluid_mesh_obj.GetComponent<Collider>());
+            }
+
+            // 0: solid, 1: fluid
+            for (int pass = 0; pass < 2; pass++)
+            {
+                int x, y, z;
+                List<Mesh> input_mesh_datas = new List<Mesh>();
+                int vertex_index_offset = 0, triangle_index_offset = 0, idx = 0;
+                int n_vertex, n_triangle, block_idx;
+                Block4 block;
+
+                ProcessMeshDataJob job = new ProcessMeshDataJob();
+                job.vertex_index_offsets = new NativeArray<int>(n_block, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                job.triangle_index_offsets = new NativeArray<int>(n_block, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+
+                bool condition0, condition1;
+
+                for (z = 0; z < DEPTH; z++)
+                {
+                    for (y = 0; y < HEIGHT; y++)
+                    {
+                        for (x = 0; x < WIDTH; x++)
+                        {
+                            //block_idx = x + width * (y + depth * z);
+                            block_idx = Utils.xyzToFlat(x, y, z, WIDTH, DEPTH);
+                            block = new Block4(block_type: block_types[block_idx],
+                                               crack_state: crack_states[block_idx],
+                                               offset: new Vector3Int(x, y, z) + location,
+                                               chunk: this);
+                            blocks[x, y, z] = block;
+
+                            condition0 = block.mesh != null;
+                            condition1 = false;
+
+                            // 這裡區分當前方塊要加到 Solid 還是 Fluid 當中
+                            if (pass == 0)
+                            {
+                                condition1 = !MeshUtils.canSpread(block_types[block_idx]);
+                            }
+                            else if (pass == 1)
+                            {
+                                condition1 = MeshUtils.canSpread(block_types[block_idx]);
+                            }
+
+                            if (condition0 && condition1)
+                            {
+                                input_mesh_datas.Add(block.mesh);
+
+                                job.vertex_index_offsets[idx] = vertex_index_offset;
+                                job.triangle_index_offsets[idx] = triangle_index_offset;
+
+                                n_vertex = block.mesh.vertexCount;
+                                n_triangle = (int)block.mesh.GetIndexCount(0);
+
+                                vertex_index_offset += n_vertex;
+                                triangle_index_offset += n_triangle;
+                                idx++;
+                            }
+                        }
+                    }
+                }
+
+                // input_mesh_datas -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
+                job.input_mesh_datas = Mesh.AcquireReadOnlyMeshData(input_mesh_datas);
+
+                // Mesh.AllocateWritableMeshData 分配一個可寫的網格數據，然後通過 jobs 進行頂點操作，
+                Mesh.MeshDataArray output_mesh_datas = Mesh.AllocateWritableMeshData(1);
+
+                // inputMeshes -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
+                job.output_mesh_data = output_mesh_datas[0];
+
+                //jobs.output_mesh_data.SetIndexBufferParams(triangle_index_offset, IndexFormat.UInt32);
+                job.setIndexBufferParams(n_triangle: triangle_index_offset);
+
+                //jobs.output_mesh_data.SetVertexBufferParams(
+                //    vertex_index_offset,
+                //    new VertexAttributeDescriptor(VertexAttribute.Position, stream: 0),
+                //    new VertexAttributeDescriptor(VertexAttribute.Normal, stream: 1),
+                //    new VertexAttributeDescriptor(VertexAttribute.TexCoord0, stream: 2),
+                //    new VertexAttributeDescriptor(VertexAttribute.TexCoord1, stream: 3));
+                job.setVertexBufferParams(n_vertex: vertex_index_offset);
+
+                /* 在正確的時間調用 Schedule 和 Complete
+                 * 一旦你擁有了一個 job 所需的數據，盡可能快地在 job 上調用 Schedule，在你需要它的執行結果之前不要調用 Complete。
+                 * 一個良好的實踐是調度一個你不需要等待的 job，同時它不會與當前正在運行的其他job產生競爭。
+                 * 舉例來說，如果你在一幀結束和下一幀開始之前擁有一段沒有其他 job 在運行的時間，並且可以接受一幀的延遲，你可以在一幀結束的時候調度一個 job，在下一幀中使用它的結果。
+                 * 或者，如果這個轉換時間已經被其他 job 占滿了，但是在一幀中有一大段未充分利用的時段，在這里調度你的 job 會更有效率。
+                 * 
+                 * job 擁有一個 Run 方法，你可以用它來替代 Schedule 從而讓主線程立刻執行這個 job。你可以使用它來達到調試目的。
+                 */
+                JobHandle handle = job.Schedule(input_mesh_datas.Count, 4);
+                Mesh mesh = new Mesh();
+                mesh.name = $"Chunk_{location.x}_{location.y}_{location.z}";
+
+                SubMeshDescriptor sm = new SubMeshDescriptor(0, triangle_index_offset, MeshTopology.Triangles);
+                sm.firstVertex = 0;
+                sm.vertexCount = vertex_index_offset;
+
+                /* 調用 JobHandle.Complete 來重新獲得歸屬權
+                 * 在主線程重新使用數據前，追蹤數據的所有權需要依賴項都完成。只檢查 JobHandle.IsCompleted 是不夠的。
+                 * 你必須調用 JobHandle.Complete 來在主線程中重新獲取 NaitveContainer 類型的所有權。調用 Complete 同時會清理安全性系統中的狀態。
+                 * 不這樣做的話會造成內存泄漏。這個過程也在你每一幀都調度依賴於上一幀 job 的新 job 時被采用。
+                 * 
+                 * 在主線程中調用 Schedule 和 Complete
+                 * 你只能在主線程中調用 Schedule 和 Complete 方法。如果一個 job 需要依賴於另一個，使用 JobHandle 來處理依賴關系而不是嘗試在 job 中調度新的 job。
+                 * 
+                 * 
+                 */
+                handle.Complete();
+
+                job.output_mesh_data.subMeshCount = 1;
+                job.output_mesh_data.SetSubMesh(0, sm);
+
+                // 通過 Mesh.ApplyAndDisposeWritableMeshData 接口賦值回 Mesh
+                // inputMeshes -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
+                Mesh.ApplyAndDisposeWritableMeshData(output_mesh_datas, new[] { mesh });
+
+                job.input_mesh_datas.Dispose();
+                job.vertex_index_offsets.Dispose();
+                job.triangle_index_offsets.Dispose();
+                mesh.RecalculateBounds();
+
+                // (pass: 0)載入固體方塊 Mesh
+                if (pass == 0)
+                {
+                    solid_mesh_filter.mesh = mesh;
+                    MeshCollider collider = solid_mesh_obj.AddComponent<MeshCollider>();
+                    collider.sharedMesh = solid_mesh_filter.mesh;
+                }
+
+                // (pass: 1)載入流體方塊 Mesh
+                else
+                {
+                    fluid_mesh_filter.mesh = mesh;
+                    MeshCollider collider = fluid_mesh_obj.AddComponent<MeshCollider>();
+                    //fluid_mesh_obj.layer = 4;
+                    fluid_mesh_obj.layer = LayerMask.NameToLayer("Water");
+                    collider.sharedMesh = fluid_mesh_filter.mesh;
+                }
+            }
+        }
+
+        private void buildMesh(GameObject obj, string mesh_type = "Solid")
+        {
+            MeshFilter mesh_filter;
+
+            if (obj == null)
+            {
+                obj = new GameObject(mesh_type);
+                obj.transform.parent = transform;
+
+                // 當 Chunk 下的 Block 發生變化，需要重繪 Chunk 時這些 Component 會被刪除，因此每次都需要重新添加
+                mesh_filter = obj.AddComponent<MeshFilter>();
+
+                switch (mesh_type)
+                {
+                    case "Solid":
+                        solid_mesh_renderer = obj.AddComponent<MeshRenderer>();
+                        solid_mesh_renderer.material = solid_material;
+                        break;
+
+                    case "Fluid":
+                        fluid_mesh_renderer = obj.AddComponent<MeshRenderer>();
+                        fluid_mesh_renderer.material = material_fluid;
+
+                        obj.AddComponent<UVScroller>();
+                        break;
+                }
+            }
+            else
+            {
+                mesh_filter = obj.GetComponent<MeshFilter>();
+                DestroyImmediate(obj.GetComponent<Collider>());
+            }
+
             int x, y, z;
             List<Mesh> input_mesh_datas = new List<Mesh>();
             int vertex_index_offset = 0, triangle_index_offset = 0, idx = 0;
             int n_vertex, n_triangle, block_idx;
-            Block3 block;
+            Block4 block;
 
             ProcessMeshDataJob job = new ProcessMeshDataJob();
             job.vertex_index_offsets = new NativeArray<int>(n_block, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -163,7 +369,7 @@ namespace udemy
                     {
                         //block_idx = x + width * (y + depth * z);
                         block_idx = Utils.xyzToFlat(x, y, z, WIDTH, DEPTH);
-                        block = new Block3(block_type: block_types[block_idx],
+                        block = new Block4(block_type: block_types[block_idx],
                                            crack_state: crack_states[block_idx],
                                            offset: new Vector3Int(x, y, z) + location,
                                            chunk: this);
@@ -247,11 +453,21 @@ namespace udemy
             job.triangle_index_offsets.Dispose();
             mesh.RecalculateBounds();
 
-            filter.mesh = mesh;
+            // 更新 mesh_filter 的 mesh
+            mesh_filter.mesh = mesh;
 
             // 當 Chunk 下的 Block 發生變化，需要重繪 Chunk 時，MeshCollider 會被刪除，因此每次都需要重新添加
-            MeshCollider collider = gameObject.AddComponent<MeshCollider>();
+            MeshCollider collider = obj.AddComponent<MeshCollider>();
             collider.sharedMesh = mesh;
+
+            switch (mesh_type)
+            {
+                case "Solid":
+                    break;
+                case "Fluid":
+                    obj.layer = 4;
+                    break;
+            }
         }
 
         /// <summary>
@@ -259,34 +475,37 @@ namespace udemy
         /// </summary>
         public void rebuild()
         {
-            DestroyImmediate(gameObject.GetComponent<MeshFilter>());
-            DestroyImmediate(mesh_renderer);
-            DestroyImmediate(gameObject.GetComponent<Collider>());
+            DestroyImmediate(GetComponent<MeshFilter>());
+            DestroyImmediate(GetComponent<MeshRenderer>());
+            DestroyImmediate(GetComponent<Collider>());
             build();
         }
 
-        void buildTrees2()
+        public IEnumerable<(Vector3Int, BlockType)> iterTrees3()
         {
-            int n_block = block_types.Length, t_index;
+            int n_block = block_types.Length;
             Vector3Int block_pos, base_pos;
 
             for (int i = 0; i < n_block; i++)
             {
                 if (block_types[i] == BlockType.WOODBASE)
                 {
-                    base_pos = WorldDemo3.flatToVector3Int(i);
+                    base_pos = WorldDemo4.flatToVector3Int(i);
 
                     foreach ((Vector3Int, BlockType) tree in tree_design)
                     {
                         block_pos = base_pos + tree.Item1;
-                        t_index = WorldDemo3.vector3IntToFlat(block_pos);
+                        yield return (block_pos, tree.Item2);
+                    }
+                }
+                else if (block_types[i] == BlockType.CACTUSBASE)
+                {
+                    base_pos = WorldDemo4.flatToVector3Int(i);
 
-                        // TODO: 目前樹木若剛好在 Chunk 的邊界上，則會被切掉，應使用 getChunkBlockLocation 取得跨邊界方塊資訊
-                        if ((0 <= t_index) && (t_index < n_block))
-                        {
-                            block_types[t_index] = BlockType.WOOD;
-                            crack_states[t_index] = CrackState.None;
-                        }
+                    foreach ((Vector3Int, BlockType) cactus in cactus_design)
+                    {
+                        block_pos = base_pos + cactus.Item1;
+                        yield return (block_pos, cactus.Item2);
                     }
                 }
             }
@@ -301,7 +520,7 @@ namespace udemy
             {
                 if (block_types[i] == BlockType.WOODBASE)
                 {
-                    base_pos = WorldDemo3.flatToVector3Int(i);
+                    base_pos = WorldDemo4.flatToVector3Int(i);
 
                     foreach ((Vector3Int, BlockType) tree in tree_design)
                     {
@@ -321,7 +540,7 @@ namespace udemy
             {
                 if (block_types[i] == BlockType.WOODBASE)
                 {
-                    block_pos = WorldDemo3.flatToVector3Int(i) + Vector3Int.up;
+                    block_pos = WorldDemo4.flatToVector3Int(i) + Vector3Int.up;
                     yield return (block_pos, BlockType.WOOD);
 
                     block_pos += Vector3Int.up;
@@ -330,39 +549,19 @@ namespace udemy
             }
         }
 
-        void buildTrees1()
-        {
-            int n_block = block_types.Length, t_index;
-            Vector3Int block_pos;
-
-            for (int i = 0; i < n_block; i++)
-            {
-                if (block_types[i] == BlockType.WOODBASE)
-                {
-                    block_pos = WorldDemo3.flatToVector3Int(i) + Vector3Int.up;
-                    t_index = WorldDemo3.vector3IntToFlat(block_pos);
-
-                    if ((0 <= t_index) && (t_index < n_block))
-                    {
-                        block_types[t_index] = BlockType.WOOD;
-                        crack_states[t_index] = CrackState.None;
-                    }
-
-                    block_pos += Vector3Int.up;
-                    t_index = WorldDemo3.vector3IntToFlat(block_pos);
-
-                    if ((0 <= t_index) && (t_index < n_block))
-                    {
-                        block_types[t_index] = BlockType.LEAVES;
-                        crack_states[t_index] = CrackState.None;
-                    }
-                }
-            }
-        }
-
         public void setVisiable(bool visiable)
         {
-            mesh_renderer.enabled = visiable;
+            solid_mesh_renderer.enabled = visiable;
+            fluid_mesh_renderer.enabled = visiable;
+        }
+
+        /// <summary>
+        /// mesh_renderer_solid 和 mesh_renderer_fluid 是否可見的狀態相同，因此返回任一個的狀態即可
+        /// </summary>
+        /// <returns></returns>
+        public bool isVisiable()
+        {
+            return solid_mesh_renderer.enabled;
         }
 
         public (Vector3Int, Vector3Int) getChunkBlockLocation(Vector3Int block_position)
@@ -500,7 +699,7 @@ namespace udemy
             }
             catch (IndexOutOfRangeException)
             {
-                Vector3Int v = WorldDemo3.flatToVector3Int(index);
+                Vector3Int v = WorldDemo4.flatToVector3Int(index);
                 Debug.LogError($"{index}/{block_types.Length}; {v}/({WIDTH}, {HEIGHT}, {DEPTH})");
             }
         }
@@ -576,7 +775,7 @@ namespace udemy
     }
 
     // DefineBlockJob：根據海拔與位置等資訊，決定 Block 的類型與位置。再交由 ProcessMeshDataJob 處理如何呈現。
-    struct DefineBlockJob1 : IJobParallelFor
+    struct DefineBlockJob2 : IJobParallelFor
     {
         public NativeArray<BlockType> block_types;
         public NativeArray<CrackState> crack_states;
@@ -591,7 +790,7 @@ namespace udemy
         Vector3Int xyz;
         Unity.Mathematics.Random random;
         int surface_height, stone_height, diamond_top_height, diamond_bottom_height;
-        int dig_cave, plant_tree;
+        int dig_cave, plant_tree, dessert_biome;
 
         public void Execute(int i)
         {
@@ -599,44 +798,54 @@ namespace udemy
             random = randoms[i];
 
             surface_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
-                                             octaves: WorldDemo3.surface_strata.octaves,
-                                             scale: WorldDemo3.surface_strata.scale,
-                                             height_scale: WorldDemo3.surface_strata.height_scale,
-                                             height_offset: WorldDemo3.surface_strata.height_offset);
+                                             octaves: WorldDemo4.surface_strata.octaves,
+                                             scale: WorldDemo4.surface_strata.scale,
+                                             height_scale: WorldDemo4.surface_strata.height_scale,
+                                             height_offset: WorldDemo4.surface_strata.height_offset);
 
             stone_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
-                                           octaves: WorldDemo3.stone_strata.octaves,
-                                           scale: WorldDemo3.stone_strata.scale,
-                                           height_scale: WorldDemo3.stone_strata.height_scale,
-                                           height_offset: WorldDemo3.stone_strata.height_offset);
+                                           octaves: WorldDemo4.stone_strata.octaves,
+                                           scale: WorldDemo4.stone_strata.scale,
+                                           height_scale: WorldDemo4.stone_strata.height_scale,
+                                           height_offset: WorldDemo4.stone_strata.height_offset);
 
             diamond_top_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
-                                                 octaves: WorldDemo3.diamond_top_strata.octaves,
-                                                 scale: WorldDemo3.diamond_top_strata.scale,
-                                                 height_scale: WorldDemo3.diamond_top_strata.height_scale,
-                                                 height_offset: WorldDemo3.diamond_top_strata.height_offset);
+                                                 octaves: WorldDemo4.diamond_top_strata.octaves,
+                                                 scale: WorldDemo4.diamond_top_strata.scale,
+                                                 height_scale: WorldDemo4.diamond_top_strata.height_scale,
+                                                 height_offset: WorldDemo4.diamond_top_strata.height_offset);
 
             diamond_bottom_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
-                                                    octaves: WorldDemo3.diamond_bottom_strata.octaves,
-                                                    scale: WorldDemo3.diamond_bottom_strata.scale,
-                                                    height_scale: WorldDemo3.diamond_bottom_strata.height_scale,
-                                                    height_offset: WorldDemo3.diamond_bottom_strata.height_offset);
+                                                    octaves: WorldDemo4.diamond_bottom_strata.octaves,
+                                                    scale: WorldDemo4.diamond_bottom_strata.scale,
+                                                    height_scale: WorldDemo4.diamond_bottom_strata.height_scale,
+                                                    height_offset: WorldDemo4.diamond_bottom_strata.height_offset);
 
             dig_cave = (int)Cluster.fBM3D(x: xyz.x, y: xyz.y, z: xyz.z,
-                                          octaves: WorldDemo3.cave_cluster.octaves,
-                                          scale: WorldDemo3.cave_cluster.scale,
-                                          height_scale: WorldDemo3.cave_cluster.height_scale,
-                                          height_offset: WorldDemo3.cave_cluster.height_offset);
+                                          octaves: WorldDemo4.cave_cluster.octaves,
+                                          scale: WorldDemo4.cave_cluster.scale,
+                                          height_scale: WorldDemo4.cave_cluster.height_scale,
+                                          height_offset: WorldDemo4.cave_cluster.height_offset);
 
 
             plant_tree = (int)Cluster.fBM3D(x: xyz.x, y: xyz.y, z: xyz.z,
-                                            octaves: WorldDemo3.tree_cluster.octaves,
-                                            scale: WorldDemo3.tree_cluster.scale,
-                                            height_scale: WorldDemo3.tree_cluster.height_scale,
-                                            height_offset: WorldDemo3.tree_cluster.height_offset);
+                                            octaves: WorldDemo4.tree_cluster.octaves,
+                                            scale: WorldDemo4.tree_cluster.scale,
+                                            height_scale: WorldDemo4.tree_cluster.height_scale,
+                                            height_offset: WorldDemo4.tree_cluster.height_offset);
 
 
-            int WATER_LINE = 16;
+            dessert_biome = (int)Cluster.fBM3D(x: xyz.x, y: xyz.y, z: xyz.z,
+                                               octaves: WorldDemo4.biome_cluster.octaves,
+                                               scale: WorldDemo4.biome_cluster.scale,
+                                               height_scale: WorldDemo4.biome_cluster.height_scale,
+                                               height_offset: WorldDemo4.biome_cluster.height_offset);
+
+
+            /* 目前在水線下的高度放了一個 Post-process Volume，定義攝影機進入該區域的效果(看起來藍藍的、能見度很低)，
+             * 並利用 WaterManager 在水平方向追蹤玩家。即，不管從哪裡下降到水線以下的區域都會看起來像在水中，
+             * 即便現在不在水中。 這個做法必須改掉，因為它不但水線以下都附加該效果，水線的定位方式(要自己算形成的世界有多高)也不是很理想 */
+            int WATER_LINE = 20;
 
             crack_states[i] = CrackState.None;
 
@@ -647,41 +856,33 @@ namespace udemy
             }
 
             // TODO: 目前的洞穴可能會挖到地表，且因沒有考慮到是否是地表，因而造成地表為泥土而非草地
-            if (dig_cave < WorldDemo3.cave_cluster.boundary)
+            if (dig_cave < WorldDemo4.cave_cluster.boundary)
             {
                 block_types[i] = BlockType.AIR;
                 return;
             }
 
-            if (xyz.y == surface_height)
+            if (xyz.y == surface_height && xyz.y >= WATER_LINE)
             {
-                //if (desertBiome < World.biomeSettings.probability)
-                //{
-                //    block_types[i] = BlockType.SAND;
-
-                //    if (random.NextFloat(1) <= 0.1)
-                //    {
-                //        block_types[i] = BlockType.CACTUS;
-                //    }
-                //}
-                //else if (plantTree < World.treeSettings.probability)
-                //{
-                //    block_types[i] = BlockType.FOREST;
-
-                //    if (random.NextFloat(1) <= 0.1)
-                //    {
-                //        // Execute 當中一次處理一個 Block，因此這裡僅放置樹基，而非直接種一棵樹
-                //        block_types[i] = BlockType.WOODBASE;
-                //    }
-                //}
-                //else
-                //{
-                //    block_types[i] = BlockType.GRASSSIDE;
-                //}
-
-                if ((plant_tree <= WorldDemo3.tree_cluster.boundary) && (random.NextFloat(1) <= 0.1f))
+                if (dessert_biome < WorldDemo4.biome_cluster.boundary)
                 {
-                    block_types[i] = BlockType.WOODBASE;
+                    block_types[i] = BlockType.SAND;
+
+                    if (random.NextFloat(1) <= 0.05f)
+                    {
+                        block_types[i] = BlockType.CACTUSBASE;
+                    }
+                }
+                else if (plant_tree < WorldDemo4.tree_cluster.boundary)
+                {
+                    block_types[i] = BlockType.FOREST;
+
+                    // TODO: 樹出現的密度(機率)應由外部設置
+                    if (random.NextFloat(1) <= 0.05f)
+                    {
+                        // Execute 當中一次處理一個 Block，因此這裡僅放置樹基，而非直接種一棵樹
+                        block_types[i] = BlockType.WOODBASE;
+                    }
                 }
                 else
                 {
@@ -689,12 +890,12 @@ namespace udemy
                 }
             }
 
-            else if ((diamond_bottom_height < xyz.y) && (xyz.y < diamond_top_height) && (random.NextFloat(1) <= WorldDemo3.diamond_top_strata.probability))
+            else if ((diamond_bottom_height < xyz.y) && (xyz.y < diamond_top_height) && (random.NextFloat(1) <= WorldDemo4.diamond_top_strata.probability))
             {
                 block_types[i] = BlockType.DIAMOND;
             }
 
-            else if ((xyz.y < stone_height) && (random.NextFloat(1) <= WorldDemo3.stone_strata.probability))
+            else if ((xyz.y < stone_height) && (random.NextFloat(1) <= WorldDemo4.stone_strata.probability))
             {
                 block_types[i] = BlockType.STONE;
             }

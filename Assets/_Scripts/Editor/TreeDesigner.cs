@@ -5,7 +5,10 @@ using UnityEditor;
 [CustomEditor(typeof(TreeCreator))]
 public class TreeDesigner : Editor
 {
-    Vector2 scrollPos;
+    Vector2 scroll_pos;
+    int SCROLL_HEIGHT = 100;
+    int TEXT_AREA_HEIGHT = 800;
+
     public override void OnInspectorGUI()
     {
         DrawDefaultInspector();
@@ -14,17 +17,17 @@ public class TreeDesigner : Editor
 
         if (GUILayout.Button("Realign Blocks"))
         {
-            handle.ReAlignBlocks();
+            handle.reAlignBlocks();
         }
-        scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.Height(100));
-        EditorGUILayout.TextArea(handle.blockDetails, GUILayout.Height(800));
+
+        scroll_pos = EditorGUILayout.BeginScrollView(scroll_pos, GUILayout.Height(SCROLL_HEIGHT));
+        EditorGUILayout.TextArea(handle.block_detail, GUILayout.Height(TEXT_AREA_HEIGHT));
         EditorGUILayout.EndScrollView();
+
         if (GUILayout.Button("Update Details"))
         {
-            handle.GetDetails();
+            handle.getDetails();
         }
-
-
     }
 
 }
