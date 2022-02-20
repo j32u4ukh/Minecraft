@@ -183,6 +183,9 @@ namespace udemy
                 }
             }
 
+            // TODO: 在這裡考慮 Chunk 交界問題，隱藏 Chunk 交界的 Mesh
+            //yield return handleCrossChunkMesh();
+
             // 在這裡呼叫 Chunk.buildTrees()，樹的建構才有辦法考慮到跨 Chunk 的情況
             yield return buildVegetations();
 
@@ -269,6 +272,67 @@ namespace udemy
 
                 chunk_columns.Add(new Vector2Int(col_x, col_z));
             }            
+        }
+
+        private IEnumerator handleCrossChunkMesh()
+        {
+            (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) neighbors;
+
+            foreach (KeyValuePair<Vector3Int, Chunk> location_chunk in chunks)
+            {
+                neighbors = getNeighbourChunk(center: location_chunk.Key);
+
+                yield return null;
+            }
+
+            foreach (Chunk chunk in chunks.Values)
+            {
+                // TODO: 需改寫為會考慮跨 Chunk 的情況
+                chunk.rebuild();
+            }
+        }
+
+        private (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) getNeighbourChunk(Vector3Int center)
+        {
+            Chunk up = null, down = null, left = null, right = null, forward = null, back = null;
+            Vector3Int u = center + chunk_dimensions * Vector3Int.up,
+                       d = center + chunk_dimensions * Vector3Int.down,
+                       l = center + chunk_dimensions * Vector3Int.left,
+                       r = center + chunk_dimensions * Vector3Int.right,
+                       f = center + chunk_dimensions * Vector3Int.forward,
+                       b = center + chunk_dimensions * Vector3Int.back;
+
+            if (chunks.ContainsKey(u))
+            {
+                up = chunks[u];
+            }
+
+            if (chunks.ContainsKey(d))
+            {
+                down = chunks[d];
+            }
+
+            if (chunks.ContainsKey(l))
+            {
+                left = chunks[l];
+            }
+
+            if (chunks.ContainsKey(r))
+            {
+                right = chunks[r];
+            }
+
+            if (chunks.ContainsKey(f))
+            {
+                forward = chunks[f];
+            }
+
+            if (chunks.ContainsKey(b))
+            {
+                back = chunks[b];
+            }
+
+            return (up, down, left, right, forward, back);
         }
 
         /// <summary>

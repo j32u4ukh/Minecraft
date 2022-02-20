@@ -30,7 +30,7 @@ namespace udemy
 
             /* 利用 hasSolidNeighbour 檢查各個方向是否還有下一格，因此傳入的座標為該方向下一格 Block 的座標 */
 
-            if (!hasSolidNeighbour(local_position.x, local_position.y - 1, local_position.z, block_type))
+            if (!hasNeighbour(local_position.x, local_position.y - 1, local_position.z, block_type))
             {
                 if (block_type == BlockType.GRASSSIDE)
                 {
@@ -42,7 +42,7 @@ namespace udemy
                 }
             }
 
-            if (!hasSolidNeighbour(local_position.x, local_position.y + 1, local_position.z, block_type))
+            if (!hasNeighbour(local_position.x, local_position.y + 1, local_position.z, block_type))
             {
                 if (block_type == BlockType.GRASSSIDE)
                 {
@@ -54,22 +54,22 @@ namespace udemy
                 }
             }
 
-            if (!hasSolidNeighbour(local_position.x - 1, local_position.y, local_position.z, block_type))
+            if (!hasNeighbour(local_position.x - 1, local_position.y, local_position.z, block_type))
             {
                 quads.Add(new Quad(block_type, crack_state, BlockSide.Left, offset));
             }
 
-            if (!hasSolidNeighbour(local_position.x + 1, local_position.y, local_position.z, block_type))
+            if (!hasNeighbour(local_position.x + 1, local_position.y, local_position.z, block_type))
             {
                 quads.Add(new Quad(block_type, crack_state, BlockSide.Right, offset));
             }
 
-            if (!hasSolidNeighbour(local_position.x, local_position.y, local_position.z + 1, block_type))
+            if (!hasNeighbour(local_position.x, local_position.y, local_position.z + 1, block_type))
             {
                 quads.Add(new Quad(block_type, crack_state, BlockSide.Front, offset));
             }
 
-            if (!hasSolidNeighbour(local_position.x, local_position.y, local_position.z - 1, block_type))
+            if (!hasNeighbour(local_position.x, local_position.y, local_position.z - 1, block_type))
             {
                 quads.Add(new Quad(block_type, crack_state, BlockSide.Back, offset));
             }
@@ -90,9 +90,14 @@ namespace udemy
             mesh.name = $"Block_{offset.x}_{offset.y}_{offset.z}";
         }
 
-        // TODO: 應實作 Chunk 版本的這個函式，使得 Chunk 之間的交界可以不用顯現，如此一來，水下的 Chunk 邊界才不會出現
-        bool hasSolidNeighbour(float x, float y, float z, BlockType block_type)
+        public void build()
         {
+
+        }
+
+        bool hasNeighbour(float x, float y, float z, BlockType block_type)
+        {
+            // TODO: 考慮 Chunk 之間的交界，如此一來，水下的 Chunk 邊界才不會出現
             if (x < 0 || chunk.WIDTH <= x ||
                 y < 0 || chunk.HEIGHT <= y ||
                 z < 0 || chunk.DEPTH <= z)

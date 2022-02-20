@@ -18,6 +18,8 @@ namespace udemy
         public int WIDTH = 2;
         public int HEIGHT = 2;
         public int DEPTH = 2;
+
+        // n_block = WIDTH * HEIGHT * DEPTH
         int n_block;
 
         public Block[,,] blocks;
@@ -86,6 +88,11 @@ namespace udemy
             (new Vector3Int(0,5,0), BlockType.CACTUS)
         };
 
+        /// <summary>
+        /// 決定 block_types 和 crack_states 的內容，尚未實際建構 Block
+        /// </summary>
+        /// <param name="dimensions"></param>
+        /// <param name="location"></param>
         public void init(Vector3Int dimensions, Vector3Int location)
         {
             locate(dimensions, location);
@@ -130,6 +137,11 @@ namespace udemy
             random_array.Dispose();
         }
 
+        /// <summary>
+        /// 尺寸參數初始化
+        /// </summary>
+        /// <param name="dimensions">長寬高尺寸</param>
+        /// <param name="location">世界座標</param>
         public void locate(Vector3Int dimensions, Vector3Int location)
         {
             this.location = location;
@@ -195,51 +207,46 @@ namespace udemy
             job.vertex_index_offsets = new NativeArray<int>(n_block, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             job.triangle_index_offsets = new NativeArray<int>(n_block, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
-            // TODO: for block_idx in range(n_block)
-            for (z = 0; z < DEPTH; z++)
+            Vector3Int xyz;
+
+            for (block_idx = 0; block_idx < n_block; block_idx++)
             {
-                for (y = 0; y < HEIGHT; y++)
+                xyz = Utils.flatToVector3Int(i: block_idx, width: WIDTH, height: HEIGHT);
+
+                block = new Block(block_type: block_types[block_idx], 
+                                  crack_state: crack_states[block_idx],
+                                  offset: xyz + location,
+                                  chunk: this);
+                blocks[xyz.x, xyz.y, xyz.z] = block;
+
+                condition0 = block.mesh != null;
+                condition1 = false;
+
+                // 區分這裡是 Solid 還是 Fluid 
+                switch (mesh_type)
                 {
-                    for (x = 0; x < WIDTH; x++)
-                    {
-                        //block_idx = x + width * (y + depth * z);
-                        block_idx = Utils.xyzToFlat(x, y, z, WIDTH, DEPTH);
-                        block = new Block(block_type: block_types[block_idx],
-                                           crack_state: crack_states[block_idx],
-                                           offset: new Vector3Int(x, y, z) + location,
-                                           chunk: this);
-                        blocks[x, y, z] = block;
+                    case "Solid":
+                        condition1 = !MeshUtils.canSpread(block_types[block_idx]);
+                        break;
 
-                        condition0 = block.mesh != null;
-                        condition1 = false;
+                    case "Fluid":
+                        condition1 = MeshUtils.canSpread(block_types[block_idx]);
+                        break;
+                }
 
-                        // 區分這裡是 Solid 還是 Fluid 
-                        switch (mesh_type)
-                        {
-                            case "Solid":
-                                condition1 = !MeshUtils.canSpread(block_types[block_idx]);
-                                break;
+                if (condition0 && condition1)
+                {
+                    input_mesh_datas.Add(block.mesh);
 
-                            case "Fluid":
-                                condition1 = MeshUtils.canSpread(block_types[block_idx]);
-                                break;
-                        }
+                    job.vertex_index_offsets[idx] = vertex_index_offset;
+                    job.triangle_index_offsets[idx] = triangle_index_offset;
 
-                        if (condition0 && condition1)
-                        {
-                            input_mesh_datas.Add(block.mesh);
+                    n_vertex = block.mesh.vertexCount;
+                    n_triangle = (int)block.mesh.GetIndexCount(0);
 
-                            job.vertex_index_offsets[idx] = vertex_index_offset;
-                            job.triangle_index_offsets[idx] = triangle_index_offset;
-
-                            n_vertex = block.mesh.vertexCount;
-                            n_triangle = (int)block.mesh.GetIndexCount(0);
-
-                            vertex_index_offset += n_vertex;
-                            triangle_index_offset += n_triangle;
-                            idx++;
-                        }
-                    }
+                    vertex_index_offset += n_vertex;
+                    triangle_index_offset += n_triangle;
+                    idx++;
                 }
             }
 
@@ -320,6 +327,182 @@ namespace udemy
             DestroyImmediate(GetComponent<MeshRenderer>());
             DestroyImmediate(GetComponent<Collider>());
             build();
+        }
+
+        public void handleCrossChunkMesh(Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back)
+        {
+
+        }
+
+        private void buildCrossChunkMesh(ref GameObject obj, string mesh_type = "Solid")
+        {
+            // TODO: 改為全域變數，避免重複 GetComponent
+            MeshFilter mesh_filter;
+
+            if (obj == null)
+            {
+                obj = new GameObject(mesh_type);
+                obj.transform.parent = transform;
+
+                // 當 Chunk 下的 Block 發生變化，需要重繪 Chunk 時這些 Component 會被刪除，因此每次都需要重新添加
+                mesh_filter = obj.AddComponent<MeshFilter>();
+
+                switch (mesh_type)
+                {
+                    case "Solid":
+                        solid_mesh_renderer = obj.AddComponent<MeshRenderer>();
+                        solid_mesh_renderer.material = solid_material;
+                        break;
+
+                    case "Fluid":
+                        fluid_mesh_renderer = obj.AddComponent<MeshRenderer>();
+                        fluid_mesh_renderer.material = fluid_material;
+
+                        obj.AddComponent<UVScroller>();
+                        obj.layer = LayerMask.NameToLayer("Water");
+                        break;
+                }
+            }
+            else
+            {
+                mesh_filter = obj.GetComponent<MeshFilter>();
+
+                // 避免後面又重複添加 Collider
+                DestroyImmediate(obj.GetComponent<Collider>());
+            }
+
+            List<Mesh> input_mesh_datas = new List<Mesh>();
+            int vertex_index_offset = 0, triangle_index_offset = 0, idx = 0;
+            int n_vertex, n_triangle, block_idx;
+            Block block;
+            bool condition0, condition1;
+
+            ProcessMeshDataJob job = new ProcessMeshDataJob();
+            job.vertex_index_offsets = new NativeArray<int>(n_block, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            job.triangle_index_offsets = new NativeArray<int>(n_block, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+
+            Vector3Int xyz;
+
+            for (block_idx = 0; block_idx < n_block; block_idx++)
+            {
+                xyz = Utils.flatToVector3Int(i: block_idx, width: WIDTH, height: HEIGHT);
+
+                block = new Block(block_type: block_types[block_idx],
+                                  crack_state: crack_states[block_idx],
+                                  offset: xyz + location,
+                                  chunk: this);
+                blocks[xyz.x, xyz.y, xyz.z] = block;
+
+                condition0 = block.mesh != null;
+                condition1 = false;
+
+                // 區分這裡是 Solid 還是 Fluid 
+                switch (mesh_type)
+                {
+                    case "Solid":
+                        condition1 = !MeshUtils.canSpread(block_types[block_idx]);
+                        break;
+
+                    case "Fluid":
+                        condition1 = MeshUtils.canSpread(block_types[block_idx]);
+                        break;
+                }
+
+                if (condition0 && condition1)
+                {
+                    input_mesh_datas.Add(block.mesh);
+
+                    job.vertex_index_offsets[idx] = vertex_index_offset;
+                    job.triangle_index_offsets[idx] = triangle_index_offset;
+
+                    n_vertex = block.mesh.vertexCount;
+                    n_triangle = (int)block.mesh.GetIndexCount(0);
+
+                    vertex_index_offset += n_vertex;
+                    triangle_index_offset += n_triangle;
+                    idx++;
+                }
+            }
+
+            // input_mesh_datas -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
+            job.input_mesh_datas = Mesh.AcquireReadOnlyMeshData(input_mesh_datas);
+
+            // Mesh.AllocateWritableMeshData 分配一個可寫的網格數據，然後通過 jobs 進行頂點操作，
+            Mesh.MeshDataArray output_mesh_datas = Mesh.AllocateWritableMeshData(1);
+
+            // inputMeshes -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
+            job.output_mesh_data = output_mesh_datas[0];
+
+            //jobs.output_mesh_data.SetIndexBufferParams(triangle_index_offset, IndexFormat.UInt32);
+            job.setIndexBufferParams(n_triangle: triangle_index_offset);
+
+            //jobs.output_mesh_data.SetVertexBufferParams(
+            //    vertex_index_offset,
+            //    new VertexAttributeDescriptor(VertexAttribute.Position, stream: 0),
+            //    new VertexAttributeDescriptor(VertexAttribute.Normal, stream: 1),
+            //    new VertexAttributeDescriptor(VertexAttribute.TexCoord0, stream: 2),
+            //    new VertexAttributeDescriptor(VertexAttribute.TexCoord1, stream: 3));
+            job.setVertexBufferParams(n_vertex: vertex_index_offset);
+
+            /* 在正確的時間調用 Schedule 和 Complete
+             * 一旦你擁有了一個 job 所需的數據，盡可能快地在 job 上調用 Schedule，在你需要它的執行結果之前不要調用 Complete。
+             * 一個良好的實踐是調度一個你不需要等待的 job，同時它不會與當前正在運行的其他job產生競爭。
+             * 舉例來說，如果你在一幀結束和下一幀開始之前擁有一段沒有其他 job 在運行的時間，並且可以接受一幀的延遲，你可以在一幀結束的時候調度一個 job，在下一幀中使用它的結果。
+             * 或者，如果這個轉換時間已經被其他 job 占滿了，但是在一幀中有一大段未充分利用的時段，在這里調度你的 job 會更有效率。
+             * 
+             * job 擁有一個 Run 方法，你可以用它來替代 Schedule 從而讓主線程立刻執行這個 job。你可以使用它來達到調試目的。
+             */
+            JobHandle handle = job.Schedule(input_mesh_datas.Count, 4);
+            Mesh mesh = new Mesh();
+            mesh.name = $"Chunk_{location.x}_{location.y}_{location.z}";
+
+            SubMeshDescriptor sm = new SubMeshDescriptor(0, triangle_index_offset, MeshTopology.Triangles);
+            sm.firstVertex = 0;
+            sm.vertexCount = vertex_index_offset;
+
+            /* 調用 JobHandle.Complete 來重新獲得歸屬權
+             * 在主線程重新使用數據前，追蹤數據的所有權需要依賴項都完成。只檢查 JobHandle.IsCompleted 是不夠的。
+             * 你必須調用 JobHandle.Complete 來在主線程中重新獲取 NaitveContainer 類型的所有權。調用 Complete 同時會清理安全性系統中的狀態。
+             * 不這樣做的話會造成內存泄漏。這個過程也在你每一幀都調度依賴於上一幀 job 的新 job 時被采用。
+             * 
+             * 在主線程中調用 Schedule 和 Complete
+             * 你只能在主線程中調用 Schedule 和 Complete 方法。如果一個 job 需要依賴於另一個，使用 JobHandle 來處理依賴關系而不是嘗試在 job 中調度新的 job。
+             * 
+             * 
+             */
+            handle.Complete();
+
+            job.output_mesh_data.subMeshCount = 1;
+            job.output_mesh_data.SetSubMesh(0, sm);
+
+            // 通過 Mesh.ApplyAndDisposeWritableMeshData 接口賦值回 Mesh
+            // inputMeshes -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
+            Mesh.ApplyAndDisposeWritableMeshData(output_mesh_datas, new[] { mesh });
+
+            job.input_mesh_datas.Dispose();
+            job.vertex_index_offsets.Dispose();
+            job.triangle_index_offsets.Dispose();
+            mesh.RecalculateBounds();
+
+            // 更新 mesh_filter 的 mesh
+            mesh_filter.mesh = mesh;
+
+            // 當 Chunk 下的 Block 發生變化，需要重繪 Chunk 時，MeshCollider 會被刪除，因此每次都需要重新添加
+            MeshCollider collider = obj.AddComponent<MeshCollider>();
+            collider.sharedMesh = mesh;
+        }
+
+        public IEnumerable<(int, BlockType, CrackState)> iterBlockDatas()
+        {
+            for (int i = 0; i < n_block; i++)
+            {
+                yield return (i, block_types[i], crack_states[i]);
+            }
+        }
+
+        bool hasNeighbour(float x, float y, float z, BlockType block_type)
+        {
+            return true;
         }
 
         public IEnumerable<(Vector3Int, BlockType)> iterVegetations()
