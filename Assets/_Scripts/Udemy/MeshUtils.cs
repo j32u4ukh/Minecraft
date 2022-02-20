@@ -73,7 +73,6 @@ namespace udemy
 
         /// <summary>
         /// Merge multi meshes into one mesh.
-        /// TODO: unit test
         /// </summary>
         /// <param name="meshes">mesh list which we want to merge into one mesh</param>
         /// <returns>A mesh conmbine all inputed meshes</returns>

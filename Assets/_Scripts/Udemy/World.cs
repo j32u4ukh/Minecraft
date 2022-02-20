@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace udemy
 {
-    public class WorldDemo4 : MonoBehaviour
+    public class World : MonoBehaviour
     {
         public static Vector3Int world_dimesions = new Vector3Int(5, 5, 5);
         public static Vector3Int extra_world_dimesions = new Vector3Int(0, 0, 0);
@@ -32,7 +32,7 @@ namespace udemy
         public static Strata diamond_bottom_strata;
         #endregion
 
-        // fBM 3D
+        #region fBM 3D
         public ClusterSetting cave_setting;
         public static Cluster cave_cluster;
 
@@ -40,9 +40,10 @@ namespace udemy
         public static Cluster tree_cluster;
 
         public ClusterSetting biome_setting;
-        public static Cluster biome_cluster;
+        public static Cluster biome_cluster; 
+        #endregion
 
-        public Dictionary<Vector3Int, Chunk3> chunks = new Dictionary<Vector3Int, Chunk3>();
+        public Dictionary<Vector3Int, Chunk> chunks = new Dictionary<Vector3Int, Chunk>();
         HashSet<Vector2Int> chunk_columns = new HashSet<Vector2Int>();
 
         // 為什麼要利用 Queue 來管理這些建造和隱藏 ChunkColumn 的任務？是為了強調任務的順序性，以避免後面的小任務比前面的大任務還要快結束嗎？
@@ -83,18 +84,15 @@ namespace udemy
 
         private void Update()
         {
+            // TODO: 移到 Player 當中管理，利用事件通知 World 哪些方塊被移除，哪些方塊又被新增
             // 左鍵(0)：挖掘方塊；右鍵(1)：放置方塊
             if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
             {
-                RaycastHit hit;
                 Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-                if (Physics.Raycast(ray, out hit, 10f))
+                if (Physics.Raycast(ray, out RaycastHit hit, 10f))
                 {
-                    //Chunk3 chunk = hit.collider.GetComponent<Chunk3>();
-                    //Chunk3 chunk = hit.collider.gameObject.transform.parent.GetComponent<Chunk3>();
-
-                    if (!hit.collider.gameObject.transform.parent.TryGetComponent(out Chunk3 chunk))
+                    if (!hit.collider.gameObject.transform.parent.TryGetComponent(out Chunk chunk))
                     {
                         Debug.Log($"No Chunk, parent: {hit.collider.gameObject.transform.parent.gameObject.name}," +
                                   $"target: {hit.collider.gameObject.name}");
@@ -129,8 +127,6 @@ namespace udemy
                         // 累加破壞程度(若破壞程度與方塊強度相當，才會真的破壞掉)
                         if(chunk.crackBlock(index: i))
                         {
-                            //Tuple<Vector3Int, Vector3Int> chunk_block_location = chunk.getChunkBlockLocation(bx, by, bz);
-
                             // 考慮當前方塊的上方一格是否會觸發掉落機制
                             dropBlockAbove(chunk: chunk, block_position: new Vector3Int(bx, by, bz));
                         }
@@ -139,6 +135,7 @@ namespace udemy
                     // 右鍵(1)：放置方塊
                     else
                     {
+                        // TODO: 考慮 世界 的大小，取得的 chunk 不一定存在於 chunks 當中
                         (Vector3Int, Vector3Int) chunk_block_location = chunk.getChunkBlockLocation(bx, by, bz);
 
                         if (chunks.ContainsKey(chunk_block_location.Item1))
@@ -187,7 +184,7 @@ namespace udemy
             }
 
             // 在這裡呼叫 Chunk.buildTrees()，樹的建構才有辦法考慮到跨 Chunk 的情況
-            buildVegetations(version: 3);
+            yield return buildVegetations();
 
             main_camera.SetActive(false);
 
@@ -254,7 +251,7 @@ namespace udemy
             else
             {
                 GameObject chunk_obj;
-                Chunk3 chunk;
+                Chunk chunk;
 
                 foreach(Vector3Int location in iterChunkColumnLocation(col_x, col_z))
                 {
@@ -262,7 +259,7 @@ namespace udemy
                     chunk_obj = Instantiate(chunk_prefab);
                     chunk_obj.name = $"Chunk_{location.x}_{location.y}_{location.z}";
 
-                    chunk = chunk_obj.GetComponent<Chunk3>();
+                    chunk = chunk_obj.GetComponent<Chunk>();
                     chunk.init(dimensions: chunk_dimensions, location: location);
                     chunk.build();
                     chunk.setVisiable(visiable: visiable);
@@ -277,6 +274,8 @@ namespace udemy
         /// <summary>
         /// 依序執行 task_queue 當中的任務
         /// Coordinator: 協調員
+        /// TODO: 任務優先順序應為：1. enable 已建構的 ChunkColumn 2. 生成新的 ChunkColumn 3. 隱藏遠方 ChunkColumn
+        /// TODO: 維護鄰近 ChunkColumn 座標列表，若要 enable 或要新生成的 ChunkColumn 又已不在清單中，或許可以跳出 Coroutine 以避免無效作業
         /// </summary>
         /// <returns></returns>
         IEnumerator taskCoordinator()
@@ -381,15 +380,15 @@ namespace udemy
 
         void setChunkColumnVisiable(int col_x, int col_z, bool visiable = true)
         {
-            IEnumerable<Chunk3> chunk_column = iterChunkColumn(col_x, col_z);
+            IEnumerable<Chunk> chunk_column = iterChunkColumn(col_x, col_z);
 
-            foreach(Chunk3 chunk in chunk_column)
+            foreach(Chunk chunk in chunk_column)
             {
                 chunk.setVisiable(visiable);
             }
         }
 
-        IEnumerator dropBlock(Chunk3 chunk, int block_index, int spread = 2)
+        IEnumerator dropBlock(Chunk chunk, int block_index, int spread = 2)
         {
             BlockType block_type = chunk.getBlockType(block_index);
 
@@ -402,7 +401,7 @@ namespace udemy
 
             Vector3Int block_position;
             (Vector3Int, Vector3Int) location_below;
-            Chunk3 chunk_below;
+            Chunk chunk_below;
             int block_below_index;
 
             while (true)
@@ -468,7 +467,7 @@ namespace udemy
             }
         }
 
-        void spreadBlock(Chunk3 chunk, Vector3Int block_position, Vector3Int direction, int spread = 2)
+        void spreadBlock(Chunk chunk, Vector3Int block_position, Vector3Int direction, int spread = 2)
         {
             spread--;
 
@@ -484,7 +483,7 @@ namespace udemy
                 return;
             }
 
-            Chunk3 neighbor_chunk = chunks[location.Item1];
+            Chunk neighbor_chunk = chunks[location.Item1];
             int block_neighbor_index = vector3IntToFlat(location.Item2);
 
             if (neighbor_chunk.getBlockType(block_neighbor_index).Equals(BlockType.AIR))
@@ -503,7 +502,7 @@ namespace udemy
         /// </summary>
         /// <param name="chunk"></param>
         /// <param name="block_position"></param>
-        void dropBlockAbove(Chunk3 chunk, Vector3Int block_position)
+        void dropBlockAbove(Chunk chunk, Vector3Int block_position)
         {
             (Vector3Int, Vector3Int) location_above = chunk.getChunkBlockLocation(bx: block_position.x,
                                                                                   by: block_position.y + 1,
@@ -511,7 +510,7 @@ namespace udemy
 
             if (chunks.ContainsKey(location_above.Item1))
             {
-                Chunk3 chunk_above = chunks[location_above.Item1];
+                Chunk chunk_above = chunks[location_above.Item1];
                 int block_above_index = vector3IntToFlat(v: location_above.Item2);
 
                 StartCoroutine(dropBlock(chunk_above, block_above_index));
@@ -522,28 +521,16 @@ namespace udemy
         /// 在這裡呼叫 Chunk.buildTrees()，樹的建構才有辦法考慮到跨 Chunk 的情況
         /// </summary>
         /// <param name="version"></param>
-        private void buildVegetations(int version)
+        private IEnumerator buildVegetations()
         {
-            Chunk3 target_chunk;
+            Chunk target_chunk;
             IEnumerable<(Vector3Int, BlockType)> vegetations;
             (Vector3Int, Vector3Int) chunk_block_location;
             int t_index;
 
-            foreach (Chunk3 chunk in chunks.Values)
+            foreach (Chunk chunk in chunks.Values)
             {
-                switch (version)
-                {
-                    case 3:
-                        vegetations = chunk.iterTrees3();
-                        break;
-                    case 2:
-                        vegetations = chunk.iterTrees2();
-                        break;
-                    default:
-                    case 1:
-                        vegetations = chunk.iterTrees1();
-                        break;
-                }
+                vegetations = chunk.iterVegetations();
 
                 // 依序取出樹的部分位置與方塊
                 foreach ((Vector3Int, BlockType) tree in vegetations)
@@ -568,15 +555,16 @@ namespace udemy
                 }
 
                 loading_bar.value++;
+                yield return null;
             }
 
-            foreach (Chunk3 chunk in chunks.Values)
+            foreach (Chunk chunk in chunks.Values)
             {
                 chunk.rebuild();
             }
         }
 
-        IEnumerable<Chunk3> iterChunkColumn(int col_x, int col_z)
+        IEnumerable<Chunk> iterChunkColumn(int col_x, int col_z)
         {
             IEnumerable<Vector3Int> locations = iterChunkColumnLocation(col_x, col_z);
 
@@ -600,9 +588,9 @@ namespace udemy
 
         void saveWorldToFile()
         {
-            WorldData2 wd = new WorldData2();
+            WorldData wd = new WorldData();
 
-            foreach (KeyValuePair<Vector3Int, Chunk3> item in chunks)
+            foreach (KeyValuePair<Vector3Int, Chunk> item in chunks)
             {
                 wd.setLocation(location: item.Key);
                 wd.setVisibility(visible: item.Value.isVisiable());
@@ -611,13 +599,13 @@ namespace udemy
 
             wd.setPlayerPosition(position: player.transform.position);
 
-            WorldRecorder2.save(wd);
+            WorldRecorder.save(wd);
         }
 
         // 目前讀取檔案來建構世界的過程中，沒有區分哪些是 Extra World，因此會全部都建構後才進入遊戲
         IEnumerator loadWorldFromFile()
         {
-            WorldData2 wd = WorldRecorder2.load();
+            WorldData wd = WorldRecorder.load();
 
             if (wd == null)
             {
@@ -630,7 +618,7 @@ namespace udemy
 
             Vector3Int location;
             GameObject obj;
-            Chunk3 chunk;
+            Chunk chunk;
 
             // NOTE: 若想初始化完玩家周圍後就進入遊戲，loading_bar.maxValue 的設置會是個問題
             loading_bar.maxValue = wd.getChunkNumber();
@@ -645,7 +633,7 @@ namespace udemy
 
                 obj = Instantiate(chunk_prefab);
                 obj.name = $"Chunk_{location.x}_{location.y}_{location.z}";
-                chunk = obj.GetComponent<Chunk3>();
+                chunk = obj.GetComponent<Chunk>();
 
                 chunk.block_types = chunk_data.Item2;
                 chunk.crack_states = chunk_data.Item3;
@@ -693,7 +681,7 @@ namespace udemy
     }
 
     [Serializable]
-    public class WorldData2
+    public class WorldData
     {
         // 每個 chunk_location 分別有 3 個數值 (x, y, z)，共有 n_chunk * 3 個數值 
         //public int[] locations;
@@ -710,7 +698,7 @@ namespace udemy
         public int player_y;
         public int player_z;
 
-        public WorldData2()
+        public WorldData()
         {
             locations = new List<int>();
             block_types = new List<int>();
@@ -744,7 +732,7 @@ namespace udemy
 
         public IEnumerator<Tuple<Vector3Int, BlockType[], CrackState[], bool>> iterChunkDatas()
         {
-            int b, c, n_chunk = getChunkNumber(), n_block = WorldDemo4.chunk_dimensions.x * WorldDemo4.chunk_dimensions.y * WorldDemo4.chunk_dimensions.z;
+            int b, c, n_chunk = getChunkNumber(), n_block = World.chunk_dimensions.x * World.chunk_dimensions.y * World.chunk_dimensions.z;
             int loaction_index = 0, index = 0;
             Vector3Int location;
             BlockType[] block_types;

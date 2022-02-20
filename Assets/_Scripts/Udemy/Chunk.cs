@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Burst;
 using Unity.Collections;
@@ -5,17 +7,18 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
-using Random = UnityEngine.Random;
 
 namespace udemy
 {
     public class Chunk : MonoBehaviour
     {
-        public Material atlas;
+        public Material solid_material;
+        public Material fluid_material;
 
-        public int width = 2;
-        public int height = 2;
-        public int depth = 2;
+        public int WIDTH = 2;
+        public int HEIGHT = 2;
+        public int DEPTH = 2;
+        int n_block;
 
         public Block[,,] blocks;
 
@@ -23,50 +26,206 @@ namespace udemy
         public BlockType[] block_types;
 
         // 將三維的 blocks 的 CrackState 攤平成一個陣列，可加快存取速度
-        //public CrackState[] crack_states;
+        public CrackState[] crack_states;
 
         public Vector3Int location;
 
-        public MeshRenderer mesh_renderer;
+        private MeshRenderer solid_mesh_renderer;
+        private GameObject solid_mesh_obj = null;
 
-        public void build(Vector3Int dimensions, Vector3Int location)
+        private MeshRenderer fluid_mesh_renderer;
+        private GameObject fluid_mesh_obj = null;
+
+        // For HealBlock
+        private WaitForSeconds heal_block_buffer = new WaitForSeconds(3.0f);
+
+        (Vector3Int, BlockType)[] tree_design = new (Vector3Int, BlockType)[] {
+            (new Vector3Int(-1,2,-1), BlockType.LEAVES),
+            (new Vector3Int(0,2,-1), BlockType.LEAVES),
+            (new Vector3Int(0,3,-1), BlockType.LEAVES),
+            (new Vector3Int(1,3,-1), BlockType.LEAVES),
+            (new Vector3Int(-1,4,-1), BlockType.LEAVES),
+            (new Vector3Int(0,4,-1), BlockType.LEAVES),
+            (new Vector3Int(0,5,-1), BlockType.LEAVES),
+            (new Vector3Int(0,0,0), BlockType.WOOD),
+            (new Vector3Int(0,1,0), BlockType.WOOD),
+            (new Vector3Int(-1,2,0), BlockType.LEAVES),
+            (new Vector3Int(0,2,0), BlockType.WOOD),
+            (new Vector3Int(1,2,0), BlockType.LEAVES),
+            (new Vector3Int(-1,3,0), BlockType.LEAVES),
+            (new Vector3Int(0,3,0), BlockType.WOOD),
+            (new Vector3Int(1,3,0), BlockType.LEAVES),
+            (new Vector3Int(-1,4,0), BlockType.LEAVES),
+            (new Vector3Int(0,4,0), BlockType.WOOD),
+            (new Vector3Int(1,4,0), BlockType.LEAVES),
+            (new Vector3Int(-1,5,0), BlockType.LEAVES),
+            (new Vector3Int(0,5,0), BlockType.LEAVES),
+            (new Vector3Int(1,5,0), BlockType.LEAVES),
+            (new Vector3Int(0,2,1), BlockType.LEAVES),
+            (new Vector3Int(1,2,1), BlockType.LEAVES),
+            (new Vector3Int(-1,3,1), BlockType.LEAVES),
+            (new Vector3Int(0,3,1), BlockType.LEAVES),
+            (new Vector3Int(0,4,1), BlockType.LEAVES),
+            (new Vector3Int(1,4,1), BlockType.LEAVES),
+            (new Vector3Int(0,5,1), BlockType.LEAVES)
+        };
+
+        (Vector3Int, BlockType)[] cactus_design = new (Vector3Int, BlockType)[] {
+            (new Vector3Int(0,0,0), BlockType.CACTUS),
+            (new Vector3Int(0,1,0), BlockType.CACTUS),
+            (new Vector3Int(-2,2,0), BlockType.CACTUS),
+            (new Vector3Int(-1,2,0), BlockType.CACTUS),
+            (new Vector3Int(0,2,0), BlockType.CACTUS),
+            (new Vector3Int(-2,3,0), BlockType.CACTUS),
+            (new Vector3Int(0,3,0), BlockType.CACTUS),
+            (new Vector3Int(1,3,0), BlockType.CACTUS),
+            (new Vector3Int(2,3,0), BlockType.CACTUS),
+            (new Vector3Int(-2,4,0), BlockType.CACTUS),
+            (new Vector3Int(0,4,0), BlockType.CACTUS),
+            (new Vector3Int(2,4,0), BlockType.CACTUS),
+            (new Vector3Int(0,5,0), BlockType.CACTUS)
+        };
+
+        public void init(Vector3Int dimensions, Vector3Int location)
         {
-            MeshFilter filter = gameObject.AddComponent<MeshFilter>();
-            mesh_renderer = gameObject.AddComponent<MeshRenderer>();
-            mesh_renderer.material = atlas;
+            locate(dimensions, location);
 
+            block_types = new BlockType[n_block];
+            crack_states = new CrackState[n_block];
+
+            NativeArray<BlockType> block_type_array = new NativeArray<BlockType>(block_types, Allocator.Persistent);
+            NativeArray<CrackState> crack_state_array = new NativeArray<CrackState>(crack_states, Allocator.Persistent);
+
+            Unity.Mathematics.Random[] randoms = new Unity.Mathematics.Random[n_block];
+            System.Random seed = new System.Random();
+
+            for (int i = 0; i < n_block; i++)
+            {
+                randoms[i] = new Unity.Mathematics.Random((uint)seed.Next());
+            }
+
+            NativeArray<Unity.Mathematics.Random> random_array = new NativeArray<Unity.Mathematics.Random>(randoms, Allocator.Persistent);
+
+            DefineBlockJob job = new DefineBlockJob()
+            {
+                block_types = block_type_array,
+                crack_states = crack_state_array,
+                randoms = random_array,
+
+                width = WIDTH,
+                height = HEIGHT,
+                location = location
+            };
+
+            JobHandle handle = job.Schedule(n_block, 64);
+
+            // Schedule 執行完才會執行這一行，若不加 jobHandle.Complete()，則會在背景繼續執行，也執行下方程式碼
+            handle.Complete();
+
+            job.block_types.CopyTo(block_types);
+            job.crack_states.CopyTo(crack_states);
+
+            block_type_array.Dispose();
+            crack_state_array.Dispose();
+            random_array.Dispose();
+        }
+
+        public void locate(Vector3Int dimensions, Vector3Int location)
+        {
             this.location = location;
-            width = dimensions.x;
-            height = dimensions.y;
-            depth = dimensions.z;
-            blocks = new Block[width, height, depth];
-            initChunk();
-            int x, y, z;
 
-            int n_mesh = width * height * depth;
+            WIDTH = dimensions.x;
+            HEIGHT = dimensions.y;
+            DEPTH = dimensions.z;
+            blocks = new Block[WIDTH, HEIGHT, DEPTH];
+            n_block = WIDTH * HEIGHT * DEPTH;
+        }
+
+        public void build()
+        {
+            buildMesh(obj: ref solid_mesh_obj, mesh_type: "Solid");
+            buildMesh(obj: ref fluid_mesh_obj, mesh_type: "Fluid");
+        }
+
+        private void buildMesh(ref GameObject obj, string mesh_type = "Solid")
+        {
+            // TODO: 改為全域變數，避免重複 GetComponent
+            MeshFilter mesh_filter;
+
+            if (obj == null)
+            {
+                obj = new GameObject(mesh_type);
+                obj.transform.parent = transform;
+
+                // 當 Chunk 下的 Block 發生變化，需要重繪 Chunk 時這些 Component 會被刪除，因此每次都需要重新添加
+                mesh_filter = obj.AddComponent<MeshFilter>();
+
+                switch (mesh_type)
+                {
+                    case "Solid":
+                        solid_mesh_renderer = obj.AddComponent<MeshRenderer>();
+                        solid_mesh_renderer.material = solid_material;
+                        break;
+
+                    case "Fluid":
+                        fluid_mesh_renderer = obj.AddComponent<MeshRenderer>();
+                        fluid_mesh_renderer.material = fluid_material;
+
+                        obj.AddComponent<UVScroller>();
+                        obj.layer = LayerMask.NameToLayer("Water");
+                        break;
+                }
+            }
+            else
+            {
+                mesh_filter = obj.GetComponent<MeshFilter>();
+
+                // 避免後面又重複添加 Collider
+                DestroyImmediate(obj.GetComponent<Collider>());
+            }
+
+            int x, y, z;
             List<Mesh> input_mesh_datas = new List<Mesh>();
             int vertex_index_offset = 0, triangle_index_offset = 0, idx = 0;
             int n_vertex, n_triangle, block_idx;
             Block block;
+            bool condition0, condition1;
 
             ProcessMeshDataJob job = new ProcessMeshDataJob();
-            job.vertex_index_offsets = new NativeArray<int>(n_mesh, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            job.triangle_index_offsets = new NativeArray<int>(n_mesh, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            job.vertex_index_offsets = new NativeArray<int>(n_block, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            job.triangle_index_offsets = new NativeArray<int>(n_block, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
-            for (z = 0; z < depth; z++)
+            // TODO: for block_idx in range(n_block)
+            for (z = 0; z < DEPTH; z++)
             {
-                for (y = 0; y < height; y++)
+                for (y = 0; y < HEIGHT; y++)
                 {
-                    for (x = 0; x < width; x++)
+                    for (x = 0; x < WIDTH; x++)
                     {
                         //block_idx = x + width * (y + depth * z);
-                        block_idx = Utils.xyzToFlat(x, y, z, width, depth);
+                        block_idx = Utils.xyzToFlat(x, y, z, WIDTH, DEPTH);
                         block = new Block(block_type: block_types[block_idx],
-                                          offset: new Vector3Int(x, y, z) + location,
-                                          chunk: this);
+                                           crack_state: crack_states[block_idx],
+                                           offset: new Vector3Int(x, y, z) + location,
+                                           chunk: this);
                         blocks[x, y, z] = block;
 
-                        if (block.mesh != null)
+                        condition0 = block.mesh != null;
+                        condition1 = false;
+
+                        // 區分這裡是 Solid 還是 Fluid 
+                        switch (mesh_type)
+                        {
+                            case "Solid":
+                                condition1 = !MeshUtils.canSpread(block_types[block_idx]);
+                                break;
+
+                            case "Fluid":
+                                condition1 = MeshUtils.canSpread(block_types[block_idx]);
+                                break;
+                        }
+
+                        if (condition0 && condition1)
                         {
                             input_mesh_datas.Add(block.mesh);
 
@@ -144,55 +303,282 @@ namespace udemy
             job.triangle_index_offsets.Dispose();
             mesh.RecalculateBounds();
 
-            filter.mesh = mesh;
+            // 更新 mesh_filter 的 mesh
+            mesh_filter.mesh = mesh;
 
-            MeshCollider collider = gameObject.AddComponent<MeshCollider>();
+            // 當 Chunk 下的 Block 發生變化，需要重繪 Chunk 時，MeshCollider 會被刪除，因此每次都需要重新添加
+            MeshCollider collider = obj.AddComponent<MeshCollider>();
             collider.sharedMesh = mesh;
         }
 
-        void initChunk()
+        /// <summary>
+        /// 當 新增 或 破壞 方塊後，呼叫此函式，以重新繪製 Chunk
+        /// </summary>
+        public void rebuild()
         {
-            int n_block = width * depth * height;
-            block_types = new BlockType[n_block];
+            DestroyImmediate(GetComponent<MeshFilter>());
+            DestroyImmediate(GetComponent<MeshRenderer>());
+            DestroyImmediate(GetComponent<Collider>());
+            build();
+        }
 
-            NativeArray<BlockType> block_type_array = new NativeArray<BlockType>(block_types, Allocator.Persistent);
-            //NativeArray<CrackState> crack_state_array = new NativeArray<CrackState>(crack_states, Allocator.Persistent);
-
-            Unity.Mathematics.Random[] randoms = new Unity.Mathematics.Random[n_block];
-            System.Random seed = new System.Random();
+        public IEnumerable<(Vector3Int, BlockType)> iterVegetations()
+        {
+            int n_block = block_types.Length;
+            Vector3Int block_pos, base_pos;
 
             for (int i = 0; i < n_block; i++)
             {
-                randoms[i] = new Unity.Mathematics.Random((uint)seed.Next());
+                if (block_types[i] == BlockType.WOODBASE)
+                {
+                    base_pos = flatToVector3Int(i);
+
+                    foreach ((Vector3Int, BlockType) tree in tree_design)
+                    {
+                        block_pos = base_pos + tree.Item1;
+                        yield return (block_pos, tree.Item2);
+                    }
+                }
+                else if (block_types[i] == BlockType.CACTUSBASE)
+                {
+                    base_pos = flatToVector3Int(i);
+
+                    foreach ((Vector3Int, BlockType) cactus in cactus_design)
+                    {
+                        block_pos = base_pos + cactus.Item1;
+                        yield return (block_pos, cactus.Item2);
+                    }
+                }
+            }
+        }
+
+        public void setVisiable(bool visiable)
+        {
+            solid_mesh_renderer.enabled = visiable;
+            fluid_mesh_renderer.enabled = visiable;
+        }
+
+        /// <summary>
+        /// mesh_renderer_solid 和 mesh_renderer_fluid 是否可見的狀態相同，因此返回任一個的狀態即可
+        /// </summary>
+        /// <returns></returns>
+        public bool isVisiable()
+        {
+            return solid_mesh_renderer.enabled;
+        }
+
+        public (Vector3Int, Vector3Int) getChunkBlockLocation(Vector3Int block_position)
+        {
+            return getChunkBlockLocation(bx: block_position.x, by: block_position.y, bz: block_position.z);
+        }
+
+        public (Vector3Int, Vector3Int) getChunkBlockLocationAdvanced(Vector3Int block_position)
+        {
+            return getChunkBlockLocationAdvanced(bx: block_position.x, by: block_position.y, bz: block_position.z);
+        }
+
+        /// <summary>
+        /// 當點擊方塊所屬 Chunk，和目標方塊所屬 Chunk 不同時，方塊位置的座標會發生索引值超出。
+        /// 處理 Chunk 邊界對 Block 索引值的處理，當超出當前 Chunk 時，指向下一個 Chunk 並修正 Block 索引值。
+        /// NOTE: 這裡未考慮到 世界 的大小
+        /// </summary>
+        /// <param name="bx">目標方塊位置的 X 座標</param>
+        /// <param name="by">目標方塊位置的 Y 座標</param>
+        /// <param name="bz">目標方塊位置的 Z 座標</param>
+        /// <returns>(已校正 chunk 位置, 已校正 block 索引值)</returns>
+        public (Vector3Int, Vector3Int) getChunkBlockLocation(int bx, int by, int bz)
+        {
+            Vector3Int chunk_location = new Vector3Int(location.x, location.y, location.z);
+
+            if (bx == WIDTH)
+            {
+                chunk_location.x += WIDTH;
+                bx = 0;
+            }
+            else if (bx == -1)
+            {
+                chunk_location.x -= WIDTH;
+                bx = WIDTH - 1;
+            }
+            else if (by == HEIGHT)
+            {
+                chunk_location.y += HEIGHT;
+                by = 0;
+            }
+            else if (by == -1)
+            {
+                chunk_location.y -= HEIGHT;
+                by = HEIGHT - 1;
+            }
+            else if (bz == DEPTH)
+            {
+                chunk_location.z += DEPTH;
+                bz = 0;
+            }
+            else if (bz == -1)
+            {
+                chunk_location.z -= DEPTH;
+                bz = DEPTH - 1;
             }
 
-            NativeArray<Unity.Mathematics.Random> random_array = new NativeArray<Unity.Mathematics.Random>(randoms, Allocator.Persistent);
+            return (chunk_location, new Vector3Int(bx, by, bz));
+        }
 
-            DefineBlockJob1 job = new DefineBlockJob1()
+        /// <summary>
+        /// getChunkBlockLocation 只考慮放置方塊的情形，因此一次只會有一個方向超出 Chunk 的邊界
+        /// 而 getChunkBlockLocationAdvanced 使用於程式添加環境，一次會有多個方向超出 Chunk 的邊界，XYZ 三個方向都須考慮
+        /// 目前僅考慮超出一個 Chunk 的情況，尚未考慮跨兩個或以上 Chunk 的情況
+        /// </summary>
+        /// <param name="bx">目標方塊位置的 X 座標</param>
+        /// <param name="by">目標方塊位置的 Y 座標</param>
+        /// <param name="bz">目標方塊位置的 Z 座標</param>
+        /// <returns>(已校正 chunk 位置, 已校正 block 索引值)</returns>
+        public (Vector3Int, Vector3Int) getChunkBlockLocationAdvanced(int bx, int by, int bz)
+        {
+            Vector3Int chunk_location = new Vector3Int(location.x, location.y, location.z);
+
+            if (bx >= WIDTH)
             {
-                block_types = block_type_array,
-                randoms = random_array,
+                chunk_location.x += WIDTH;
+                bx -= WIDTH;
+            }
+            else if (bx <= -1)
+            {
+                chunk_location.x -= WIDTH;
+                bx += WIDTH;
+            }
 
-                width = width,
-                height = height,
-                location = location
-            };
+            if (by >= HEIGHT)
+            {
+                chunk_location.y += HEIGHT;
+                by -= HEIGHT;
+            }
+            else if (by <= -1)
+            {
+                chunk_location.y -= HEIGHT;
+                by += HEIGHT;
+            }
 
-            JobHandle handle = job.Schedule(n_block, 64);
+            if (bz >= DEPTH)
+            {
+                chunk_location.z += DEPTH;
+                bz -= DEPTH;
+            }
+            else if (bz <= -1)
+            {
+                chunk_location.z -= DEPTH;
+                bz += DEPTH;
+            }
 
-            // Schedule 執行完才會執行這一行，若不加 jobHandle.Complete()，則會在背景繼續執行，也執行下方程式碼
-            handle.Complete();
+            return (chunk_location, new Vector3Int(bx, by, bz));
+        }
 
-            job.block_types.CopyTo(block_types);
-            //job.hData.CopyTo(healthData);
-            block_type_array.Dispose();
-            //healthTypes.Dispose();
-            random_array.Dispose();
+        public void setBlockType(int index, BlockType block_type)
+        {
+            block_types[index] = block_type;
         }
 
         public BlockType getBlockType(int index)
         {
             return block_types[index];
+        }
+
+        public void setCrackState(int index, CrackState crack_state = CrackState.None)
+        {
+            crack_states[index] = crack_state;
+        }
+
+        public CrackState getCrackState(int index)
+        {
+            return crack_states[index];
+        }
+
+        public void placeBlock(int index, BlockType block_type)
+        {
+            try
+            {
+                block_types[index] = block_type;
+                crack_states[index] = CrackState.None;
+            }
+            catch (IndexOutOfRangeException)
+            {
+                Vector3Int v = flatToVector3Int(index);
+                Debug.LogError($"{index}/{block_types.Length}; {v}/({WIDTH}, {HEIGHT}, {DEPTH})");
+            }
+        }
+
+        /// <summary>
+        /// 敲擊某塊方塊時，累加破壞程度
+        /// 若破壞程度與方塊強度相當，才會真的破壞掉
+        /// </summary>
+        /// <param name="index">方塊索引值</param>
+        /// <returns>該方塊是否被破壞</returns>
+        public bool crackBlock(int index)
+        {
+            // 若無法破壞，直接返回
+            if (!isCrackable(index))
+            {
+                return false;
+            }
+
+            // 第一次敲擊時觸發，一段時間後檢查是否已被敲掉，否則修復自己 crack_state 恢復成 CrackState.None
+            if (crack_states[index].Equals(CrackState.None))
+            {
+                StartCoroutine(healBlock(index));
+            }
+
+            // 累加破壞程度
+            crack_states[index]++;
+
+            // 若 破壞程度 與 方塊強度 相當
+            if (isCracked(index))
+            {
+                // 實際破壞該方塊
+                block_types[index] = BlockType.AIR;
+                crack_states[index] = CrackState.None;
+
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 破壞程度(CrackState) 與 方塊強度(Strenth) 相當，才能真的破壞掉
+        /// </summary>
+        /// <param name="index">方塊索引值</param>
+        /// <returns>是否被破壞了</returns>
+        public bool isCracked(int index)
+        {
+            return crack_states[index].Equals((CrackState)MeshUtils.getStrenth(block_types[index]));
+        }
+
+        /// <summary>
+        /// 若為基岩等類型的方塊，強度設置為 -1，表示無法破壞。
+        /// 其他的則無限制。
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns>該方塊是否可以破壞</returns>
+        public bool isCrackable(int index)
+        {
+            return MeshUtils.getStrenth(block_types[index]) != -1;
+        }
+
+        // 一段時間後檢查是否已被敲掉，否則修復自己 health 恢復成 NOCRACK
+        public IEnumerator healBlock(int index)
+        {
+            yield return heal_block_buffer;
+
+            if (block_types[index] != BlockType.AIR)
+            {
+                crack_states[index] = CrackState.None;
+                rebuild();
+            }
+        }
+
+        public Vector3Int flatToVector3Int(int i)
+        {
+            return Utils.flatToVector3Int(i, width: WIDTH, height: HEIGHT);
         }
     }
 
@@ -217,6 +603,152 @@ namespace udemy
      * Burst 是一個新的基於 LLVM 的後端編譯器技術，它會使事情對於你更加簡單。它獲取 C# job 並利用你平台的特定功能產生高度優化的機器碼。
      * 參考：https://zhuanlan.zhihu.com/p/58125078
      */
+
+    // DefineBlockJob：根據海拔與位置等資訊，決定 Block 的類型與位置。再交由 ProcessMeshDataJob 處理如何呈現。
+    struct DefineBlockJob : IJobParallelFor
+    {
+        public NativeArray<BlockType> block_types;
+        public NativeArray<CrackState> crack_states;
+
+        // TODO: 原本每次開起的隨機數都會相同，是因為給 Unity.Mathematics.Random 的 seed 都是 1，因此只須傳入隨機的 seed，並在 Execute(int i) 外部建立 Unity.Mathematics.Random 物件即可
+        public NativeArray<Unity.Mathematics.Random> randoms;
+
+        public int width;
+        public int height;
+        public Vector3Int location;
+
+        Vector3Int xyz;
+        Unity.Mathematics.Random random;
+        int surface_height, stone_height, diamond_top_height, diamond_bottom_height;
+        int dig_cave, plant_tree, dessert_biome;
+
+        public void Execute(int i)
+        {
+            xyz = Utils.flatToVector3Int(i, width, height) + location;
+            random = randoms[i];
+
+            surface_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
+                                             octaves: World.surface_strata.octaves,
+                                             scale: World.surface_strata.scale,
+                                             height_scale: World.surface_strata.height_scale,
+                                             height_offset: World.surface_strata.height_offset);
+
+            stone_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
+                                           octaves: World.stone_strata.octaves,
+                                           scale: World.stone_strata.scale,
+                                           height_scale: World.stone_strata.height_scale,
+                                           height_offset: World.stone_strata.height_offset);
+
+            diamond_top_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
+                                                 octaves: World.diamond_top_strata.octaves,
+                                                 scale: World.diamond_top_strata.scale,
+                                                 height_scale: World.diamond_top_strata.height_scale,
+                                                 height_offset: World.diamond_top_strata.height_offset);
+
+            diamond_bottom_height = (int)Strata.fBM(x: xyz.x, z: xyz.z,
+                                                    octaves: World.diamond_bottom_strata.octaves,
+                                                    scale: World.diamond_bottom_strata.scale,
+                                                    height_scale: World.diamond_bottom_strata.height_scale,
+                                                    height_offset: World.diamond_bottom_strata.height_offset);
+
+            dig_cave = (int)Cluster.fBM3D(x: xyz.x, y: xyz.y, z: xyz.z,
+                                          octaves: World.cave_cluster.octaves,
+                                          scale: World.cave_cluster.scale,
+                                          height_scale: World.cave_cluster.height_scale,
+                                          height_offset: World.cave_cluster.height_offset);
+
+
+            plant_tree = (int)Cluster.fBM3D(x: xyz.x, y: xyz.y, z: xyz.z,
+                                            octaves: World.tree_cluster.octaves,
+                                            scale: World.tree_cluster.scale,
+                                            height_scale: World.tree_cluster.height_scale,
+                                            height_offset: World.tree_cluster.height_offset);
+
+
+            dessert_biome = (int)Cluster.fBM3D(x: xyz.x, y: xyz.y, z: xyz.z,
+                                               octaves: World.biome_cluster.octaves,
+                                               scale: World.biome_cluster.scale,
+                                               height_scale: World.biome_cluster.height_scale,
+                                               height_offset: World.biome_cluster.height_offset);
+
+
+            /* 目前在水線下的高度放了一個 Post-process Volume，定義攝影機進入該區域的效果(看起來藍藍的、能見度很低)，
+             * 並利用 WaterManager 在水平方向追蹤玩家。即，不管從哪裡下降到水線以下的區域都會看起來像在水中，
+             * 即便現在不在水中。 這個做法必須改掉，因為它不但水線以下都附加該效果，水線的定位方式(要自己算形成的世界有多高)也不是很理想 */
+            int WATER_LINE = 20;
+
+            crack_states[i] = CrackState.None;
+
+            if (xyz.y == 0)
+            {
+                block_types[i] = BlockType.BEDROCK;
+                return;
+            }
+
+            // TODO: 目前的洞穴可能會挖到地表，且因沒有考慮到是否是地表，因而造成地表為泥土而非草地
+            if (dig_cave < World.cave_cluster.boundary)
+            {
+                block_types[i] = BlockType.AIR;
+                return;
+            }
+
+            if (xyz.y == surface_height && xyz.y >= WATER_LINE)
+            {
+                if (dessert_biome < World.biome_cluster.boundary)
+                {
+                    block_types[i] = BlockType.SAND;
+
+                    if (random.NextFloat(1) <= 0.05f)
+                    {
+                        block_types[i] = BlockType.CACTUSBASE;
+                    }
+                }
+                else if (plant_tree < World.tree_cluster.boundary)
+                {
+                    block_types[i] = BlockType.FOREST;
+
+                    // TODO: 樹出現的密度(機率)應由外部設置
+                    if (random.NextFloat(1) <= 0.05f)
+                    {
+                        // Execute 當中一次處理一個 Block，因此這裡僅放置樹基，而非直接種一棵樹
+                        block_types[i] = BlockType.WOODBASE;
+                    }
+                }
+                else
+                {
+                    block_types[i] = BlockType.GRASSSIDE;
+                }
+            }
+
+            else if ((diamond_bottom_height < xyz.y) && (xyz.y < diamond_top_height) && (random.NextFloat(1) <= World.diamond_top_strata.probability))
+            {
+                block_types[i] = BlockType.DIAMOND;
+            }
+
+            else if ((xyz.y < stone_height) && (random.NextFloat(1) <= World.stone_strata.probability))
+            {
+                block_types[i] = BlockType.STONE;
+            }
+
+            else if (xyz.y < surface_height)
+            {
+                block_types[i] = BlockType.DIRT;
+            }
+
+            // TODO: 實際數值要根據地形高低來做調整
+            // TODO: 如何確保水是自己一個區塊，而非隨機的散佈在地圖中？大概要像樹一樣，使用 fBM3D
+            else if (xyz.y < WATER_LINE)
+            {
+                block_types[i] = BlockType.WATER;
+            }
+
+            else
+            {
+                block_types[i] = BlockType.AIR;
+            }
+        }
+    }
+
 
     // ProcessMeshDataJob：根據 Block 的類型與位置等，計算所需貼圖與位置
     // ProcessMeshDataJob 用於將多個 Mesh 合併為單一個 Mesh，作用同 MeshUtils.mergeMeshes，但是使用了 Job System 會更有效率

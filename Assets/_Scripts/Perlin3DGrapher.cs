@@ -9,8 +9,6 @@ public class Perlin3DGrapher : MonoBehaviour
     public float heightScale = 2;
     [Range(0.0f, 1.0f)]
     public float scale = 0.5f;
-
-    // TODO: 暫時不需要洞穴，因此將 3 改為 5
     public int octaves = 1;
 
     public float heightOffset = 1;

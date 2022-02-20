@@ -79,7 +79,6 @@ namespace udemy
 
         private void Update()
         {
-            // TODO: 移到 Player 當中管理，利用事件通知 World 哪些方塊被移除，哪些方塊又被新增
             // 左鍵(0)：挖掘方塊；右鍵(1)：放置方塊
             if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
             {
@@ -128,7 +127,6 @@ namespace udemy
                     // 右鍵(1)：放置方塊
                     else
                     {
-                        // TODO: 考慮 世界 的大小，取得的 chunk 不一定存在於 chunks 當中
                         (Vector3Int, Vector3Int) chunk_block_location = chunk.getChunkBlockLocation(bx, by, bz);
 
                         if (chunks.ContainsKey(chunk_block_location.Item1))
@@ -144,51 +142,6 @@ namespace udemy
 
                     // 當 新增 或 破壞 方塊後，重新繪製 Chunk
                     chunk.rebuild();
-
-                    //var blockNeighbour = GetWorldNeighbour(new Vector3Int(bx, by, bz), Vector3Int.CeilToInt(chunk.location));
-                    //chunk = chunks[blockNeighbour.Item2];
-
-                    ////int i = bx + chunkDimensions.x * (by + chunkDimensions.z * bz);
-                    //int i = ToFlat(blockNeighbour.Item1);
-
-                    //if (Input.GetMouseButtonDown(0))
-                    //{
-                    //    // TODO: 教學中為了避免 health 為 -1 的方塊被刪除，因此加了這個判斷，但其實根本沒必要。health 從 NOCRACK(10) 開始往上加，本來就不可能加到 -1
-                    //    if (MeshUtils.blockTypeHealth[(int)chunk.chunkData[i]] != -1)
-                    //    {
-                    //        // 第一次敲擊時觸發，一段時間後檢查是否已被敲掉，否則修復自己 health 恢復成 NOCRACK
-                    //        if (chunk.healthData[i] == MeshUtils.BlockType.NOCRACK)
-                    //        {
-                    //            StartCoroutine(HealBlock(c: chunk, blockIndex: i));
-                    //        }
-
-                    //        chunk.healthData[i]++;
-
-                    //        if (chunk.healthData[i] == MeshUtils.BlockType.NOCRACK + MeshUtils.blockTypeHealth[(int)chunk.chunkData[i]])
-                    //        {
-                    //            chunk.chunkData[i] = MeshUtils.BlockType.AIR;
-                    //            chunk.healthData[i] = MeshUtils.BlockType.NOCRACK;
-
-                    //            // 上方方塊是否掉落檢查
-                    //            Vector3Int nBlock = FromFlat(i);
-                    //            var neghbourBlock = GetWorldNeighbour(new Vector3Int(nBlock.x, nBlock.y + 1, nBlock.z), Vector3Int.CeilToInt(chunk.location));
-                    //            Vector3Int block = neghbourBlock.Item1;
-                    //            int neighboutBlockIndex = ToFlat(block);
-                    //            Chunk neighbourChunk = chunks[neghbourBlock.Item2];
-                    //            StartCoroutine(Drop(neighbourChunk, neighboutBlockIndex));
-                    //        }
-                    //    }
-                    //}
-                    //else
-                    //{
-                    //    chunk.chunkData[i] = buildType;
-                    //    thisChunk.healthData[i] = MeshUtils.BlockType.NOCRACK;
-
-                    //    // 方塊是否掉落檢查
-                    //    StartCoroutine(Drop(thisChunk, i));
-                    //}
-
-                    //RedrawChunk(thisChunk);
                 }
             }
 
@@ -312,8 +265,6 @@ namespace udemy
         /// <summary>
         /// 依序執行 task_queue 當中的任務
         /// Coordinator: 協調員
-        /// TODO: 任務優先順序應為：1. enable 已建構的 ChunkColumn 2. 生成新的 ChunkColumn 3. 隱藏遠方 ChunkColumn
-        /// TODO: 維護鄰近 ChunkColumn 座標列表，若要 enable 或要新生成的 ChunkColumn 又已不在清單中，或許可以跳出 Coroutine 以避免無效作業
         /// </summary>
         /// <returns></returns>
         IEnumerator taskCoordinator()

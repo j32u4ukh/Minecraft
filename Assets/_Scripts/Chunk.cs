@@ -44,7 +44,6 @@ public class Chunk : MonoBehaviour
         public int height;
         public Vector3 location;
 
-        // TODO: 原本每次開起的隨機數都會相同，是因為給 Unity.Mathematics.Random 的 seed 都是 1，因此只須傳入隨機的 seed，並在 Execute(int i) 外部建立 Unity.Mathematics.Random 物件即可
         public NativeArray<Unity.Mathematics.Random> randoms;
 
         public void Execute(int i)
@@ -107,7 +106,6 @@ public class Chunk : MonoBehaviour
                 return;
             }
 
-            // TODO: 目前的洞穴可能會挖到地表，且因沒有考慮到是否是地表，因而造成地表為泥土而非草地
             if (digCave < World.caveSettings.probability)
             {
                 cData[i] = MeshUtils.BlockType.AIR;
@@ -156,8 +154,6 @@ public class Chunk : MonoBehaviour
                 cData[i] = MeshUtils.BlockType.DIRT;
             }
 
-            // TODO: 實際數值要根據地形高低來做調整
-            // TODO: 如何確保水是自己一個區塊，而非隨機的散佈在地圖中？大概要像樹一樣，使用 fBM3D
             else if (y < WATER_LINE)
             {
                 cData[i] = MeshUtils.BlockType.WATER;
@@ -297,7 +293,7 @@ public class Chunk : MonoBehaviour
         height = (int)dimensions.y;
         depth = (int)dimensions.z;
 
-        // TODO: 可將此處的 mrs, mrf 用全域的 meshRendererSolid, meshRendererFluid 取代
+        // 可將此處的 mrs, mrf 用全域的 meshRendererSolid, meshRendererFluid 取代。我的優化版已採用。
         // 固體(Solid)方塊 Mesh
         MeshFilter mesh_filter_solid;
         MeshRenderer mesh_renderer_solid;
@@ -530,7 +526,7 @@ public class Chunk : MonoBehaviour
                     Vector3Int blockPos = World.FromFlat(i) + v.Item1;
                     int bIndex = World.ToFlat(blockPos);
 
-                    // TODO: 目前樹木若剛好在 Chunk 的邊界上，則會被切掉
+                    // 這個版本樹木若剛好在 Chunk 的邊界上，則會被切掉。我的優化版已解決。
                     if ((0 <= bIndex) && (bIndex < chunkData.Length))
                     {
                         chunkData[bIndex] = v.Item2;

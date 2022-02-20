@@ -43,15 +43,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1cb678d7accfeb34c893afe84f9d3860, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  atlas: {fileID: 2100000, guid: d8bb48271eae1454583b06e3108f60e0, type: 2}
-  width: 2
-  height: 2
-  depth: 2
+  solid_material: {fileID: 2100000, guid: d8bb48271eae1454583b06e3108f60e0, type: 2}
+  fluid_material: {fileID: 2100000, guid: 4093ca777884e3c40a2909f87a4d1abd, type: 2}
+  WIDTH: 2
+  HEIGHT: 2
+  DEPTH: 2
   block_types: 
+  crack_states: 
   location: {x: 0, y: 0, z: 0}
-  mesh_renderer: {fileID: 0}
-  surface_setting: {fileID: 11400000, guid: d7b30f8eb2d9cc9499aafa551613e6eb, type: 2}
-  stone_setting: {fileID: 11400000, guid: 0b3d6527a3802344cba0540e5db0d744, type: 2}
-  diamond_top_setting: {fileID: 11400000, guid: 470ec7ae3e32ffd47bc31f494926fea9, type: 2}
-  diamond_bottom_setting: {fileID: 11400000, guid: 54ad33fe1128f0f4795c6864c92a680e, type: 2}
-  cave_setting: {fileID: 11400000, guid: 111305e2d6c1615479975dcdacbb9b04, type: 2}

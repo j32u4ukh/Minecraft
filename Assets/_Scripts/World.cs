@@ -135,6 +135,7 @@ public class World : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        // 左鍵(0)：挖掘方塊；右鍵(1)：放置方塊
         if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
         {
             RaycastHit hit;
@@ -168,7 +169,7 @@ public class World : MonoBehaviour
                     
                 if (Input.GetMouseButtonDown(0))
                 {
-                    // TODO: 教學中為了避免 health 為 -1 的方塊被刪除，因此加了這個判斷，但其實根本沒必要。health 從 NOCRACK(10) 開始往上加，本來就不可能加到 -1
+                    // 教學中為了避免 health 為 -1 的方塊被刪除，因此加了這個判斷，但其實根本沒必要。health 從 NOCRACK(10) 開始往上加，本來就不可能加到 -1
                     if (MeshUtils.blockTypeHealth[(int)thisChunk.chunkData[i]] != -1)
                     {
                         // 第一次敲擊時觸發，一段時間後檢查是否已被敲掉，否則修復自己 health 恢復成 NOCRACK
@@ -220,8 +221,7 @@ public class World : MonoBehaviour
 
     /// <summary>
     /// 處理 Chunk 邊界對 Block 索引值的處理，當超出當前 Chunk 時，指向下一個 Chunk 並修正 Block 索引值
-    /// TODO: 應該先返回 chunk index 再返回 updated block index，比較合邏輯
-    /// TODO: 當指向的下一個 Chunk 超出了世界範圍，應該返回 null
+    /// 應該先返回 chunk index 再返回 updated block index，比較合邏輯。我的優化版已修正。
     /// </summary>
     /// <param name="blockIndex">updated block index</param>
     /// <param name="chunkIndex">chunk index</param>
@@ -349,8 +349,6 @@ public class World : MonoBehaviour
 
     /// <summary>
     /// 讓水等物件流向四周
-    /// TODO: 應該不只 FlowIntoNeighbour 與 Drop 之間遞迴呼叫，還要 FlowIntoNeighbour 遞迴呼叫自身，
-    /// 只是前者的衰退速度應該會較快，相較於 FlowIntoNeighbour 每次 spread 減一
     /// </summary>
     /// <param name="blockPosition"></param>
     /// <param name="chunkPosition"></param>
@@ -381,8 +379,6 @@ public class World : MonoBehaviour
             neighbourChunk.chunkData[neighbourBlockIndex] = chunks[chunkPosition].chunkData[ToFlat(blockPosition)];
             neighbourChunk.healthData[neighbourBlockIndex] = MeshUtils.BlockType.NOCRACK;
             RedrawChunk(neighbourChunk);
-
-            // TODO: 此函式進來時就已經減一，遞迴呼叫時又再減一次，應該是重複做了？
             StartCoroutine(Drop(c: neighbourChunk, blockIndex: neighbourBlockIndex, spread: spread--));
         }
     }
@@ -603,9 +599,7 @@ public class World : MonoBehaviour
     {
         FileSaver.Save(this);
     }
-
-    // TODO: 利用檔案重建世界，目前遇到若有刪除方塊，會發生 IndexOutOfRangeException，可能是刪除方塊的流程和添加有著關鍵性的不同
-    // TODO: 上述問題同時還觀察到 WorldData.allChunkData 似乎儲存失敗，當中沒有數據
+    
     IEnumerator LoadWorldFromFile()
     {
         WorldData wd = FileSaver.Load();

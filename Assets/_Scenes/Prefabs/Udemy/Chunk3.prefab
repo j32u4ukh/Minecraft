@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   solid_material: {fileID: 2100000, guid: d8bb48271eae1454583b06e3108f60e0, type: 2}
-  material_fluid: {fileID: 2100000, guid: 4093ca777884e3c40a2909f87a4d1abd, type: 2}
+  fluid_material: {fileID: 2100000, guid: 4093ca777884e3c40a2909f87a4d1abd, type: 2}
   WIDTH: 2
   HEIGHT: 2
   DEPTH: 2
