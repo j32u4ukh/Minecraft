@@ -84,83 +84,84 @@ namespace udemy
 
         private void Update()
         {
-            // TODO: 移到 Player 當中管理，利用事件通知 World 哪些方塊被移除，哪些方塊又被新增
-            // 左鍵(0)：挖掘方塊；右鍵(1)：放置方塊
-            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
-            {
-                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            //// TODO: 移到 Player 當中管理，利用事件通知 World 哪些方塊被移除，哪些方塊又被新增
+            //// 左鍵(0)：挖掘方塊；右鍵(1)：放置方塊
+            //if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
+            //{
+            //    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-                if (Physics.Raycast(ray, out RaycastHit hit, 10f))
-                {
-                    if (!hit.collider.gameObject.transform.parent.TryGetComponent(out Chunk chunk))
-                    {
-                        Debug.Log($"No Chunk, parent: {hit.collider.gameObject.transform.parent.gameObject.name}," +
-                                  $"target: {hit.collider.gameObject.name}");
-                        return;
-                    }
+            //    if (Physics.Raycast(ray, out RaycastHit hit, 10f))
+            //    {
+            //        if (!hit.collider.gameObject.transform.parent.TryGetComponent(out Chunk chunk))
+            //        {
+            //            Debug.Log($"No Chunk, parent: {hit.collider.gameObject.transform.parent.gameObject.name}," +
+            //                      $"target: {hit.collider.gameObject.name}");
+            //            return;
+            //        }
 
-                    Vector3 hit_block;
+            //        Vector3 hit_block;
 
-                    // 左鍵(0)：挖掘方塊
-                    if (Input.GetMouseButtonDown(0))
-                    {
-                        hit_block = hit.point - hit.normal / 2.0f;
-                    }
+            //        // 左鍵(0)：挖掘方塊
+            //        if (Input.GetMouseButtonDown(0))
+            //        {
+            //            hit_block = hit.point - hit.normal / 2.0f;
+            //        }
 
-                    // 右鍵(1)：放置方塊
-                    else
-                    {
-                        hit_block = hit.point + hit.normal / 2.0f;
-                    }
+            //        // 右鍵(1)：放置方塊
+            //        else
+            //        {
+            //            hit_block = hit.point + hit.normal / 2.0f;
+            //        }
 
-                    // Debug.Log($"Block location: {hit_block}");
-                    int bx = (int)(Mathf.Round(hit_block.x) - chunk.location.x);
-                    int by = (int)(Mathf.Round(hit_block.y) - chunk.location.y);
-                    int bz = (int)(Mathf.Round(hit_block.z) - chunk.location.z);
-                    int i;
+            //        // Debug.Log($"Block location: {hit_block}");
+            //        int bx = (int)(Mathf.Round(hit_block.x) - chunk.location.x);
+            //        int by = (int)(Mathf.Round(hit_block.y) - chunk.location.y);
+            //        int bz = (int)(Mathf.Round(hit_block.z) - chunk.location.z);
+            //        int i;
 
-                    // 左鍵(0)：挖掘方塊
-                    if (Input.GetMouseButtonDown(0))
-                    {
-                        i = xyzToFlat(bx, by, bz);
+            //        // 左鍵(0)：挖掘方塊
+            //        if (Input.GetMouseButtonDown(0))
+            //        {
+            //            i = xyzToFlat(bx, by, bz);
 
-                        // 累加破壞程度(若破壞程度與方塊強度相當，才會真的破壞掉)
-                        if(chunk.crackBlock(index: i))
-                        {
-                            // 考慮當前方塊的上方一格是否會觸發掉落機制
-                            dropBlockAbove(chunk: chunk, block_position: new Vector3Int(bx, by, bz));
-                        }
-                    }
+            //            // 累加破壞程度(若破壞程度與方塊強度相當，才會真的破壞掉)
+            //            if(chunk.crackBlock(index: i))
+            //            {
+            //                // 考慮當前方塊的上方一格是否會觸發掉落機制
+            //                dropBlockAbove(chunk: chunk, block_position: new Vector3Int(bx, by, bz));
+            //            }
+            //        }
 
-                    // 右鍵(1)：放置方塊
-                    else
-                    {
-                        // TODO: 考慮 世界 的大小，取得的 chunk 不一定存在於 chunks 當中
-                        (Vector3Int, Vector3Int) chunk_block_location = chunk.getChunkBlockLocation(bx, by, bz);
+            //        // 右鍵(1)：放置方塊
+            //        else
+            //        {
+            //            // TODO: 考慮 世界 的大小，取得的 chunk 不一定存在於 chunks 當中
+            //            (Vector3Int, Vector3Int) chunk_block_location = chunk.getChunkBlockLocation(bx, by, bz);
 
-                        if (chunks.ContainsKey(chunk_block_location.Item1))
-                        {
-                            chunk = chunks[chunk_block_location.Item1];
-                            i = vector3IntToFlat(chunk_block_location.Item2);
+            //            if (chunks.ContainsKey(chunk_block_location.Item1))
+            //            {
+            //                chunk = chunks[chunk_block_location.Item1];
+            //                i = vector3IntToFlat(chunk_block_location.Item2);
 
-                            chunk.placeBlock(index: i, block_type: player.getBlockType());
+            //                chunk.placeBlock(index: i, block_type: player.getBlockType());
 
-                            StartCoroutine(dropBlock(chunk: chunk, block_index: i));
-                        }
-                    }
+            //                StartCoroutine(dropBlock(chunk: chunk, block_index: i));
+            //            }
+            //        }
 
-                    // 當 新增 或 破壞 方塊後，重新繪製 Chunk
-                    chunk.rebuild();
-                }
-            }
+            //        // 當 新增 或 破壞 方塊後，重新繪製 Chunk
+            //        //chunk.rebuild();
+            //        rebuild(chunk);
+            //    }
+            //}
 
-            if (Input.GetKey(KeyCode.RightControl))
-            {
-                if (Input.GetKeyDown(KeyCode.RightAlt))
-                {
-                    saveWorldToFile();
-                }
-            }
+            //if (Input.GetKey(KeyCode.RightControl))
+            //{
+            //    if (Input.GetKeyDown(KeyCode.RightAlt))
+            //    {
+            //        saveWorldToFile();
+            //    }
+            //}
         }
 
         IEnumerator buildWorld()
@@ -169,6 +170,7 @@ namespace udemy
             loading_bar.maxValue = world_dimesions.x * world_dimesions.z + chunks.Count;
             int x, z, column_z;
 
+            // 初始化 chunks 以及各個 Chunk 的方塊 類型(block_types) 與 狀態(crack_states)
             for (z = 0; z < world_dimesions.z; z++)
             {
                 column_z = z * chunk_dimensions.z;
@@ -183,11 +185,13 @@ namespace udemy
                 }
             }
 
+            Debug.Log($"#chunk: {chunks.Count}");
+
             // TODO: 在這裡考慮 Chunk 交界問題，隱藏 Chunk 交界的 Mesh
-            //yield return handleCrossChunkMesh();
+            handleCrossChunkMesh();
 
             // 在這裡呼叫 Chunk.buildTrees()，樹的建構才有辦法考慮到跨 Chunk 的情況
-            yield return buildVegetations();
+            //yield return buildVegetations();
 
             main_camera.SetActive(false);
 
@@ -202,13 +206,13 @@ namespace udemy
             loading_bar.gameObject.SetActive(false);
 
             // 啟動 taskCoordinator，依序執行被分派的任務
-            StartCoroutine(taskCoordinator());
+            //StartCoroutine(taskCoordinator());
 
             // NOTE: 暫且關閉此功能，以利開發其他機制
             // 將 IEnumerator 添加到 buildQueue 當中
             //StartCoroutine(updateWorld());
 
-            StartCoroutine(buildExtraWorld());
+            //StartCoroutine(buildExtraWorld());
         }
 
         IEnumerator buildExtraWorld(bool visiable = false)
@@ -264,8 +268,6 @@ namespace udemy
 
                     chunk = chunk_obj.GetComponent<Chunk>();
                     chunk.init(dimensions: chunk_dimensions, location: location);
-                    chunk.build();
-                    chunk.setVisiable(visiable: visiable);
 
                     chunks.Add(location, chunk);
                 }
@@ -274,7 +276,7 @@ namespace udemy
             }            
         }
 
-        private IEnumerator handleCrossChunkMesh()
+        private void handleCrossChunkMesh()
         {
             (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) neighbors;
 
@@ -282,14 +284,25 @@ namespace udemy
             {
                 neighbors = getNeighbourChunk(center: location_chunk.Key);
 
-                yield return null;
+                location_chunk.Value.handleCrossChunkMesh(neighbors.up, neighbors.down, neighbors.left, neighbors.right, neighbors.forward, neighbors.back);
+                location_chunk.Value.setVisiable(visiable: true);
             }
 
-            foreach (Chunk chunk in chunks.Values)
-            {
-                // TODO: 需改寫為會考慮跨 Chunk 的情況
-                chunk.rebuild();
-            }
+            //foreach (Chunk chunk in chunks.Values)
+            //{
+            //    rebuild(chunk);
+            //}
+        }
+
+        void rebuild(Chunk chunk)
+        {
+            (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) neighbors;
+            neighbors = getNeighbourChunk(center: chunk.location);
+
+            DestroyImmediate(chunk.GetComponent<MeshFilter>());
+            DestroyImmediate(chunk.GetComponent<MeshRenderer>());
+            DestroyImmediate(chunk.GetComponent<Collider>());
+            chunk.handleCrossChunkMesh(neighbors.up, neighbors.down, neighbors.left, neighbors.right, neighbors.forward, neighbors.back);
         }
 
         private (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) getNeighbourChunk(Vector3Int center)
@@ -505,11 +518,13 @@ namespace udemy
 
                     yield return falling_buffer;
 
-                    chunk.rebuild();
+                    //chunk.rebuild();
+                    rebuild(chunk);
 
-                    if(chunk_below != chunk)
+                    if (chunk_below != chunk)
                     {
-                        chunk_below.rebuild();
+                        //chunk_below.rebuild();
+                        rebuild(chunk_below);
                     }
 
                     // 指向落下後的方塊
@@ -555,7 +570,8 @@ namespace udemy
                 int block_index = vector3IntToFlat(block_position);
                 neighbor_chunk.setBlockType(index: block_neighbor_index, chunk.getBlockType(block_index));
                 neighbor_chunk.setCrackState(index: block_neighbor_index);
-                neighbor_chunk.rebuild();
+                //neighbor_chunk.rebuild();
+                rebuild(neighbor_chunk);
 
                 StartCoroutine(dropBlock(chunk: neighbor_chunk, block_index: block_neighbor_index, spread: spread));
             }
@@ -624,7 +640,8 @@ namespace udemy
 
             foreach (Chunk chunk in chunks.Values)
             {
-                chunk.rebuild();
+                //chunk.rebuild();
+                rebuild(chunk);
             }
         }
 
@@ -669,63 +686,64 @@ namespace udemy
         // 目前讀取檔案來建構世界的過程中，沒有區分哪些是 Extra World，因此會全部都建構後才進入遊戲
         IEnumerator loadWorldFromFile()
         {
-            WorldData wd = WorldRecorder.load();
+            yield return null;
+            //WorldData wd = WorldRecorder.load();
 
-            if (wd == null)
-            {
-                StartCoroutine(buildWorld());
-                yield break;
-            }
+            //if (wd == null)
+            //{
+            //    StartCoroutine(buildWorld());
+            //    yield break;
+            //}
 
-            chunks.Clear();
-            chunk_columns.Clear();
+            //chunks.Clear();
+            //chunk_columns.Clear();
 
-            Vector3Int location;
-            GameObject obj;
-            Chunk chunk;
+            //Vector3Int location;
+            //GameObject obj;
+            //Chunk chunk;
 
-            // NOTE: 若想初始化完玩家周圍後就進入遊戲，loading_bar.maxValue 的設置會是個問題
-            loading_bar.maxValue = wd.getChunkNumber();
-            var chunk_datas = wd.iterChunkDatas();
+            //// NOTE: 若想初始化完玩家周圍後就進入遊戲，loading_bar.maxValue 的設置會是個問題
+            //loading_bar.maxValue = wd.getChunkNumber();
+            //var chunk_datas = wd.iterChunkDatas();
 
-            while (chunk_datas.MoveNext())
-            {
-                var chunk_data = chunk_datas.Current;
-                location = chunk_data.Item1;
+            //while (chunk_datas.MoveNext())
+            //{
+            //    var chunk_data = chunk_datas.Current;
+            //    location = chunk_data.Item1;
 
-                // NOTE: 若想初始化完玩家周圍後就進入遊戲，可以利用 location 和玩家位置，判斷是否需要現在就建置
+            //    // NOTE: 若想初始化完玩家周圍後就進入遊戲，可以利用 location 和玩家位置，判斷是否需要現在就建置
 
-                obj = Instantiate(chunk_prefab);
-                obj.name = $"Chunk_{location.x}_{location.y}_{location.z}";
-                chunk = obj.GetComponent<Chunk>();
+            //    obj = Instantiate(chunk_prefab);
+            //    obj.name = $"Chunk_{location.x}_{location.y}_{location.z}";
+            //    chunk = obj.GetComponent<Chunk>();
 
-                chunk.block_types = chunk_data.Item2;
-                chunk.crack_states = chunk_data.Item3;
+            //    chunk.block_types = chunk_data.Item2;
+            //    chunk.crack_states = chunk_data.Item3;
 
-                chunk.locate(dimensions: chunk_dimensions, location: location);
-                chunk.build();
-                chunk.setVisiable(visiable: chunk_data.Item4);
+            //    chunk.locate(dimensions: chunk_dimensions, location: location);
+            //    chunk.build();
+            //    chunk.setVisiable(visiable: chunk_data.Item4);
 
-                chunk_columns.Add(new Vector2Int(location.x, location.z));
-                chunks.Add(location, chunk);
+            //    chunk_columns.Add(new Vector2Int(location.x, location.z));
+            //    chunks.Add(location, chunk);
 
-                loading_bar.value++;
-                yield return null;
-            }
+            //    loading_bar.value++;
+            //    yield return null;
+            //}
 
-            player.transform.position = wd.getPlayerPosition();
-            main_camera.SetActive(false);
-            loading_bar.gameObject.SetActive(false);
-            player.gameObject.SetActive(true);
-            last_position = Vector3Int.CeilToInt(player.transform.position);
+            //player.transform.position = wd.getPlayerPosition();
+            //main_camera.SetActive(false);
+            //loading_bar.gameObject.SetActive(false);
+            //player.gameObject.SetActive(true);
+            //last_position = Vector3Int.CeilToInt(player.transform.position);
 
-            // NOTE: 若想初始化完玩家周圍後就進入遊戲，這裡之前就可先進入，這之後建構剩餘的世界
+            //// NOTE: 若想初始化完玩家周圍後就進入遊戲，這裡之前就可先進入，這之後建構剩餘的世界
 
-            // 依序執行 buildQueue 當中的 IEnumerator
-            StartCoroutine(taskCoordinator());
+            //// 依序執行 buildQueue 當中的 IEnumerator
+            //StartCoroutine(taskCoordinator());
 
-            // 將 IEnumerator 添加到 buildQueue 當中
-            StartCoroutine(updateWorld());
+            //// 將 IEnumerator 添加到 buildQueue 當中
+            //StartCoroutine(updateWorld());
         }
 
         public static Vector3Int flatToVector3Int(int i)
