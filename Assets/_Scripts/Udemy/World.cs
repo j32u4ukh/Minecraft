@@ -9,7 +9,7 @@ namespace udemy
     public class World : MonoBehaviour
     {
         public static Vector3Int world_dimesions = new Vector3Int(5, 5, 5);
-        public static Vector3Int extra_world_dimesions = new Vector3Int(0, 0, 0);
+        public static Vector3Int extra_world_dimesions = new Vector3Int(5, 5, 5);
         public static Vector3Int chunk_dimensions = new Vector3Int(10, 10, 10);
         public bool load_file = false;
         public GameObject chunk_prefab;
@@ -166,8 +166,11 @@ namespace udemy
 
         IEnumerator buildWorld()
         {
-            // loading_bar.maxValue 考慮後面建樹的工作量，才不會進度條跑完，卻還不能進入世界
-            loading_bar.maxValue = world_dimesions.x * world_dimesions.z + chunks.Count;
+            int n_chunk_column = world_dimesions.x * world_dimesions.z;
+            int n_chunk = world_dimesions.x * world_dimesions.y * world_dimesions.z;
+
+            // 跨 Chunk 處理 以及 種樹，兩者都是要遍歷當前所有 Chunk，因此工作量是 n_chunk * 2
+            loading_bar.maxValue = n_chunk_column + n_chunk * 2;
             int x, z, column_z;
 
             // 初始化 chunks 以及各個 Chunk 的方塊 類型(block_types) 與 狀態(crack_states)
@@ -185,13 +188,11 @@ namespace udemy
                 }
             }
 
-            Debug.Log($"#chunk: {chunks.Count}");
-
             // TODO: 在這裡考慮 Chunk 交界問題，隱藏 Chunk 交界的 Mesh
-            handleCrossChunkMesh();
+            yield return buildConsiderAround();
 
             // 在這裡呼叫 Chunk.buildTrees()，樹的建構才有辦法考慮到跨 Chunk 的情況
-            //yield return buildVegetations();
+            yield return buildVegetations();
 
             main_camera.SetActive(false);
 
@@ -206,13 +207,13 @@ namespace udemy
             loading_bar.gameObject.SetActive(false);
 
             // 啟動 taskCoordinator，依序執行被分派的任務
-            //StartCoroutine(taskCoordinator());
+            StartCoroutine(taskCoordinator());
 
             // NOTE: 暫且關閉此功能，以利開發其他機制
             // 將 IEnumerator 添加到 buildQueue 當中
             //StartCoroutine(updateWorld());
 
-            //StartCoroutine(buildExtraWorld());
+            StartCoroutine(buildExtraWorld(visiable: false));
         }
 
         IEnumerator buildExtraWorld(bool visiable = false)
@@ -222,9 +223,11 @@ namespace udemy
             int x_start = world_dimesions.x;
             int x_end = world_dimesions.x + extra_world_dimesions.x;
 
+            /* NOTE: 目前呼叫 buildChunkColumn 後只是定義了各個 Block 的類型等數據，尚未實際添加 Mesh，
+             * 若在呼叫 buildConsiderAround 之前想對 Mesh 進行操作，則會發生錯誤 */
             for (int z = z_start; z < z_end; z++)
             {
-                for (int x = 0; x < x_end; x++)
+                for (int x = 0; x < x_start; x++)
                 {
                     buildChunkColumn(chunk_dimensions.x * x, chunk_dimensions.z * z, visiable: visiable);
                     yield return null;
@@ -239,6 +242,10 @@ namespace udemy
                     yield return null;
                 }
             }
+
+            yield return buildConsiderAround();
+
+            yield return buildVegetations();
         }
 
         /// <summary>
@@ -276,44 +283,43 @@ namespace udemy
             }            
         }
 
-        private void handleCrossChunkMesh()
+        /// <summary>
+        /// 考慮跨 Chunk 交界問題後，實際添加 Mesh 到 Chunk 當中
+        /// </summary>
+        /// <returns></returns>
+        private IEnumerator buildConsiderAround()
         {
             (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) neighbors;
 
             foreach (KeyValuePair<Vector3Int, Chunk> location_chunk in chunks)
             {
-                neighbors = getNeighbourChunk(center: location_chunk.Key);
+                neighbors = getNeighbours(location: location_chunk.Key);
 
-                location_chunk.Value.handleCrossChunkMesh(neighbors.up, neighbors.down, neighbors.left, neighbors.right, neighbors.forward, neighbors.back);
+                location_chunk.Value.buildConsiderAround(neighbors.up, neighbors.down, neighbors.left, neighbors.right, neighbors.forward, neighbors.back);
                 location_chunk.Value.setVisiable(visiable: true);
-            }
 
-            //foreach (Chunk chunk in chunks.Values)
-            //{
-            //    rebuild(chunk);
-            //}
+                loading_bar.value++;
+                yield return null;
+            }
         }
 
-        void rebuild(Chunk chunk)
+        void rebuildConsiderAround(Chunk chunk)
         {
             (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) neighbors;
-            neighbors = getNeighbourChunk(center: chunk.location);
+            neighbors = getNeighbours(location: chunk.location);
 
-            DestroyImmediate(chunk.GetComponent<MeshFilter>());
-            DestroyImmediate(chunk.GetComponent<MeshRenderer>());
-            DestroyImmediate(chunk.GetComponent<Collider>());
-            chunk.handleCrossChunkMesh(neighbors.up, neighbors.down, neighbors.left, neighbors.right, neighbors.forward, neighbors.back);
+            chunk.rebuildConsiderAround(neighbors.up, neighbors.down, neighbors.left, neighbors.right, neighbors.forward, neighbors.back);
         }
 
-        private (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) getNeighbourChunk(Vector3Int center)
+        private (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) getNeighbours(Vector3Int location)
         {
             Chunk up = null, down = null, left = null, right = null, forward = null, back = null;
-            Vector3Int u = center + chunk_dimensions * Vector3Int.up,
-                       d = center + chunk_dimensions * Vector3Int.down,
-                       l = center + chunk_dimensions * Vector3Int.left,
-                       r = center + chunk_dimensions * Vector3Int.right,
-                       f = center + chunk_dimensions * Vector3Int.forward,
-                       b = center + chunk_dimensions * Vector3Int.back;
+            Vector3Int u = location + chunk_dimensions * Vector3Int.up,
+                       d = location + chunk_dimensions * Vector3Int.down,
+                       l = location + chunk_dimensions * Vector3Int.left,
+                       r = location + chunk_dimensions * Vector3Int.right,
+                       f = location + chunk_dimensions * Vector3Int.forward,
+                       b = location + chunk_dimensions * Vector3Int.back;
 
             if (chunks.ContainsKey(u))
             {
@@ -519,12 +525,12 @@ namespace udemy
                     yield return falling_buffer;
 
                     //chunk.rebuild();
-                    rebuild(chunk);
+                    rebuildConsiderAround(chunk);
 
                     if (chunk_below != chunk)
                     {
                         //chunk_below.rebuild();
-                        rebuild(chunk_below);
+                        rebuildConsiderAround(chunk_below);
                     }
 
                     // 指向落下後的方塊
@@ -571,7 +577,7 @@ namespace udemy
                 neighbor_chunk.setBlockType(index: block_neighbor_index, chunk.getBlockType(block_index));
                 neighbor_chunk.setCrackState(index: block_neighbor_index);
                 //neighbor_chunk.rebuild();
-                rebuild(neighbor_chunk);
+                rebuildConsiderAround(neighbor_chunk);
 
                 StartCoroutine(dropBlock(chunk: neighbor_chunk, block_index: block_neighbor_index, spread: spread));
             }
@@ -640,8 +646,7 @@ namespace udemy
 
             foreach (Chunk chunk in chunks.Values)
             {
-                //chunk.rebuild();
-                rebuild(chunk);
+                rebuildConsiderAround(chunk);
             }
         }
 

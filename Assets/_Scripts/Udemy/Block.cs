@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,6 +9,7 @@ namespace udemy
     {
         public Mesh mesh;
 
+        [Obsolete("提供在 Chunk 中建立 Block 時的協助，延後添加 Mesh 的時間點，而非在建構子當中添加 Mesh")]
         public Block() { }
 
         public Block(BlockType block_type, CrackState crack_state, Vector3Int offset, Chunk chunk, Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back)
@@ -216,6 +218,7 @@ namespace udemy
             }
         }
 
+        [Obsolete("提供在 Chunk 中建立 Block 時的協助，延後添加 Mesh 的時間點，而非在建構子當中添加 Mesh")]
         public void build(List<Quad> quads, string block_name)
         {
             if(quads.Count == 0)

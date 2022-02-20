@@ -153,12 +153,15 @@ namespace udemy
             n_block = WIDTH * HEIGHT * DEPTH;
         }
 
+        #region 未考慮跨 Chunk 交界的版本
+        [Obsolete("未考慮跨 Chunk 交界，只考慮當前 Chunk 中建立 Block 時的函式")]
         public void build()
         {
             buildMesh(obj: ref solid_mesh_obj, mesh_type: "Solid");
             buildMesh(obj: ref fluid_mesh_obj, mesh_type: "Fluid");
         }
 
+        [Obsolete("未考慮跨 Chunk 交界，只考慮當前 Chunk 中建立 Block 時的函式")]
         private void buildMesh(ref GameObject obj, string mesh_type = "Solid")
         {
             // TODO: 改為全域變數，避免重複 GetComponent
@@ -214,7 +217,7 @@ namespace udemy
                 xyz = Utils.flatToVector3Int(i: block_idx, width: WIDTH, height: HEIGHT);
 
                 block = new Block();
-                
+
                 blocks[xyz.x, xyz.y, xyz.z] = block;
 
                 condition0 = block.mesh != null;
@@ -319,21 +322,24 @@ namespace udemy
         /// <summary>
         /// 當 新增 或 破壞 方塊後，呼叫此函式，以重新繪製 Chunk
         /// </summary>
+        [Obsolete("未考慮跨 Chunk 交界，只考慮當前 Chunk 中建立 Block 時的函式")]
         public void rebuild()
         {
-            //DestroyImmediate(GetComponent<MeshFilter>());
-            //DestroyImmediate(GetComponent<MeshRenderer>());
-            //DestroyImmediate(GetComponent<Collider>());
-            //build();
+            DestroyImmediate(GetComponent<MeshFilter>());
+            DestroyImmediate(GetComponent<MeshRenderer>());
+            DestroyImmediate(GetComponent<Collider>());
+            build();
         }
+        #endregion
 
-        public void handleCrossChunkMesh(Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back)
+        #region 有考慮跨 Chunk 交界的版本
+        public void buildConsiderAround(Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back)
         {
-            buildCrossChunkMesh(up, down, left, right, forward, back, ref solid_mesh_obj, mesh_type: "Solid");
-            buildCrossChunkMesh(up, down, left, right, forward, back, ref fluid_mesh_obj, mesh_type: "Fluid");
+            buildMeshConsiderAround(up, down, left, right, forward, back, ref solid_mesh_obj, mesh_type: "Solid");
+            buildMeshConsiderAround(up, down, left, right, forward, back, ref fluid_mesh_obj, mesh_type: "Fluid");
         }
 
-        private void buildCrossChunkMesh(Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back, ref GameObject obj, string mesh_type = "Solid")
+        private void buildMeshConsiderAround(Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back, ref GameObject obj, string mesh_type = "Solid")
         {
             // TODO: 改為全域變數，避免重複 GetComponent
             MeshFilter mesh_filter;
@@ -381,12 +387,6 @@ namespace udemy
             job.triangle_index_offsets = new NativeArray<int>(n_block, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
             Vector3Int xyz, offset;
-            List<Quad> quads;
-            BlockSide[] sides = new BlockSide[] { BlockSide.Top, BlockSide.Bottom,
-                                                  BlockSide.Left, BlockSide.Right,
-                                                  BlockSide.Front, BlockSide.Back };
-            (bool is_inside, int nx, int ny, int nz) info;
-            Chunk neighbour_chunk = null;
             BlockType block_type;
             CrackState crack_state;
 
@@ -398,66 +398,16 @@ namespace udemy
                 crack_state = crack_states[block_idx];
 
                 // Block(block_type, crack_state, offset, chunk, up, down, left, right, forward, back)
-                block = new Block(block_type: block_type, crack_state:crack_state, offset: offset, 
-                                  chunk: this, up: up, down: down, left: left, right: right, forward: forward, back: back);
-
-                //// AIR 不須考慮 Mesh 問題，直接加入 blocks
-                //if (block_type != BlockType.AIR)
-                //{
-                //    quads = new List<Quad>();
-
-                //    foreach (BlockSide side in sides)
-                //    {
-                //        info = getNeighbourInfo(xyz.x, xyz.y, xyz.z, side: side);
-
-                //        // Chunk 內檢查 Neighbour
-                //        if (info.is_inside)
-                //        {
-                //            // 旁邊沒有被擋住/有生成這面 Mesh 的必要
-                //            if (!hasInsideNeighbour(info.nx, info.ny, info.nz, block_type))
-                //            {
-                //                quads.Add(block.createQuad(side: side, block_type: block_type, crack_state: crack_state, offset: offset));
-                //            }
-                //        }
-
-                //        // Chunk 之間檢查 Neighbour
-                //        else
-                //        {
-                //            switch (side)
-                //            {
-                //                case BlockSide.Right:
-                //                    neighbour_chunk = right;
-                //                    break;
-                //                case BlockSide.Left:
-                //                    neighbour_chunk = left;
-                //                    break;
-                //                case BlockSide.Top:
-                //                    neighbour_chunk = up;
-                //                    break;
-                //                case BlockSide.Bottom:
-                //                    neighbour_chunk = down;
-                //                    break;
-                //                case BlockSide.Front:
-                //                    neighbour_chunk = forward;
-                //                    break;
-                //                case BlockSide.Back:
-                //                    neighbour_chunk = back;
-                //                    break;
-                //            }
-
-                //            if (neighbour_chunk != null)
-                //            {
-                //                // 旁邊沒有被擋住/有生成這面 Mesh 的必要
-                //                if (!hasNeighbour(neighbour_chunk, info.nx, info.ny, info.nz, block_type))
-                //                {
-                //                    quads.Add(block.createQuad(side: side, block_type: block_type, crack_state: crack_state, offset: offset));
-                //                }
-                //            }
-                //        }
-                //    }
-
-                //    block.build(quads, block_name: $"Block_{offset.x}_{offset.y}_{offset.z}");
-                //}
+                block = new Block(block_type: block_type,
+                                  crack_state: crack_state,
+                                  offset: offset,
+                                  chunk: this,
+                                  up: up,
+                                  down: down,
+                                  left: left,
+                                  right: right,
+                                  forward: forward,
+                                  back: back);
 
                 blocks[xyz.x, xyz.y, xyz.z] = block;
 
@@ -550,7 +500,7 @@ namespace udemy
 
             job.input_mesh_datas.Dispose();
             job.vertex_index_offsets.Dispose();
-            job.triangle_index_offsets.Dispose(); 
+            job.triangle_index_offsets.Dispose();
             #endregion
 
             mesh.RecalculateBounds();
@@ -563,110 +513,17 @@ namespace udemy
             collider.sharedMesh = mesh;
         }
 
-        (bool is_inside, int nx, int ny, int nz) getNeighbourInfo(int bx, int by, int bz, BlockSide side)
+        /// <summary>
+        /// 當 新增 或 破壞 方塊後，呼叫此函式，以重新繪製 Chunk
+        /// </summary>
+        public void rebuildConsiderAround(Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back)
         {
-            bool is_inside = true;
-
-            switch (side)
-            {
-                case BlockSide.Right:
-                    bx += 1;
-
-                    if(bx >= WIDTH)
-                    {
-                        is_inside = false;
-                        bx = 0;
-                    }
-                    break;
-
-                case BlockSide.Left:
-                    bx -= 1;
-                    is_inside = bx >= 0;
-
-                    if (bx < 0)
-                    {
-                        is_inside = false;
-                        bx = WIDTH - 1;
-                    }
-                    break;
-
-                case BlockSide.Top:
-                    by += 1;
-
-                    if (by >= HEIGHT)
-                    {
-                        is_inside = false;
-                        by = 0;
-                    }
-                    break;
-
-                case BlockSide.Bottom:
-                    by -= 1;
-
-                    if (by < 0)
-                    {
-                        is_inside = false;
-                        by = HEIGHT - 1;
-                    }
-                    break;
-
-                case BlockSide.Front:
-                    bz += 1;
-
-                    if (bz >= DEPTH)
-                    {
-                        is_inside = false;
-                        bz = 0;
-                    }
-                    break;
-
-                case BlockSide.Back:
-                    bz -= 1;
-
-                    if (bz < 0)
-                    {
-                        is_inside = false;
-                        bz = DEPTH - 1;
-                    }
-                    break;
-            }
-
-            return (is_inside, bx, by, bz);
-        }
-
-        bool hasInsideNeighbour(int x, int y, int z, BlockType block_type)
-        {
-            int block_idx = Utils.xyzToFlat(x, y, z, width: WIDTH, depth: DEPTH);
-
-            if (getBlockType(block_idx).Equals(block_type))
-            {
-                return true;
-            }
-
-            if (getBlockType(block_idx).Equals(BlockType.AIR) || getBlockType(block_idx).Equals(BlockType.WATER))
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        bool hasNeighbour(Chunk chunk, int x, int y, int z, BlockType block_type)
-        {
-            int block_idx = Utils.xyzToFlat(x, y, z, width: WIDTH, depth: DEPTH);
-
-            if (chunk.getBlockType(block_idx).Equals(block_type))
-            {
-                return true;
-            }
-
-            if (chunk.getBlockType(block_idx).Equals(BlockType.AIR) || chunk.getBlockType(block_idx).Equals(BlockType.WATER))
-            {
-                return false;
-            }
-
-            return true;
-        }
+            DestroyImmediate(GetComponent<MeshFilter>());
+            DestroyImmediate(GetComponent<MeshRenderer>());
+            DestroyImmediate(GetComponent<Collider>());
+            buildConsiderAround(up, down, left, right, forward, back);
+        } 
+        #endregion
 
         public IEnumerable<(Vector3Int, BlockType)> iterVegetations()
         {
@@ -925,6 +782,114 @@ namespace udemy
         public Vector3Int flatToVector3Int(int i)
         {
             return Utils.flatToVector3Int(i, width: WIDTH, height: HEIGHT);
+        }
+
+        [Obsolete("提供在 Chunk 中建立 Block 時，協助判斷各面 Mesh 是否需要添加")]
+        (bool is_inside, int nx, int ny, int nz) getNeighbourInfo(int bx, int by, int bz, BlockSide side)
+        {
+            bool is_inside = true;
+
+            switch (side)
+            {
+                case BlockSide.Right:
+                    bx += 1;
+
+                    if (bx >= WIDTH)
+                    {
+                        is_inside = false;
+                        bx = 0;
+                    }
+                    break;
+
+                case BlockSide.Left:
+                    bx -= 1;
+                    is_inside = bx >= 0;
+
+                    if (bx < 0)
+                    {
+                        is_inside = false;
+                        bx = WIDTH - 1;
+                    }
+                    break;
+
+                case BlockSide.Top:
+                    by += 1;
+
+                    if (by >= HEIGHT)
+                    {
+                        is_inside = false;
+                        by = 0;
+                    }
+                    break;
+
+                case BlockSide.Bottom:
+                    by -= 1;
+
+                    if (by < 0)
+                    {
+                        is_inside = false;
+                        by = HEIGHT - 1;
+                    }
+                    break;
+
+                case BlockSide.Front:
+                    bz += 1;
+
+                    if (bz >= DEPTH)
+                    {
+                        is_inside = false;
+                        bz = 0;
+                    }
+                    break;
+
+                case BlockSide.Back:
+                    bz -= 1;
+
+                    if (bz < 0)
+                    {
+                        is_inside = false;
+                        bz = DEPTH - 1;
+                    }
+                    break;
+            }
+
+            return (is_inside, bx, by, bz);
+        }
+
+        [Obsolete("提供在 Chunk 中建立 Block 時，協助判斷各面 Mesh 是否需要添加")]
+        bool hasInsideNeighbour(int x, int y, int z, BlockType block_type)
+        {
+            int block_idx = Utils.xyzToFlat(x, y, z, width: WIDTH, depth: DEPTH);
+
+            if (getBlockType(block_idx).Equals(block_type))
+            {
+                return true;
+            }
+
+            if (getBlockType(block_idx).Equals(BlockType.AIR) || getBlockType(block_idx).Equals(BlockType.WATER))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        [Obsolete("提供在 Chunk 中建立 Block 時，協助判斷各面 Mesh 是否需要添加")]
+        bool hasNeighbour(Chunk chunk, int x, int y, int z, BlockType block_type)
+        {
+            int block_idx = Utils.xyzToFlat(x, y, z, width: WIDTH, depth: DEPTH);
+
+            if (chunk.getBlockType(block_idx).Equals(block_type))
+            {
+                return true;
+            }
+
+            if (chunk.getBlockType(block_idx).Equals(BlockType.AIR) || chunk.getBlockType(block_idx).Equals(BlockType.WATER))
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 
