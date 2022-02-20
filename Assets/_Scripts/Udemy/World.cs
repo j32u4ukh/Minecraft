@@ -84,76 +84,85 @@ namespace udemy
 
         private void Update()
         {
-            //// TODO: 移到 Player 當中管理，利用事件通知 World 哪些方塊被移除，哪些方塊又被新增
-            //// 左鍵(0)：挖掘方塊；右鍵(1)：放置方塊
-            //if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
-            //{
-            //    Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            // TODO: 移到 Player 當中管理，利用事件通知 World 哪些方塊被移除，哪些方塊又被新增
+            // 左鍵(0)：挖掘方塊；右鍵(1)：放置方塊
+            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
+            {
+                Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
 
-            //    if (Physics.Raycast(ray, out RaycastHit hit, 10f))
-            //    {
-            //        if (!hit.collider.gameObject.transform.parent.TryGetComponent(out Chunk chunk))
-            //        {
-            //            Debug.Log($"No Chunk, parent: {hit.collider.gameObject.transform.parent.gameObject.name}," +
-            //                      $"target: {hit.collider.gameObject.name}");
-            //            return;
-            //        }
+                if (Physics.Raycast(ray, out RaycastHit hit, 10f))
+                {
+                    if (!hit.collider.gameObject.transform.parent.TryGetComponent(out Chunk chunk))
+                    {
+                        Debug.Log($"No Chunk, parent: {hit.collider.gameObject.transform.parent.gameObject.name}," +
+                                  $"target: {hit.collider.gameObject.name}");
+                        return;
+                    }
 
-            //        Vector3 hit_block;
+                    Vector3 hit_block;
 
-            //        // 左鍵(0)：挖掘方塊
-            //        if (Input.GetMouseButtonDown(0))
-            //        {
-            //            hit_block = hit.point - hit.normal / 2.0f;
-            //        }
+                    // 左鍵(0)：挖掘方塊
+                    if (Input.GetMouseButtonDown(0))
+                    {
+                        hit_block = hit.point - hit.normal / 2.0f;
+                    }
 
-            //        // 右鍵(1)：放置方塊
-            //        else
-            //        {
-            //            hit_block = hit.point + hit.normal / 2.0f;
-            //        }
+                    // 右鍵(1)：放置方塊
+                    else
+                    {
+                        hit_block = hit.point + hit.normal / 2.0f;
+                    }
 
-            //        // Debug.Log($"Block location: {hit_block}");
-            //        int bx = (int)(Mathf.Round(hit_block.x) - chunk.location.x);
-            //        int by = (int)(Mathf.Round(hit_block.y) - chunk.location.y);
-            //        int bz = (int)(Mathf.Round(hit_block.z) - chunk.location.z);
-            //        int i;
+                    //Debug.Log($"Block location: {hit_block}");
+                    int bx = (int)(Mathf.Round(hit_block.x) - chunk.location.x);
+                    int by = (int)(Mathf.Round(hit_block.y) - chunk.location.y);
+                    int bz = (int)(Mathf.Round(hit_block.z) - chunk.location.z);
+                    int i;
 
-            //        // 左鍵(0)：挖掘方塊
-            //        if (Input.GetMouseButtonDown(0))
-            //        {
-            //            i = xyzToFlat(bx, by, bz);
+                    // 左鍵(0)：挖掘方塊
+                    if (Input.GetMouseButtonDown(0))
+                    {
+                        i = xyzToFlat(bx, by, bz);
+                        //Debug.Log($"Block location: ({bx}, {by}, {bz}), block_type: {chunk.getBlockType(i)}");
 
-            //            // 累加破壞程度(若破壞程度與方塊強度相當，才會真的破壞掉)
-            //            if(chunk.crackBlock(index: i))
-            //            {
-            //                // 考慮當前方塊的上方一格是否會觸發掉落機制
-            //                dropBlockAbove(chunk: chunk, block_position: new Vector3Int(bx, by, bz));
-            //            }
-            //        }
+                        // 累加破壞程度(若破壞程度與方塊強度相當，才會真的破壞掉)
+                        if (chunk.crackBlock(index: i))
+                        {
+                            // 判斷當前方塊是否位於 Chunk 邊界上，若是，與之交界的是哪個 Chunk？
+                            HashSet<Vector3Int> neighbour_locations = getNeighboringChunkLocation(chunk, bx, by, bz);
 
-            //        // 右鍵(1)：放置方塊
-            //        else
-            //        {
-            //            // TODO: 考慮 世界 的大小，取得的 chunk 不一定存在於 chunks 當中
-            //            (Vector3Int, Vector3Int) chunk_block_location = chunk.getChunkBlockLocation(bx, by, bz);
+                            // 將與被破壞的 Block 交界的 Chunk 全部重繪
+                            foreach (Vector3Int neighbour_location in neighbour_locations)
+                            {
+                                rebuildConsiderAround(chunks[neighbour_location]);
+                            }
 
-            //            if (chunks.ContainsKey(chunk_block_location.Item1))
-            //            {
-            //                chunk = chunks[chunk_block_location.Item1];
-            //                i = vector3IntToFlat(chunk_block_location.Item2);
+                            // 考慮當前方塊的上方一格是否會觸發掉落機制
+                            dropBlockAbove(chunk: chunk, block_position: new Vector3Int(bx, by, bz));
+                        }
+                    }
 
-            //                chunk.placeBlock(index: i, block_type: player.getBlockType());
+                    //// 右鍵(1)：放置方塊
+                    //else
+                    //{
+                    //    // TODO: 考慮 世界 的大小，取得的 chunk 不一定存在於 chunks 當中
+                    //    (Vector3Int, Vector3Int) chunk_block_location = chunk.getChunkBlockLocation(bx, by, bz);
 
-            //                StartCoroutine(dropBlock(chunk: chunk, block_index: i));
-            //            }
-            //        }
+                    //    if (chunks.ContainsKey(chunk_block_location.Item1))
+                    //    {
+                    //        chunk = chunks[chunk_block_location.Item1];
+                    //        i = vector3IntToFlat(chunk_block_location.Item2);
 
-            //        // 當 新增 或 破壞 方塊後，重新繪製 Chunk
-            //        //chunk.rebuild();
-            //        rebuild(chunk);
-            //    }
-            //}
+                    //        chunk.placeBlock(index: i, block_type: player.getBlockType());
+
+                    //        StartCoroutine(dropBlock(chunk: chunk, block_index: i));
+                    //    }
+                    //}
+
+                    // 當 新增 或 破壞 方塊後，重新繪製 Chunk
+                    rebuildConsiderAround(chunk);
+                }
+            }
 
             //if (Input.GetKey(KeyCode.RightControl))
             //{
@@ -354,6 +363,74 @@ namespace udemy
             return (up, down, left, right, forward, back);
         }
 
+        private HashSet<Vector3Int> getNeighboringChunkLocation(Chunk chunk, int bx, int by, int bz)
+        {
+            HashSet<Vector3Int> neighbours = new HashSet<Vector3Int>();
+            Vector3Int location;
+
+            if(bx + 1 >= chunk_dimensions.x)
+            {
+                location = chunk.location + chunk_dimensions.x * Vector3Int.right;
+
+                if (chunks.ContainsKey(location))
+                {
+                    neighbours.Add(location);
+                }
+            }
+
+            if (bx - 1 < 0)
+            {
+                location = chunk.location + chunk_dimensions.x * Vector3Int.left;
+
+                if (chunks.ContainsKey(location))
+                {
+                    neighbours.Add(location);
+                }
+            }
+
+            if(by + 1 >= chunk_dimensions.y)
+            {
+                location = chunk.location + chunk_dimensions.y * Vector3Int.up;
+
+                if (chunks.ContainsKey(location))
+                {
+                    neighbours.Add(location);
+                }
+            }
+
+            if (by - 1 < 0)
+            {
+                location = chunk.location + chunk_dimensions.y * Vector3Int.down;
+
+                if (chunks.ContainsKey(location))
+                {
+                    neighbours.Add(location);
+                }
+            }
+
+            if (bz + 1 >= chunk_dimensions.z)
+            {
+                location = chunk.location + chunk_dimensions.z * Vector3Int.forward;
+
+                if (chunks.ContainsKey(location))
+                {
+                    neighbours.Add(location);
+                }
+            }
+
+            if (bz - 1 < 0)
+            {
+                location = chunk.location + chunk_dimensions.z * Vector3Int.back;
+
+                if (chunks.ContainsKey(location))
+                {
+                    neighbours.Add(location);
+                }
+            }
+
+            return neighbours;
+        }
+
         /// <summary>
         /// 依序執行 task_queue 當中的任務
         /// Coordinator: 協調員
@@ -486,6 +563,7 @@ namespace udemy
             (Vector3Int, Vector3Int) location_below;
             Chunk chunk_below;
             int block_below_index;
+            HashSet<Vector3Int> neighbour_locations, temp_locations;
 
             while (true)
             {
@@ -511,7 +589,7 @@ namespace udemy
                 // 檢查下方是否有掉落空間
                 if (chunk_below != null && chunk_below.getBlockType(block_below_index).Equals(BlockType.AIR))
                 {
-                    // 更新下方方塊
+                    // 方塊落往 chunk_below
                     chunk_below.setBlockType(index: block_below_index, block_type: block_type);
                     chunk_below.setCrackState(index: block_below_index);
 
@@ -524,13 +602,41 @@ namespace udemy
 
                     yield return falling_buffer;
 
-                    //chunk.rebuild();
-                    rebuildConsiderAround(chunk);
+                    neighbour_locations = new HashSet<Vector3Int>() { chunk.location };
+
+                    // 判斷當前方塊是否位於 Chunk 邊界上，若是，與之交界的是哪個 Chunk？
+                    temp_locations = getNeighboringChunkLocation(chunk: chunk, 
+                                                                 bx: block_position.x, 
+                                                                 by: block_position.y, 
+                                                                 bz: block_position.z);
+
+                    // 將與被破壞的 Block 交界的 Chunk 全部重繪
+                    foreach (Vector3Int temp_location in temp_locations)
+                    {
+                        neighbour_locations.Add(temp_location);
+                    }
 
                     if (chunk_below != chunk)
                     {
-                        //chunk_below.rebuild();
-                        rebuildConsiderAround(chunk_below);
+                        neighbour_locations.Add(chunk_below.location);
+
+                        // 判斷當前方塊是否位於 Chunk 邊界上，若是，與之交界的是哪個 Chunk？
+                        temp_locations = getNeighboringChunkLocation(chunk: chunk,
+                                                                     bx: location_below.Item2.x,
+                                                                     by: location_below.Item2.y,
+                                                                     bz: location_below.Item2.z);
+
+                        // 將與被破壞的 Block 交界的 Chunk 全部重繪
+                        foreach (Vector3Int temp_location in temp_locations)
+                        {
+                            neighbour_locations.Add(temp_location);
+                        }
+                    }
+
+                    // 將與被破壞的 Block 交界的 Chunk 全部重繪
+                    foreach (Vector3Int neighbour_location in neighbour_locations)
+                    {
+                        rebuildConsiderAround(chunks[neighbour_location]);
                     }
 
                     // 指向落下後的方塊
