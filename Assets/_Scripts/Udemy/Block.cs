@@ -9,6 +9,10 @@ namespace udemy
     {
         public Mesh mesh;
 
+        static BlockSide[] sides = new BlockSide[] { BlockSide.Top, BlockSide.Bottom,
+                                                     BlockSide.Left, BlockSide.Right,
+                                                     BlockSide.Front, BlockSide.Back };
+
         [Obsolete("提供在 Chunk 中建立 Block 時的協助，延後添加 Mesh 的時間點，而非在建構子當中添加 Mesh")]
         public Block() { }
 
@@ -21,10 +25,6 @@ namespace udemy
 
             List<Quad> quads = new List<Quad>();
             Vector3Int xyz = offset - chunk.location;
-
-            BlockSide[] sides = new BlockSide[] { BlockSide.Top, BlockSide.Bottom,
-                                                  BlockSide.Left, BlockSide.Right,
-                                                  BlockSide.Front, BlockSide.Back };
 
             //quads.Add(new Quad(block_type, BlockSide.Bottom, offset));
             //quads.Add(new Quad(block_type, BlockSide.Top, offset));

@@ -38,6 +38,11 @@ namespace udemy
         private MeshRenderer fluid_mesh_renderer;
         private GameObject fluid_mesh_obj = null;
 
+        #region 管理六邊鄰居的資訊，不再每次有需求都要問一次鄰居有誰
+        private bool met_neighbors = false;
+        private (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) neighbors;
+        #endregion
+
         // For HealBlock
         private WaitForSeconds heal_block_buffer = new WaitForSeconds(3.0f);
 
@@ -88,6 +93,7 @@ namespace udemy
             (new Vector3Int(0,5,0), BlockType.CACTUS)
         };
 
+        #region Chunk 初始化
         /// <summary>
         /// 決定 block_types 和 crack_states 的內容，尚未實際建構 Block
         /// </summary>
@@ -152,18 +158,22 @@ namespace udemy
             blocks = new Block[WIDTH, HEIGHT, DEPTH];
             n_block = WIDTH * HEIGHT * DEPTH;
         }
+        #endregion
 
-        #region 未考慮跨 Chunk 交界的版本
-        [Obsolete("未考慮跨 Chunk 交界，只考慮當前 Chunk 中建立 Block 時的函式")]
+        #region 建構 Chunk Mesh (事先設置六面鄰居，省略每次詢問鄰居有誰的流程)
         public void build()
         {
             buildMesh(obj: ref solid_mesh_obj, mesh_type: "Solid");
             buildMesh(obj: ref fluid_mesh_obj, mesh_type: "Fluid");
         }
 
-        [Obsolete("未考慮跨 Chunk 交界，只考慮當前 Chunk 中建立 Block 時的函式")]
         private void buildMesh(ref GameObject obj, string mesh_type = "Solid")
         {
+            if (!met_neighbors)
+            {
+                return;
+            }
+
             // TODO: 改為全域變數，避免重複 GetComponent
             MeshFilter mesh_filter;
 
@@ -199,7 +209,6 @@ namespace udemy
                 DestroyImmediate(obj.GetComponent<Collider>());
             }
 
-            int x, y, z;
             List<Mesh> input_mesh_datas = new List<Mesh>();
             int vertex_index_offset = 0, triangle_index_offset = 0, idx = 0;
             int n_vertex, n_triangle, block_idx;
@@ -210,13 +219,27 @@ namespace udemy
             job.vertex_index_offsets = new NativeArray<int>(n_block, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             job.triangle_index_offsets = new NativeArray<int>(n_block, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
 
-            Vector3Int xyz;
+            Vector3Int xyz, offset;
+            BlockType block_type;
+            CrackState crack_state;
 
             for (block_idx = 0; block_idx < n_block; block_idx++)
             {
                 xyz = Utils.flatToVector3Int(i: block_idx, width: WIDTH, height: HEIGHT);
+                offset = xyz + location;
+                block_type = block_types[block_idx];
+                crack_state = crack_states[block_idx];
 
-                block = new Block();
+                block = new Block(block_type: block_type,
+                                  crack_state: crack_state,
+                                  offset: offset,
+                                  chunk: this,
+                                  up: neighbors.up,
+                                  down: neighbors.down,
+                                  left: neighbors.left,
+                                  right: neighbors.right,
+                                  forward: neighbors.forward,
+                                  back: neighbors.back);
 
                 blocks[xyz.x, xyz.y, xyz.z] = block;
 
@@ -227,11 +250,11 @@ namespace udemy
                 switch (mesh_type)
                 {
                     case "Solid":
-                        condition1 = !MeshUtils.canSpread(block_types[block_idx]);
+                        condition1 = !MeshUtils.canSpread(block_type);
                         break;
 
                     case "Fluid":
-                        condition1 = MeshUtils.canSpread(block_types[block_idx]);
+                        condition1 = MeshUtils.canSpread(block_type);
                         break;
                 }
 
@@ -251,6 +274,7 @@ namespace udemy
                 }
             }
 
+            #region Job
             // input_mesh_datas -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
             job.input_mesh_datas = Mesh.AcquireReadOnlyMeshData(input_mesh_datas);
 
@@ -309,6 +333,8 @@ namespace udemy
             job.input_mesh_datas.Dispose();
             job.vertex_index_offsets.Dispose();
             job.triangle_index_offsets.Dispose();
+            #endregion
+
             mesh.RecalculateBounds();
 
             // 更新 mesh_filter 的 mesh
@@ -322,7 +348,6 @@ namespace udemy
         /// <summary>
         /// 當 新增 或 破壞 方塊後，呼叫此函式，以重新繪製 Chunk
         /// </summary>
-        [Obsolete("未考慮跨 Chunk 交界，只考慮當前 Chunk 中建立 Block 時的函式")]
         public void rebuild()
         {
             DestroyImmediate(GetComponent<MeshFilter>());
@@ -332,7 +357,7 @@ namespace udemy
         }
         #endregion
 
-        #region 有考慮跨 Chunk 交界的版本
+        #region 建構 Chunk Mesh (每次執行都需傳入六面鄰居)
         public void buildConsiderAround(Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back)
         {
             buildMeshConsiderAround(up, down, left, right, forward, back, ref solid_mesh_obj, mesh_type: "Solid");
@@ -525,51 +550,7 @@ namespace udemy
         } 
         #endregion
 
-        public IEnumerable<(Vector3Int, BlockType)> iterVegetations()
-        {
-            int n_block = block_types.Length;
-            Vector3Int block_pos, base_pos;
-
-            for (int i = 0; i < n_block; i++)
-            {
-                if (block_types[i] == BlockType.WOODBASE)
-                {
-                    base_pos = flatToVector3Int(i);
-
-                    foreach ((Vector3Int, BlockType) tree in tree_design)
-                    {
-                        block_pos = base_pos + tree.Item1;
-                        yield return (block_pos, tree.Item2);
-                    }
-                }
-                else if (block_types[i] == BlockType.CACTUSBASE)
-                {
-                    base_pos = flatToVector3Int(i);
-
-                    foreach ((Vector3Int, BlockType) cactus in cactus_design)
-                    {
-                        block_pos = base_pos + cactus.Item1;
-                        yield return (block_pos, cactus.Item2);
-                    }
-                }
-            }
-        }
-
-        public void setVisiable(bool visiable)
-        {
-            solid_mesh_renderer.enabled = visiable;
-            fluid_mesh_renderer.enabled = visiable;
-        }
-
-        /// <summary>
-        /// mesh_renderer_solid 和 mesh_renderer_fluid 是否可見的狀態相同，因此返回任一個的狀態即可
-        /// </summary>
-        /// <returns></returns>
-        public bool isVisiable()
-        {
-            return solid_mesh_renderer.enabled;
-        }
-
+       #region Chunk & Block
         public (Vector3Int, Vector3Int) getChunkBlockLocation(Vector3Int block_position)
         {
             return getChunkBlockLocation(bx: block_position.x, by: block_position.y, bz: block_position.z);
@@ -674,8 +655,10 @@ namespace udemy
             }
 
             return (chunk_location, new Vector3Int(bx, by, bz));
-        }
+        } 
+        #endregion
 
+        #region Block
         public void setBlockType(int index, BlockType block_type)
         {
             block_types[index] = block_type;
@@ -775,14 +758,79 @@ namespace udemy
             if (block_types[index] != BlockType.AIR)
             {
                 crack_states[index] = CrackState.None;
-                //rebuild();
+                rebuild();
             }
         }
 
         public Vector3Int flatToVector3Int(int i)
         {
             return Utils.flatToVector3Int(i, width: WIDTH, height: HEIGHT);
+        } 
+        #endregion
+
+        #region 管理六邊鄰居的資訊
+        public bool hasMetNeighbors()
+        {
+            return met_neighbors;
         }
+
+        /// <summary>
+        /// 設置六面鄰居，通常會先檢查是否設置過，若設置過就會省略此步驟。
+        /// 若之後 Chunk 會動態生成，那就需要確保六面鄰居都存在，才不繼續更新鄰居
+        /// </summary>
+        /// <param name="neighbors"></param>
+        public void setNeighbors((Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) neighbors)
+        {
+            met_neighbors = true;
+            this.neighbors = neighbors;
+        }
+        #endregion
+
+        public IEnumerable<(Vector3Int, BlockType)> iterVegetations()
+        {
+            int n_block = block_types.Length;
+            Vector3Int block_pos, base_pos;
+
+            for (int i = 0; i < n_block; i++)
+            {
+                if (block_types[i] == BlockType.WOODBASE)
+                {
+                    base_pos = flatToVector3Int(i);
+
+                    foreach ((Vector3Int, BlockType) tree in tree_design)
+                    {
+                        block_pos = base_pos + tree.Item1;
+                        yield return (block_pos, tree.Item2);
+                    }
+                }
+                else if (block_types[i] == BlockType.CACTUSBASE)
+                {
+                    base_pos = flatToVector3Int(i);
+
+                    foreach ((Vector3Int, BlockType) cactus in cactus_design)
+                    {
+                        block_pos = base_pos + cactus.Item1;
+                        yield return (block_pos, cactus.Item2);
+                    }
+                }
+            }
+        }
+
+        public void setVisiable(bool visiable)
+        {
+            solid_mesh_renderer.enabled = visiable;
+            fluid_mesh_renderer.enabled = visiable;
+        }
+
+        /// <summary>
+        /// mesh_renderer_solid 和 mesh_renderer_fluid 是否可見的狀態相同，因此返回任一個的狀態即可
+        /// </summary>
+        /// <returns></returns>
+        public bool isVisiable()
+        {
+            return solid_mesh_renderer.enabled;
+        }
+
 
         [Obsolete("提供在 Chunk 中建立 Block 時，協助判斷各面 Mesh 是否需要添加")]
         (bool is_inside, int nx, int ny, int nz) getNeighbourInfo(int bx, int by, int bz, BlockSide side)

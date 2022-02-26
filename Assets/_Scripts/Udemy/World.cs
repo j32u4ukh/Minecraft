@@ -134,7 +134,7 @@ namespace udemy
                             // 將與被破壞的 Block 交界的 Chunk 全部重繪
                             foreach (Vector3Int neighbour_location in neighbour_locations)
                             {
-                                rebuildConsiderAround(chunks[neighbour_location]);
+                                rebuild(chunks[neighbour_location]);
                             }
 
                             // 考慮當前方塊的上方一格是否會觸發掉落機制
@@ -142,25 +142,25 @@ namespace udemy
                         }
                     }
 
-                    //// 右鍵(1)：放置方塊
-                    //else
-                    //{
-                    //    // TODO: 考慮 世界 的大小，取得的 chunk 不一定存在於 chunks 當中
-                    //    (Vector3Int, Vector3Int) chunk_block_location = chunk.getChunkBlockLocation(bx, by, bz);
+                    // 右鍵(1)：放置方塊
+                    else
+                    {
+                        // TODO: 考慮 世界 的大小，取得的 chunk 不一定存在於 chunks 當中
+                        (Vector3Int, Vector3Int) chunk_block_location = chunk.getChunkBlockLocation(bx, by, bz);
 
-                    //    if (chunks.ContainsKey(chunk_block_location.Item1))
-                    //    {
-                    //        chunk = chunks[chunk_block_location.Item1];
-                    //        i = vector3IntToFlat(chunk_block_location.Item2);
+                        if (chunks.ContainsKey(chunk_block_location.Item1))
+                        {
+                            chunk = chunks[chunk_block_location.Item1];
+                            i = vector3IntToFlat(chunk_block_location.Item2);
 
-                    //        chunk.placeBlock(index: i, block_type: player.getBlockType());
+                            chunk.placeBlock(index: i, block_type: player.getBlockType());
 
-                    //        StartCoroutine(dropBlock(chunk: chunk, block_index: i));
-                    //    }
-                    //}
+                            StartCoroutine(dropBlock(chunk: chunk, block_index: i));
+                        }
+                    }
 
                     // 當 新增 或 破壞 方塊後，重新繪製 Chunk
-                    rebuildConsiderAround(chunk);
+                    rebuild(chunk);
                 }
             }
 
@@ -198,7 +198,7 @@ namespace udemy
             }
 
             // TODO: 在這裡考慮 Chunk 交界問題，隱藏 Chunk 交界的 Mesh
-            yield return buildConsiderAround();
+            yield return build();
 
             // 在這裡呼叫 Chunk.buildTrees()，樹的建構才有辦法考慮到跨 Chunk 的情況
             yield return buildVegetations();
@@ -233,7 +233,7 @@ namespace udemy
             int x_end = world_dimesions.x + extra_world_dimesions.x;
 
             /* NOTE: 目前呼叫 buildChunkColumn 後只是定義了各個 Block 的類型等數據，尚未實際添加 Mesh，
-             * 若在呼叫 buildConsiderAround 之前想對 Mesh 進行操作，則會發生錯誤 */
+             * 若在呼叫 build 之前想對 Mesh 進行操作，則會發生錯誤 */
             for (int z = z_start; z < z_end; z++)
             {
                 for (int x = 0; x < x_start; x++)
@@ -252,7 +252,7 @@ namespace udemy
                 }
             }
 
-            yield return buildConsiderAround();
+            yield return build();
 
             yield return buildVegetations();
         }
@@ -296,30 +296,46 @@ namespace udemy
         /// 考慮跨 Chunk 交界問題後，實際添加 Mesh 到 Chunk 當中
         /// </summary>
         /// <returns></returns>
-        private IEnumerator buildConsiderAround()
+        private IEnumerator build()
         {
-            (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) neighbors;
+            Chunk chunk;
 
             foreach (KeyValuePair<Vector3Int, Chunk> location_chunk in chunks)
             {
-                neighbors = getNeighbours(location: location_chunk.Key);
+                chunk = location_chunk.Value;
 
-                location_chunk.Value.buildConsiderAround(neighbors.up, neighbors.down, neighbors.left, neighbors.right, neighbors.forward, neighbors.back);
-                location_chunk.Value.setVisiable(visiable: true);
+                if (!chunk.hasMetNeighbors())
+                {
+                    chunk.setNeighbors(neighbors: getNeighbours(location: location_chunk.Key));
+                }
+
+                chunk.build();
+                chunk.setVisiable(visiable: true);
 
                 loading_bar.value++;
                 yield return null;
             }
         }
 
-        void rebuildConsiderAround(Chunk chunk)
+        /// <summary>
+        /// 當 新增 或 破壞 方塊後，呼叫此函式，以重新繪製 Chunk
+        /// </summary>
+        /// <param name="chunk"></param>
+        void rebuild(Chunk chunk)
         {
-            (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) neighbors;
-            neighbors = getNeighbours(location: chunk.location);
+            if (!chunk.hasMetNeighbors())
+            {
+                chunk.setNeighbors(neighbors: getNeighbours(location: chunk.location));
+            }
 
-            chunk.rebuildConsiderAround(neighbors.up, neighbors.down, neighbors.left, neighbors.right, neighbors.forward, neighbors.back);
+            chunk.rebuild();
         }
 
+        /// <summary>
+        /// 取得當前 Chunk 的六個面所銜接的 Chunk，若尚未建立則返回 null
+        /// </summary>
+        /// <param name="location">當前 Chunk 的位置</param>
+        /// <returns> 當前 Chunk 的六個面所銜接的 Chunk </returns>
         private (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) getNeighbours(Vector3Int location)
         {
             Chunk up = null, down = null, left = null, right = null, forward = null, back = null;
@@ -567,6 +583,7 @@ namespace udemy
 
             while (true)
             {
+                // 取得當前方塊的三維座標(當前 Chunk 的座標系)
                 block_position = flatToVector3Int(i: block_index);
 
                 // 取得當前方塊的下方方塊位置(有可能跨到下一個 Chunk，使用 getChunkBlockLocation 取得正確的 Chunk 和 Block 的索引值)
@@ -574,11 +591,17 @@ namespace udemy
                                                              by: block_position.y - 1, 
                                                              bz: block_position.z);
 
+                // 若存在下方方塊所屬 Chunk
                 if (chunks.ContainsKey(location_below.Item1))
                 {
+                    // 當前方塊的下方方塊所屬 Chunk
                     chunk_below = chunks[location_below.Item1];
+
+                    // 取得下方方塊的三維座標(下方方塊所屬 Chunk 的座標系)
                     block_below_index = vector3IntToFlat(v: location_below.Item2);
                 }
+
+                // 若下方方塊所屬 Chunk 不存在
                 else
                 {
                     chunk_below = null;
@@ -602,6 +625,7 @@ namespace udemy
 
                     yield return falling_buffer;
 
+                    // TODO: 方塊掉落的過程中，需要更新的 Chunk 實在太多，破壞得多的話，fps 從 200 多掉到只剩 80 幾，應該要加入 task_queue 來執行或是想辦法只更新一小部分
                     neighbour_locations = new HashSet<Vector3Int>() { chunk.location };
 
                     // 判斷當前方塊是否位於 Chunk 邊界上，若是，與之交界的是哪個 Chunk？
@@ -636,13 +660,15 @@ namespace udemy
                     // 將與被破壞的 Block 交界的 Chunk 全部重繪
                     foreach (Vector3Int neighbour_location in neighbour_locations)
                     {
-                        rebuildConsiderAround(chunks[neighbour_location]);
+                        rebuild(chunks[neighbour_location]);
                     }
 
                     // 指向落下後的方塊
                     block_index = block_below_index;
                     chunk = chunk_below;
                 }
+
+                // 下方無掉落空間，考慮是否會向四周溢出
                 else if (MeshUtils.canSpread(block_type: block_type))
                 {
                     spreadBlock(chunk, block_position, Vector3Int.forward, spread);
@@ -667,24 +693,37 @@ namespace udemy
                 return;
             }
 
+            // 取得溢出方向的方塊位置(所屬 Chunk 位置 & 方塊座標)
             (Vector3Int, Vector3Int) location = chunk.getChunkBlockLocation(block_position + direction);
 
+            // 若該方塊尚未被建立
             if (!chunks.ContainsKey(location.Item1))
             {
                 return;
             }
 
+            // 取得溢出方向的方塊所屬 Chunk
             Chunk neighbor_chunk = chunks[location.Item1];
+
+            // 取得溢出方向的方塊索引值
             int block_neighbor_index = vector3IntToFlat(location.Item2);
 
+            // 若該方向有空間可溢出(方塊類型為 BlockType.AIR)
             if (neighbor_chunk.getBlockType(block_neighbor_index).Equals(BlockType.AIR))
             {
+                // 取得當前方塊索引值
                 int block_index = vector3IntToFlat(block_position);
-                neighbor_chunk.setBlockType(index: block_neighbor_index, chunk.getBlockType(block_index));
-                neighbor_chunk.setCrackState(index: block_neighbor_index);
-                //neighbor_chunk.rebuild();
-                rebuildConsiderAround(neighbor_chunk);
 
+                // 更新溢出方向的方塊類型
+                neighbor_chunk.setBlockType(index: block_neighbor_index, chunk.getBlockType(block_index));
+
+                // 更新溢出方向的方塊狀態
+                neighbor_chunk.setCrackState(index: block_neighbor_index);
+
+                // 重新繪製溢出方向的方塊所屬 Chunk
+                rebuild(neighbor_chunk);
+
+                // 繼續檢查是否可以繼續往下掉
                 StartCoroutine(dropBlock(chunk: neighbor_chunk, block_index: block_neighbor_index, spread: spread));
             }
         }
@@ -752,7 +791,7 @@ namespace udemy
 
             foreach (Chunk chunk in chunks.Values)
             {
-                rebuildConsiderAround(chunk);
+                rebuild(chunk);
             }
         }
 
