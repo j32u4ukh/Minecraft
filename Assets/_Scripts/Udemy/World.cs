@@ -11,6 +11,11 @@ namespace udemy
         public static Vector3Int world_dimesions = new Vector3Int(5, 5, 5);
         public static Vector3Int extra_world_dimesions = new Vector3Int(5, 5, 5);
         public static Vector3Int chunk_dimensions = new Vector3Int(10, 10, 10);
+
+        private static Vector3Int[] directions = new Vector3Int[] {
+            Vector3Int.up, Vector3Int.down, Vector3Int.left, Vector3Int.right, Vector3Int.forward, Vector3Int.back
+        };
+
         public bool load_file = false;
         public GameObject chunk_prefab;
 
@@ -132,10 +137,7 @@ namespace udemy
                             HashSet<Vector3Int> neighbour_locations = getNeighboringChunkLocation(chunk, bx, by, bz);
 
                             // 將與被破壞的 Block 交界的 Chunk 全部重繪
-                            foreach (Vector3Int neighbour_location in neighbour_locations)
-                            {
-                                rebuild(chunks[neighbour_location]);
-                            }
+                            StartCoroutine(rebuild(neighbour_locations));
 
                             // 考慮當前方塊的上方一格是否會觸發掉落機制
                             dropBlockAbove(chunk: chunk, block_position: new Vector3Int(bx, by, bz));
@@ -160,7 +162,7 @@ namespace udemy
                     }
 
                     // 當 新增 或 破壞 方塊後，重新繪製 Chunk
-                    rebuild(chunk);
+                    StartCoroutine(rebuild(chunk));
                 }
             }
 
@@ -178,7 +180,7 @@ namespace udemy
             int n_chunk_column = world_dimesions.x * world_dimesions.z;
             int n_chunk = world_dimesions.x * world_dimesions.y * world_dimesions.z;
 
-            // 跨 Chunk 處理 以及 種樹，兩者都是要遍歷當前所有 Chunk，因此工作量是 n_chunk * 2
+            // 跨 Chunk 建置 以及 種樹，兩者都是要遍歷當前所有 Chunk，因此工作量是 n_chunk * 2
             loading_bar.maxValue = n_chunk_column + n_chunk * 2;
             int x, z, column_z;
 
@@ -197,11 +199,11 @@ namespace udemy
                 }
             }
 
-            // TODO: 在這裡考慮 Chunk 交界問題，隱藏 Chunk 交界的 Mesh
+            // 跨 Chunk 建置
             yield return build();
 
-            // 在這裡呼叫 Chunk.buildTrees()，樹的建構才有辦法考慮到跨 Chunk 的情況
-            yield return buildVegetations();
+            // 跨 Chunk 種樹
+            yield return plantVegetations();
 
             main_camera.SetActive(false);
 
@@ -216,13 +218,13 @@ namespace udemy
             loading_bar.gameObject.SetActive(false);
 
             // 啟動 taskCoordinator，依序執行被分派的任務
-            StartCoroutine(taskCoordinator());
+            //StartCoroutine(taskCoordinator());
 
             // NOTE: 暫且關閉此功能，以利開發其他機制
             // 將 IEnumerator 添加到 buildQueue 當中
             //StartCoroutine(updateWorld());
 
-            StartCoroutine(buildExtraWorld(visiable: false));
+            StartCoroutine(buildExtraWorld(visiable: true));
         }
 
         IEnumerator buildExtraWorld(bool visiable = false)
@@ -231,43 +233,68 @@ namespace udemy
             int z_end = world_dimesions.z + extra_world_dimesions.z;
             int x_start = world_dimesions.x;
             int x_end = world_dimesions.x + extra_world_dimesions.x;
+            int x, z;
+            HashSet<Vector3Int> chunk_locations = new HashSet<Vector3Int>();
+            HashSet<Vector3Int> locations, neighbors;
+
+            // Vector3Int?[] getNeighbourLocations(Vector3Int location)
 
             /* NOTE: 目前呼叫 buildChunkColumn 後只是定義了各個 Block 的類型等數據，尚未實際添加 Mesh，
              * 若在呼叫 build 之前想對 Mesh 進行操作，則會發生錯誤 */
-            for (int z = z_start; z < z_end; z++)
+            for (z = z_start; z < z_end; z++)
             {
-                for (int x = 0; x < x_start; x++)
+                for (x = 0; x < x_start; x++)
                 {
-                    buildChunkColumn(chunk_dimensions.x * x, chunk_dimensions.z * z, visiable: visiable);
+                    locations = buildChunkColumn(chunk_dimensions.x * x, chunk_dimensions.z * z);
+
+                    foreach (Vector3Int location in locations)
+                    {
+                        neighbors = getNeighbourLocations(location: location);
+                        Utils.combineHashSet(ref chunk_locations, neighbors);
+                    }
+
+                    Utils.combineHashSet(ref chunk_locations, locations);
                     yield return null;
                 }
             }
 
-            for (int z = 0; z < z_end; z++)
+            for (z = 0; z < z_end; z++)
             {
-                for (int x = x_start; x < x_end; x++)
+                for (x = x_start; x < x_end; x++)
                 {
-                    buildChunkColumn(chunk_dimensions.x * x, chunk_dimensions.z * z, visiable: visiable);
+                    locations = buildChunkColumn(chunk_dimensions.x * x, chunk_dimensions.z * z);
+
+                    foreach (Vector3Int location in locations)
+                    {
+                        neighbors = getNeighbourLocations(location: location);
+                        Utils.combineHashSet(ref chunk_locations, neighbors);
+                    }
+
+                    Utils.combineHashSet(ref chunk_locations, locations);
                     yield return null;
                 }
             }
 
-            yield return build();
+            yield return build(locations: chunk_locations, visiable: visiable);
 
-            yield return buildVegetations();
+            yield return plantVegetations(locations: chunk_locations);
         }
 
         /// <summary>
-        /// 
+        /// 建立一柱 Chunk
         /// </summary>
         /// <param name="col_x">ChunkColumn 的 X 座標</param>
         /// <param name="col_z">ChunkColumn 的 Z 座標</param>
-        void buildChunkColumn(int col_x, int col_z, bool visiable = true)
+        /// <param name="visiable"></param>
+        /// <returns>被建立的 Chunk 們的位置</returns>
+        HashSet<Vector3Int> buildChunkColumn(int col_x, int col_z)
         {
+            HashSet<Vector3Int> chunk_locations = new HashSet<Vector3Int>();
+
             // 若是已建立過的 ChunkColumn，則再次使其呈現即可
             if (chunk_columns.Contains(new Vector2Int(col_x, col_z)))
             {
-                setChunkColumnVisiable(col_x, col_z, visiable: visiable);
+                setChunkColumnVisiable(col_x, col_z, visiable: true);
             }
 
             // 若沒建立過位於 (col_x, col_z) 的 ChunkColumn，則產生並加入管理
@@ -284,36 +311,128 @@ namespace udemy
 
                     chunk = chunk_obj.GetComponent<Chunk>();
                     chunk.init(dimensions: chunk_dimensions, location: location);
-
+                    chunk_locations.Add(location);
                     chunks.Add(location, chunk);
                 }
 
                 chunk_columns.Add(new Vector2Int(col_x, col_z));
-            }            
+            }
+
+            return chunk_locations;
         }
 
         /// <summary>
-        /// 考慮跨 Chunk 交界問題後，實際添加 Mesh 到 Chunk 當中
+        /// 建置多柱 Chunk，只在世界初始化時使用，考慮 loading_bar 的進度
         /// </summary>
         /// <returns></returns>
-        private IEnumerator build()
+        private IEnumerator build(bool visiable = true)
+        {
+            HashSet<Vector3Int> locations = new HashSet<Vector3Int>(chunks.Keys);
+            IEnumerator iter = build(locations, visiable);
+
+            while (iter.MoveNext())
+            {
+                loading_bar.value++;
+                yield return iter.Current;
+            }
+        }
+
+        /// <summary>
+        /// 世界初始化之後，都使用這個，只建置指定位置的 Chunk，而非全部重新建置，節省所需資源
+        /// </summary>
+        /// <param name="locations"></param>
+        /// <returns></returns>
+        private IEnumerator build(HashSet<Vector3Int> locations, bool visiable = true)
         {
             Chunk chunk;
 
-            foreach (KeyValuePair<Vector3Int, Chunk> location_chunk in chunks)
+            foreach(Vector3Int location in locations)
             {
-                chunk = location_chunk.Value;
+                chunk = chunks[location];
 
+                // 若 Chunk 尚未設置過六面鄰居
                 if (!chunk.hasMetNeighbors())
                 {
-                    chunk.setNeighbors(neighbors: getNeighbours(location: location_chunk.Key));
+                    // Chunk 設置過六面鄰居(利用當前 Chunk 的位置取得鄰居 Chunk)
+                    chunk.setNeighbors(neighbors: getNeighbours(location: location));
                 }
 
                 chunk.build();
-                chunk.setVisiable(visiable: true);
-
-                loading_bar.value++;
+                chunk.setVisiable(visiable: visiable);
                 yield return null;
+            }
+        }
+
+        /// <summary>
+        /// 種植植物，由於要考慮到跨 Chunk 的情況，因此必須在 build 之後執行。
+        /// 種植過後，該植物就在 Chunk 的管理下了，即便需要重新繪製 Chunk，也不需要再呼叫此函式
+        /// </summary>
+        /// <param name="version"></param>
+        private IEnumerator plantVegetations()
+        {
+            HashSet<Vector3Int> locations = new HashSet<Vector3Int>(chunks.Keys);
+            IEnumerator iter = plantVegetations(locations: locations);
+
+            while (iter.MoveNext())
+            {
+                loading_bar.value++;
+                yield return iter.Current;
+            }
+        }
+
+        /// <summary>
+        /// 在這裡呼叫 Chunk.buildTrees()，樹的建構才有辦法考慮到跨 Chunk 的情況
+        /// </summary>
+        /// <param name="version"></param>
+        private IEnumerator plantVegetations(HashSet<Vector3Int> locations)
+        {
+            Chunk chunk, target_chunk;
+            IEnumerable<(Vector3Int, BlockType)> vegetations;
+            (Vector3Int, Vector3Int) chunk_block_location;
+            HashSet<Vector3Int> rebuild_locations = new HashSet<Vector3Int>();
+            Vector3Int target_location;
+            int t_index;
+
+            foreach (Vector3Int location in locations)
+            {
+                chunk = chunks[location];
+                vegetations = chunk.iterVegetations();
+                rebuild_locations.Clear();
+
+                // 依序取出樹的部分位置與方塊
+                foreach ((Vector3Int, BlockType) vegetation in vegetations)
+                {
+                    // 考慮樹的位置可能跨 Chunk，取得校正後的 Chunk 和 Block 索引值
+                    chunk_block_location = chunk.getChunkBlockLocationAdvanced(vegetation.Item1);
+                    target_location = chunk_block_location.Item1;
+
+                    // 檢查校正後的 Chunk 是否已建立，不存在則跳過
+                    if (!chunks.ContainsKey(target_location))
+                    {
+                        continue;
+                    }
+
+                    rebuild_locations.Add(target_location);
+
+                    // 取得校正後的 Chunk 索引值
+                    target_chunk = chunks[target_location];
+
+                    // 取得校正後的 Block 索引值的 flat 版本
+                    t_index = vector3IntToFlat(chunk_block_location.Item2);
+
+                    // 於校正後的 Chunk 放置樹的部分方塊
+                    target_chunk.placeBlock(index: t_index, block_type: vegetation.Item2);
+                }
+
+                yield return rebuild(rebuild_locations);
+            }
+        }
+
+        private IEnumerator rebuild(HashSet<Vector3Int> locations)
+        {
+            foreach (Vector3Int location in locations)
+            {
+                yield return rebuild(chunk: chunks[location]);
             }
         }
 
@@ -321,7 +440,7 @@ namespace udemy
         /// 當 新增 或 破壞 方塊後，呼叫此函式，以重新繪製 Chunk
         /// </summary>
         /// <param name="chunk"></param>
-        void rebuild(Chunk chunk)
+        private IEnumerator rebuild(Chunk chunk)
         {
             if (!chunk.hasMetNeighbors())
             {
@@ -329,6 +448,7 @@ namespace udemy
             }
 
             chunk.rebuild();
+            yield return null;
         }
 
         /// <summary>
@@ -337,48 +457,53 @@ namespace udemy
         /// <param name="location">當前 Chunk 的位置</param>
         /// <returns> 當前 Chunk 的六個面所銜接的 Chunk </returns>
         private (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) getNeighbours(Vector3Int location)
-        {
-            Chunk up = null, down = null, left = null, right = null, forward = null, back = null;
-            Vector3Int u = location + chunk_dimensions * Vector3Int.up,
-                       d = location + chunk_dimensions * Vector3Int.down,
-                       l = location + chunk_dimensions * Vector3Int.left,
-                       r = location + chunk_dimensions * Vector3Int.right,
-                       f = location + chunk_dimensions * Vector3Int.forward,
-                       b = location + chunk_dimensions * Vector3Int.back;
+        {            
+            Chunk[] neighbors = new Chunk[6];
+            Vector3Int neighbor;
 
-            if (chunks.ContainsKey(u))
+            for (int i = 0; i < 6; i++)
             {
-                up = chunks[u];
+                neighbor = location + chunk_dimensions * directions[i];
+
+                if (chunks.ContainsKey(neighbor))
+                {
+                    neighbors[i] = chunks[neighbor];
+                }
+                else
+                {
+                    neighbors[i] = null;
+                }
             }
 
-            if (chunks.ContainsKey(d))
-            {
-                down = chunks[d];
-            }
-
-            if (chunks.ContainsKey(l))
-            {
-                left = chunks[l];
-            }
-
-            if (chunks.ContainsKey(r))
-            {
-                right = chunks[r];
-            }
-
-            if (chunks.ContainsKey(f))
-            {
-                forward = chunks[f];
-            }
-
-            if (chunks.ContainsKey(b))
-            {
-                back = chunks[b];
-            }
-
-            return (up, down, left, right, forward, back);
+            return (neighbors[0], neighbors[1], neighbors[2], neighbors[3], neighbors[4], neighbors[5]);
         }
 
+        private HashSet<Vector3Int> getNeighbourLocations(Vector3Int location)
+        {
+            HashSet<Vector3Int> neighbors = new HashSet<Vector3Int>();
+            Vector3Int neighbor;
+
+            for(int i = 0; i < 6; i++)
+            {
+                neighbor = location + chunk_dimensions * directions[i];
+
+                if (chunks.ContainsKey(neighbor))
+                {
+                    neighbors.Add(neighbor);
+                }
+            }
+
+            return neighbors;
+        }
+
+        /// <summary>
+        /// 若當前方塊位於 Chunk 的邊界，則取得與當前 Chunk 所銜接的鄰居 Chunk
+        /// </summary>
+        /// <param name="chunk"></param>
+        /// <param name="bx"></param>
+        /// <param name="by"></param>
+        /// <param name="bz"></param>
+        /// <returns></returns>
         private HashSet<Vector3Int> getNeighboringChunkLocation(Chunk chunk, int bx, int by, int bz)
         {
             HashSet<Vector3Int> neighbours = new HashSet<Vector3Int>();
@@ -658,10 +783,7 @@ namespace udemy
                     }
 
                     // 將與被破壞的 Block 交界的 Chunk 全部重繪
-                    foreach (Vector3Int neighbour_location in neighbour_locations)
-                    {
-                        rebuild(chunks[neighbour_location]);
-                    }
+                    yield return rebuild(locations: neighbour_locations);
 
                     // 指向落下後的方塊
                     block_index = block_below_index;
@@ -684,13 +806,13 @@ namespace udemy
             }
         }
 
-        void spreadBlock(Chunk chunk, Vector3Int block_position, Vector3Int direction, int spread = 2)
+        private IEnumerator spreadBlock(Chunk chunk, Vector3Int block_position, Vector3Int direction, int spread = 2)
         {
             spread--;
 
             if (spread < 0)
             {
-                return;
+                yield break;
             }
 
             // 取得溢出方向的方塊位置(所屬 Chunk 位置 & 方塊座標)
@@ -699,7 +821,7 @@ namespace udemy
             // 若該方塊尚未被建立
             if (!chunks.ContainsKey(location.Item1))
             {
-                return;
+                yield break;
             }
 
             // 取得溢出方向的方塊所屬 Chunk
@@ -721,10 +843,10 @@ namespace udemy
                 neighbor_chunk.setCrackState(index: block_neighbor_index);
 
                 // 重新繪製溢出方向的方塊所屬 Chunk
-                rebuild(neighbor_chunk);
+                yield return rebuild(neighbor_chunk);
 
                 // 繼續檢查是否可以繼續往下掉
-                StartCoroutine(dropBlock(chunk: neighbor_chunk, block_index: block_neighbor_index, spread: spread));
+                yield return dropBlock(chunk: neighbor_chunk, block_index: block_neighbor_index, spread: spread);
             }
         }
 
@@ -745,53 +867,6 @@ namespace udemy
                 int block_above_index = vector3IntToFlat(v: location_above.Item2);
 
                 StartCoroutine(dropBlock(chunk_above, block_above_index));
-            }
-        }
-
-        /// <summary>
-        /// 在這裡呼叫 Chunk.buildTrees()，樹的建構才有辦法考慮到跨 Chunk 的情況
-        /// </summary>
-        /// <param name="version"></param>
-        private IEnumerator buildVegetations()
-        {
-            Chunk target_chunk;
-            IEnumerable<(Vector3Int, BlockType)> vegetations;
-            (Vector3Int, Vector3Int) chunk_block_location;
-            int t_index;
-
-            foreach (Chunk chunk in chunks.Values)
-            {
-                vegetations = chunk.iterVegetations();
-
-                // 依序取出樹的部分位置與方塊
-                foreach ((Vector3Int, BlockType) tree in vegetations)
-                {
-                    // 考慮樹的位置可能跨 Chunk，取得校正後的 Chunk 和 Block 索引值
-                    chunk_block_location = chunk.getChunkBlockLocationAdvanced(tree.Item1);
-
-                    // 檢查校正後的 Chunk 是否已建立，不存在則跳過
-                    if (!chunks.ContainsKey(chunk_block_location.Item1))
-                    {
-                        continue;
-                    }
-
-                    // 取得校正後的 Chunk 索引值
-                    target_chunk = chunks[chunk_block_location.Item1];
-
-                    // 取得校正後的 Block 索引值的 flat 版本
-                    t_index = vector3IntToFlat(chunk_block_location.Item2);
-
-                    // 於校正後的 Chunk 放置樹的部分方塊
-                    target_chunk.placeBlock(index: t_index, block_type: tree.Item2);
-                }
-
-                loading_bar.value++;
-                yield return null;
-            }
-
-            foreach (Chunk chunk in chunks.Values)
-            {
-                rebuild(chunk);
             }
         }
 

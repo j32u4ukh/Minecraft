@@ -39,5 +39,13 @@ namespace udemy
         {
             return v.x + width * (v.y + depth * v.z);
         }
+
+        public static void combineHashSet<T>(ref HashSet<T> container, HashSet<T> resources)
+        {
+            foreach(T resource in resources)
+            {
+                container.Add(resource);
+            }
+        }
     }
 }

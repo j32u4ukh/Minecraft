@@ -169,10 +169,10 @@ namespace udemy
 
         private void buildMesh(ref GameObject obj, string mesh_type = "Solid")
         {
-            if (!met_neighbors)
-            {
-                return;
-            }
+            //if (!met_neighbors)
+            //{
+            //    return;
+            //}
 
             // TODO: 改為全域變數，避免重複 GetComponent
             MeshFilter mesh_filter;
@@ -317,10 +317,7 @@ namespace udemy
              * 不這樣做的話會造成內存泄漏。這個過程也在你每一幀都調度依賴於上一幀 job 的新 job 時被采用。
              * 
              * 在主線程中調用 Schedule 和 Complete
-             * 你只能在主線程中調用 Schedule 和 Complete 方法。如果一個 job 需要依賴於另一個，使用 JobHandle 來處理依賴關系而不是嘗試在 job 中調度新的 job。
-             * 
-             * 
-             */
+             * 你只能在主線程中調用 Schedule 和 Complete 方法。如果一個 job 需要依賴於另一個，使用 JobHandle 來處理依賴關系而不是嘗試在 job 中調度新的 job。 */
             handle.Complete();
 
             job.output_mesh_data.subMeshCount = 1;
@@ -550,7 +547,7 @@ namespace udemy
         } 
         #endregion
 
-       #region Chunk & Block
+        #region Chunk & Block
         public (Vector3Int, Vector3Int) getChunkBlockLocation(Vector3Int block_position)
         {
             return getChunkBlockLocation(bx: block_position.x, by: block_position.y, bz: block_position.z);
@@ -781,7 +778,11 @@ namespace udemy
         /// <param name="neighbors"></param>
         public void setNeighbors((Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) neighbors)
         {
-            met_neighbors = true;
+            if(neighbors.up && neighbors.down && neighbors.left && neighbors.right && neighbors.forward && neighbors.back)
+            {
+                met_neighbors = true;
+            }
+
             this.neighbors = neighbors;
         }
         #endregion
@@ -1051,13 +1052,14 @@ namespace udemy
                 return;
             }
 
+            // NOTE: 地表種植植物時，會先設置一個特殊 BlockType 標註，實際種植時也會將該特殊 BlockType 覆蓋，可避免重複認定需要種樹
             if (xyz.y == surface_height && xyz.y >= WATER_LINE)
             {
                 if (dessert_biome < World.biome_cluster.boundary)
                 {
                     block_types[i] = BlockType.SAND;
 
-                    if (random.NextFloat(1) <= 0.05f)
+                    if (random.NextFloat(1) <= 0.01f)
                     {
                         block_types[i] = BlockType.CACTUSBASE;
                     }
