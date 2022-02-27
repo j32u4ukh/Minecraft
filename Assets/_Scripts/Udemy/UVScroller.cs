@@ -4,36 +4,39 @@ using UnityEngine;
 
 namespace udemy
 {
-    /// <summary>
-    /// 透過 UV 位置的偏移，造成流動的效果，但僅限於鄰近 UV 圖案相同時
-    /// </summary>
     public class UVScroller : MonoBehaviour
     {
-        Vector2 speed = new Vector2(0, 0.01f);
-        Vector2 offset = Vector2.zero;
-        Renderer m_renderer;
+        Vector2 uvSpeed = new Vector2(0, 0.01f);
+        Vector2 uvOffset = Vector2.zero;
+        Renderer rend;
 
         void Start()
         {
-            m_renderer = GetComponent<Renderer>();
+            rend = GetComponent<Renderer>();
         }
 
         void LateUpdate()
         {
-            //if (m_renderer == null)
-            //{
-            //    m_renderer = GetComponent<Renderer>();
-            //    return;
-            //}
-
-            offset += speed * Time.deltaTime;
-
-            if (offset.y > MeshUtils.UV_SIZE)
+            if (rend == null)
             {
-                offset = new Vector2(offset.x, 0);
+                rend = GetComponent<Renderer>();
+                return;
             }
 
-            m_renderer.materials[0].SetTextureOffset("_MainTex", offset);
+            uvOffset += uvSpeed * Time.deltaTime;
+
+            if (uvOffset.x > 0.0625f)
+            {
+                uvOffset = new Vector2(0, uvOffset.y);
+            }
+
+            if (uvOffset.y > 0.0625f)
+            {
+                uvOffset = new Vector2(uvOffset.x, 0);
+            }
+
+            rend.materials[0].SetTextureOffset("_MainTex", uvOffset);
         }
     }
+
 }

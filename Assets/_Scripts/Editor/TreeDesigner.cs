@@ -2,32 +2,34 @@ using UnityEngine;
 using System.Collections;
 using UnityEditor;
 
-[CustomEditor(typeof(TreeCreator))]
-public class TreeDesigner : Editor
+namespace udemy
 {
-    Vector2 scroll_pos;
-    int SCROLL_HEIGHT = 100;
-    int TEXT_AREA_HEIGHT = 800;
-
-    public override void OnInspectorGUI()
+    [CustomEditor(typeof(TreeCreator))]
+    public class TreeDesigner : Editor
     {
-        DrawDefaultInspector();
+        Vector2 scroll_pos;
+        int SCROLL_HEIGHT = 100;
+        int TEXT_AREA_HEIGHT = 800;
 
-        TreeCreator handle = (TreeCreator)target;
-
-        if (GUILayout.Button("Realign Blocks"))
+        public override void OnInspectorGUI()
         {
-            handle.reAlignBlocks();
-        }
+            DrawDefaultInspector();
 
-        scroll_pos = EditorGUILayout.BeginScrollView(scroll_pos, GUILayout.Height(SCROLL_HEIGHT));
-        EditorGUILayout.TextArea(handle.block_detail, GUILayout.Height(TEXT_AREA_HEIGHT));
-        EditorGUILayout.EndScrollView();
+            TreeCreator handle = (TreeCreator)target;
 
-        if (GUILayout.Button("Update Details"))
-        {
-            handle.getDetails();
+            if (GUILayout.Button("Realign Blocks"))
+            {
+                handle.reAlignBlocks();
+            }
+
+            scroll_pos = EditorGUILayout.BeginScrollView(scroll_pos, GUILayout.Height(SCROLL_HEIGHT));
+            EditorGUILayout.TextArea(handle.block_detail, GUILayout.Height(TEXT_AREA_HEIGHT));
+            EditorGUILayout.EndScrollView();
+
+            if (GUILayout.Button("Update Details"))
+            {
+                handle.getDetails();
+            }
         }
     }
-
 }

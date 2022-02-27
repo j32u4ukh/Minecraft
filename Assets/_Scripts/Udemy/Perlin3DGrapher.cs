@@ -1,43 +1,47 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using System;
-using UnityEditor;
 
 namespace udemy
 {
+    //[ExecuteInEditMode]
     public class Perlin3DGrapher : MonoBehaviour
     {
-        public ClusterSetting setting;
         Vector3 dimensions = new Vector3(10, 10, 10);
+        public float heightScale = 2;
+        [Range(0.0f, 1.0f)]
+        public float scale = 0.5f;
+        public int octaves = 1;
 
-        private void Awake()
+        public float heightOffset = 1;
+        [Range(0.0f, 10.0f)]
+        public float DrawCutOff = 1;
+
+        void CreateCubes()
         {
-
-        }
-
-        private void OnDrawGizmosSelected()
-        {
-            if (EditorUtility.IsDirty(setting.GetInstanceID()))
+            for (int z = 0; z < dimensions.z; z++)
             {
-                Debug.Log("ClusterSetting is dirty");
-                graphPerlin3D();
+                for (int y = 0; y < dimensions.y; y++)
+                {
+                    for (int x = 0; x < dimensions.x; x++)
+                    {
+                        GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                        cube.name = "perlin_cube";
+                        cube.transform.parent = transform;
+                        cube.transform.position = new Vector3(x, y, z);
+                    }
+                }
             }
         }
 
-        void OnValidate()
-        {
-            graphPerlin3D();
-        }
-
-        void graphPerlin3D()
+        void Graph()
         {
             // destroy existing cubes
-            MeshRenderer[] cubes = GetComponentsInChildren<MeshRenderer>();
+            MeshRenderer[] cubes = this.GetComponentsInChildren<MeshRenderer>();
 
             if (cubes.Length == 0)
             {
-                createCubes();
+                CreateCubes();
             }
 
             if (cubes.Length == 0)
@@ -45,51 +49,30 @@ namespace udemy
                 return;
             }
 
-            int n_enable = 0, idx;
-            float p3d;
-
             for (int z = 0; z < dimensions.z; z++)
             {
                 for (int y = 0; y < dimensions.y; y++)
                 {
                     for (int x = 0; x < dimensions.x; x++)
                     {
-                        p3d = setting.fBM3D(x, y, z);
-                        idx = Utils.xyzToFlat(x, y, z, (int)dimensions.x, (int)dimensions.z);
+                        float p3d = MeshUtils.fBM3D(x, y, z, octaves, scale, heightScale, heightOffset);
 
-                        if(p3d >= setting.boundary)
+                        if (p3d < DrawCutOff)
                         {
-                            cubes[idx].enabled = true;
-                            n_enable++;
+                            cubes[x + (int)dimensions.x * (y + (int)dimensions.z * z)].enabled = false;
                         }
                         else
                         {
-                            cubes[idx].enabled = false;
+                            cubes[x + (int)dimensions.x * (y + (int)dimensions.z * z)].enabled = true;
                         }
                     }
                 }
             }
-
-            //print($"n_enable: {n_enable}");
         }
 
-        void createCubes()
+        void OnValidate()
         {
-            GameObject cube;
-
-            for (int z = 0; z < dimensions.z; z++)
-            {
-                for (int y = 0; y < dimensions.y; y++)
-                {
-                    for (int x = 0; x < dimensions.x; x++)
-                    {
-                        cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                        cube.name = "perlin_cube";
-                        cube.transform.parent = transform;
-                        cube.transform.position = new Vector3(x, y, z);
-                    }
-                }
-            }
+            Graph();
         }
     }
 

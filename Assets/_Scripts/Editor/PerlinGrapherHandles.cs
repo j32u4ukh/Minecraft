@@ -2,22 +2,25 @@ using UnityEngine;
 using System.Collections;
 using UnityEditor;
 
-[CustomEditor(typeof(PerlinGrapher))]
-public class PerlinGrapherHandles : Editor
+namespace udemy
 {
-    void OnSceneGUI()
+    [CustomEditor(typeof(PerlinGrapher))]
+    public class PerlinGrapherHandles : Editor
     {
-        PerlinGrapher handle = (PerlinGrapher)target;
-
-        if (handle == null)
+        void OnSceneGUI()
         {
-            return;
+            PerlinGrapher handle = (PerlinGrapher)target;
+
+            if (handle == null)
+            {
+                return;
+            }
+
+            Handles.color = Color.blue;
+            Handles.Label(handle.lr.GetPosition(0) + Vector3.up * 2,
+                "Layer: " +
+                handle.gameObject.name);
         }
 
-        Handles.color = Color.blue;
-        Handles.Label(handle.lr.GetPosition(0) + Vector3.up * 2,
-            "Layer: " +
-            handle.gameObject.name);
     }
-
 }

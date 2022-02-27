@@ -3,237 +3,280 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// vertex, normal, uv0, uv1
-using VertexData = System.Tuple<UnityEngine.Vector3, UnityEngine.Vector3, UnityEngine.Vector2, UnityEngine.Vector2>;
-
 namespace udemy
 {
+    // vertex, normal, uv0, uv1
+    using VertexData = System.Tuple<UnityEngine.Vector3, UnityEngine.Vector3, UnityEngine.Vector2, UnityEngine.Vector2>;
+
     public static class MeshUtils
     {
-        public static readonly float UV_SIZE = 0.0625f;
+        public enum BlockSide { BOTTOM, TOP, LEFT, RIGHT, FRONT, BACK }
 
-        // Dict<BlockType, Tuple(x, y)> -> (x, y) 再利用 Vector2[] getBlockUVs(int x, int y) 取得 UV 邊界座標
-        private static readonly Dictionary<BlockType, Tuple<int, int>> block_anchor = new Dictionary<BlockType, Tuple<int, int>>()
+        public enum BlockType
         {
-            {BlockType.GRASSTOP, new Tuple<int, int>(2, 6) },
-            {BlockType.GRASSSIDE, new Tuple<int, int>(3, 15) },
-            {BlockType.DIRT, new Tuple<int, int>(2, 15) },
-            {BlockType.WATER, new Tuple<int, int>(14, 2) },
-            {BlockType.STONE, new Tuple<int, int>(0, 15) },
-            {BlockType.SAND, new Tuple<int, int>(2, 14) },
-            {BlockType.LEAVES, new Tuple<int, int>(1, 6) },
-            {BlockType.WOOD, new Tuple<int, int>(4, 14) },
-            {BlockType.WOODBASE, new Tuple<int, int>(4, 14) },
-            {BlockType.FOREST, new Tuple<int, int>(4, 13) },
-            {BlockType.CACTUS, new Tuple<int, int>(6, 11) },
-            {BlockType.CACTUSBASE, new Tuple<int, int>(4, 13) },
-            {BlockType.GOLD, new Tuple<int, int>(0, 13) },
-            {BlockType.BEDROCK, new Tuple<int, int>(5, 13) },
-            {BlockType.REDSTONE, new Tuple<int, int>(3, 12) },
-            {BlockType.DIAMOND, new Tuple<int, int>(2, 12) },
+            GRASSTOP, GRASSSIDE, DIRT, WATER, STONE, LEAVES, WOOD, WOODBASE, FOREST, CACTUS, SAND, GOLD, BEDROCK, REDSTONE, DIAMOND, NOCRACK,
+            CRACK1, CRACK2, CRACK3, CRACK4, AIR
         };
 
-        private static readonly Dictionary<CrackState, Tuple<int, int>> crack_anchor = new Dictionary<CrackState, Tuple<int, int>>()
+        public static int[] blockTypeHealth =
+        { 2, 2, 1, 1, 4, 2, 4, 4, 3, 2, 3, 4, -1, 3, 4, -1, -1, -1, -1, -1, -1
+    };
+
+        public static HashSet<BlockType> canDrop = new HashSet<BlockType> { BlockType.SAND, BlockType.WATER };
+        public static HashSet<BlockType> canFlow = new HashSet<BlockType> { BlockType.WATER };
+
+        // 此種取得 UV 邊界座標的方式，與 enum BlockType 的順序有關聯，是不好的方法
+        public static Vector2[,] blockUVs =
         {
-            {CrackState.None, new Tuple<int, int>(11, 0) },
-            {CrackState.Crack1, new Tuple<int, int>(0, 0) },
-            {CrackState.Crack2, new Tuple<int, int>(1, 0) },
-            {CrackState.Crack3, new Tuple<int, int>(2, 0) },
-            {CrackState.Crack4, new Tuple<int, int>(3, 0) },
-        };
+        // GRASSTOP
+        {
+            new Vector2(0.1250f, 0.3750f),
+            new Vector2(0.1875f, 0.3750f),
+            new Vector2(0.1250f, 0.4375f),
+            new Vector2(0.1875f, 0.4375f)
+        },
+        // GRASSSIDE
+        {
+            new Vector2(0.1875f, 0.9375f),
+            new Vector2(0.2500f, 0.9375f),
+            new Vector2(0.1875f, 1.0000f),
+            new Vector2(0.2500f, 1.0000f)
+        },
+        // DIRT
+        {
+            new Vector2(0.1250f, 0.9375f),
+            new Vector2(0.1875f, 0.9375f),
+            new Vector2(0.1250f, 1.0000f),
+            new Vector2(0.1875f, 1.0000f)
+        },
+        // WATER
+        {
+            new Vector2(0.8750f, 0.1250f),
+            new Vector2(0.9375f, 0.1250f),
+            new Vector2(0.8750f, 0.1875f),
+            new Vector2(0.9375f, 0.1875f)
+        },
+        // STONE
+        {
+            new Vector2(0.0000f, 0.8750f),
+            new Vector2(0.0625f, 0.8750f),
+            new Vector2(0.0000f, 0.9375f),
+            new Vector2(0.0625f, 0.9375f)
+        },
+        /*LEAVES*/	  
+        {
+            new Vector2(0.0625f,0.375f),
+            new Vector2(0.125f,0.375f),
+            new Vector2(0.0625f,0.4375f),
+            new Vector2(0.125f,0.4375f)
+        },
+ 		/*WOOD*/	  
+        {
+            new Vector2(0.375f,0.625f),
+            new Vector2(0.4375f,0.625f),
+            new Vector2(0.375f,0.6875f),
+            new Vector2(0.4375f,0.6875f)
+        },
+ 		/*WOODBASE*/  
+        {
+            new Vector2(0.375f,0.625f),
+            new Vector2(0.4375f,0.625f),
+            new Vector2(0.375f,0.6875f),
+            new Vector2(0.4375f,0.6875f)
+        },	
+        /*FOREST*/    
+        {
+            new Vector2(0.2500f, 0.8125f),
+            new Vector2(0.3125f, 0.8125f),
+            new Vector2(0.2500f, 0.8750f),
+            new Vector2(0.3125f, 0.8750f)
+        },
+        /*CACTUS*/    
+        {
+            new Vector2(0.1250f, 0.3125f),
+            new Vector2(0.1875f, 0.3125f),
+            new Vector2(0.1250f, 0.3750f),
+            new Vector2(0.1875f, 0.3750f)
+        },
+        // SAND
+        {
+            new Vector2(0.1250f, 0.8750f),
+            new Vector2(0.1875f, 0.8750f),
+            new Vector2(0.1250f, 0.9375f),
+            new Vector2(0.1875f, 0.9375f)
+        },
+        /*GOLD*/        
+        {
+            new Vector2(0.0000f, 0.8125f),
+            new Vector2(0.0625f, 0.8125f),
+            new Vector2(0.0000f, 0.8750f),
+            new Vector2(0.0625f, 0.8750f)
+        },
+        /*BEDROCK*/     
+        {
+            new Vector2(0.3125f, 0.8125f),
+            new Vector2(0.3750f, 0.8125f),
+            new Vector2(0.3125f, 0.8750f),
+            new Vector2(0.3750f, 0.8750f)
+        },
+        /*REDSTONE*/    
+        {
+            new Vector2(0.1875f, 0.7500f),
+            new Vector2(0.2500f, 0.7500f),
+            new Vector2(0.1875f, 0.8125f),
+            new Vector2(0.2500f, 0.8125f)
+        },
+        /*DIAMOND*/    
+        {
+            new Vector2(0.1250f, 0.7500f),
+            new Vector2(0.1875f, 0.7500f),
+            new Vector2(0.1250f, 0.8125f),
+            new Vector2(0.1875f, 0.8125f)
+        },
+        /*NOCRACK*/     
+        {
+            new Vector2(0.6875f, 0.0000f),
+            new Vector2(0.7500f, 0.0000f),
+            new Vector2(0.6875f, 0.0625f),
+            new Vector2(0.7500f, 0.0625f)
+        },
+        /*CRACK1*/      
+        {
+            new Vector2(0.0000f, 0.0000f),
+            new Vector2(0.0625f, 0.0000f),
+            new Vector2(0.0000f, 0.0625f),
+            new Vector2(0.0625f, 0.0625f)
+        },
+        /*CRACK2*/      
+        {
+            new Vector2(0.0625f, 0.0000f),
+            new Vector2(0.1250f, 0.0000f),
+            new Vector2(0.0625f, 0.0625f),
+            new Vector2(0.1250f, 0.0625f)
+        },
+        /*CRACK3*/      
+        {
+            new Vector2(0.1250f, 0.0000f),
+            new Vector2(0.1875f, 0.0000f),
+            new Vector2(0.1250f, 0.0625f),
+            new Vector2(0.1875f, 0.0625f)
+        },
+        /*CRACK4*/      
+        {
+            new Vector2(0.1875f, 0.0000f),
+            new Vector2(0.2500f, 0.0000f),
+            new Vector2(0.1875f, 0.0625f),
+            new Vector2(0.2500f, 0.0625f)
+        }
+    };
 
-        // Coordinate of block which is queried 
-        private static Dictionary<BlockType, Vector2[,]> block_to_coordinate = new Dictionary<BlockType, Vector2[,]>();
-
-        // Coordinate of crack which is queried 
-        private static Dictionary<CrackState, Vector2[,]> crack_to_coordinate = new Dictionary<CrackState, Vector2[,]>();
-
-        // 定義各種方塊需要敲擊幾次才會被移除(-1 表示無法被破壞)
-        private static Dictionary<BlockType, int> block_strength = new Dictionary<BlockType, int>() {
-            { BlockType.GRASSTOP, 2 },
-            { BlockType.GRASSSIDE, 2 },
-            { BlockType.DIRT, 1 },
-            { BlockType.WATER, 1 },
-            { BlockType.STONE, 4 },
-            { BlockType.SAND, 3 },
-            { BlockType.GOLD, 4 },
-            { BlockType.BEDROCK, -1 },
-            { BlockType.REDSTONE, 3 },
-            { BlockType.DIAMOND, 4 },
-            { BlockType.WOOD, 2 },
-            { BlockType.WOODBASE, 2 },
-            { BlockType.CACTUS, 1 },
-            { BlockType.CACTUSBASE, 1 },
-            { BlockType.LEAVES, 1 },
-        };
-
-        private static HashSet<BlockType> drop_blocks = new HashSet<BlockType>() { BlockType.SAND, BlockType.WATER };
-
-        private static HashSet<BlockType> spread_blocks = new HashSet<BlockType>() { BlockType.WATER };
-
-        /// <summary>
-        /// Merge multi meshes into one mesh.
-        /// </summary>
-        /// <param name="meshes">mesh list which we want to merge into one mesh</param>
-        /// <returns>A mesh conmbine all inputed meshes</returns>
-        public static Mesh mergeMeshes(List<Mesh> meshes)
+        public static Mesh MergeMeshes(Mesh[] meshes)
         {
             Mesh mesh = new Mesh();
-            Dictionary<VertexData, int> datas = new Dictionary<VertexData, int>();
 
-            List<Vector3> vertices = new List<Vector3>();
-            List<Vector3> normals = new List<Vector3>();
-            List<Vector2> uvs = new List<Vector2>();
-            List<Vector2> uv2s = new List<Vector2>();
-            List<int> triangles = new List<int>();
+            Dictionary<VertexData, int> pointsOrder = new Dictionary<VertexData, int>();
+            HashSet<VertexData> pointsHash = new HashSet<VertexData>();
+            List<int> tris = new List<int>();
 
-            int i, j, t, triangle, n_mesh = meshes.Count, n_triangle;
-            VertexData data;
-            Vector3 vertex, normal;
-            Vector2 uv, uv2;
+            int pIndex = 0;
 
             // loop through each mesh
-            for (i = 0; i < n_mesh; i++)
+            for (int i = 0; i < meshes.Length; i++)
             {
-                // 主要用在 Block 當中，而 meshes 為自行傳入的 List<Mesh>，應該不會有空值
                 if (meshes[i] == null)
                 {
-                    Debug.LogError($"[MeshUtils] mergeMeshes | meshes[{i}] == null");
                     continue;
                 }
 
-                n_triangle = meshes[i].triangles.Length;
-
                 // loop through each vertex of the current mesh
-                for (j = 0; j < n_triangle; j++)
+                for (int j = 0; j < meshes[i].vertices.Length; j++)
                 {
-                    // get triangle index of current mesh
-                    t = meshes[i].triangles[j];
-                    vertex = meshes[i].vertices[t];
-                    normal = meshes[i].normals[t];
-                    uv = meshes[i].uv[t];
-                    uv2 = meshes[i].uv2[t];
-                    data = new VertexData(vertex, normal, uv, uv2);
+                    Vector3 v = meshes[i].vertices[j];
+                    Vector3 n = meshes[i].normals[j];
+                    Vector2 u = meshes[i].uv[j];
+                    Vector2 u2 = meshes[i].uv2[j];
+                    VertexData p = new VertexData(v, n, u, u2);
 
-                    if (datas.ContainsKey(data))
+                    if (!pointsHash.Contains(p))
                     {
-                        // get triangle index of mesh which will be merged
-                        // t(triangle index of current mesh) may be 1, but triangle is 5
-                        // because there has been 5 vertex from previous mesh
-                        triangle = datas[data];
+                        pointsOrder.Add(p, pIndex);
+                        pointsHash.Add(p);
+
+                        pIndex++;
                     }
-                    else
-                    {
-                        triangle = datas.Count;
-
-                        // Non-duplicate values
-                        vertices.Add(vertex);
-                        normals.Add(normal);
-                        uvs.Add(uv);
-                        uv2s.Add(uv2);
-
-                        datas.Add(data, triangle);
-                    }
-
-                    triangles.Add(triangle);
                 }
+
+                for (int t = 0; t < meshes[i].triangles.Length; t++)
+                {
+                    int triPoint = meshes[i].triangles[t];
+                    Vector3 v = meshes[i].vertices[triPoint];
+                    Vector3 n = meshes[i].normals[triPoint];
+                    Vector2 u = meshes[i].uv[triPoint];
+                    Vector2 u2 = meshes[i].uv2[triPoint];
+                    VertexData p = new VertexData(v, n, u, u2);
+
+                    int index;
+                    pointsOrder.TryGetValue(p, out index);
+                    tris.Add(index);
+                }
+
+                meshes[i] = null;
             }
 
-            mesh.vertices = vertices.ToArray();
-            mesh.normals = normals.ToArray();
-            mesh.uv = uvs.ToArray();
-            mesh.uv2 = uv2s.ToArray();
-            mesh.triangles = triangles.ToArray();
+            ExtractMesh(pointsOrder, mesh);
+            mesh.triangles = tris.ToArray();
             mesh.RecalculateBounds();
 
             return mesh;
         }
 
-        /// <summary>
-        /// According to the block type to return the coordinate of uv texture
-        /// if it has been queried, we can read the coordinate from block_to_coordinate.
-        /// Or we can use the (x, y) from block_anchor, and use getBlockUVs to get the coordinate.
-        /// We will save the coordinate into block_to_coordinate for next query.
-        /// </summary>
-        /// <param name="block_type">what kind of block</param>
-        /// <returns></returns>
-        public static Vector2[,] getBlockTypeCoordinate(BlockType block_type)
+        public static void ExtractMesh(Dictionary<VertexData, int> list, Mesh mesh)
         {
-            if (!block_anchor.ContainsKey(block_type))
+            List<Vector3> verts = new List<Vector3>();
+            List<Vector3> norms = new List<Vector3>();
+            List<Vector2> uvs = new List<Vector2>();
+            List<Vector2> uvs2 = new List<Vector2>();
+
+            foreach (VertexData v in list.Keys)
             {
-                // uv00, uv01, uv11, uv10
-                return new Vector2[,] { { new Vector2(0, 0), new Vector2(0, 1) }, 
-                                        { new Vector2(1, 0), new Vector2(1, 1) } };
-            }
-            else if (!block_to_coordinate.ContainsKey(block_type))
-            {
-                Tuple<int, int> anchor = block_anchor[block_type];
-                block_to_coordinate[block_type] = getUVCoordinate(x: anchor.Item1, y: anchor.Item2);
+                verts.Add(v.Item1);
+                norms.Add(v.Item2);
+                uvs.Add(v.Item3);
+                uvs2.Add(v.Item4);
             }
 
-            return block_to_coordinate[block_type];
+            mesh.vertices = verts.ToArray();
+            mesh.normals = norms.ToArray();
+            mesh.uv = uvs.ToArray();
+            mesh.uv2 = uvs2.ToArray();
         }
 
-        public static Vector2[,] getCrackStateCoordinate(CrackState crack_state)
+        public static float fBM(float x, float z, int octaves, float scale, float heightScale, float heightOffset)
         {
-            if (!crack_anchor.ContainsKey(crack_state))
+            float total = 0f;
+            float frequncy = 1f;
+
+            for (int i = 0; i < octaves; i++)
             {
-                // uv00, uv01, uv11, uv10
-                return new Vector2[,] { { new Vector2(0, 0), new Vector2(0, 1) },
-                                        { new Vector2(1, 0), new Vector2(1, 1) } };
-            }
-            else if (!crack_to_coordinate.ContainsKey(crack_state))
-            {
-                Tuple<int, int> anchor = crack_anchor[crack_state];
-                crack_to_coordinate[crack_state] = getUVCoordinate(x: anchor.Item1, y: anchor.Item2);
+                total += Mathf.PerlinNoise(x * scale * frequncy, z * scale * frequncy) * heightScale;
+                frequncy *= 2f;
             }
 
-            return crack_to_coordinate[crack_state];
+            return total + heightOffset;
         }
 
-        /// <summary>
-        /// 每個方塊尺寸為 0.0625 * 0.0625，根據 (x, y) 位置，返回邊界四點座標
-        /// </summary>
-        /// <param name="x"></param>
-        /// <param name="y"></param>
-        /// <returns>the coordinate of uv texture ((LeftBottom  00, LeftTop   01), 
-        ///                                        (RightBottom 10, RightTop  11))</returns>
-        private static Vector2[,] getUVCoordinate(int x, int y)
+        public static float fBM3D(float x, float y, float z, int octaves, float scale, float heightScale, float heightOffset)
         {
-            float left = UV_SIZE * x, right = UV_SIZE * (x + 1);
-            float bottom = UV_SIZE * y, top = UV_SIZE * (y + 1);
+            float XY = fBM(x, y, octaves, scale, heightScale, heightOffset);
+            float YZ = fBM(y, z, octaves, scale, heightScale, heightOffset);
+            float XZ = fBM(x, z, octaves, scale, heightScale, heightOffset);
+            float YX = fBM(y, x, octaves, scale, heightScale, heightOffset);
+            float ZY = fBM(z, y, octaves, scale, heightScale, heightOffset);
+            float ZX = fBM(z, x, octaves, scale, heightScale, heightOffset);
 
-            return new Vector2[,] {
-                { new Vector2(left, bottom), new Vector2(left, top) },
-                { new Vector2(right, bottom), new Vector2(right, top) }
-            };
+            return (XY + YZ + XZ + YX + ZY + ZX) / 6.0f;
         }
 
-        /// <summary>
-        /// 各種方塊需要敲擊幾次才會被移除(-1 表示無法被破壞)
-        /// </summary>
-        /// <param name="block_type"></param>
-        /// <returns>所需敲擊次數</returns>
-        public static int getStrenth(BlockType block_type)
-        {
-            if (block_strength.ContainsKey(block_type))
-            {
-                return block_strength[block_type];
-            }
-            else
-            {
-                return 1;
-            }
-        }
-
-        public static bool canDrop(BlockType block_type)
-        {
-            return drop_blocks.Contains(block_type);
-        }
-
-        public static bool canSpread(BlockType block_type)
-        {
-            return spread_blocks.Contains(block_type);
-        }
     }
+
 }

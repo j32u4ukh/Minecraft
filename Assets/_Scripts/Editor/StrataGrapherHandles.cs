@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace udemy
+namespace minecraft
 {
     [CustomEditor(typeof(StrataGrapher))]
     public class StrataGrapherHandler : Editor
