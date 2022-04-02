@@ -13,8 +13,20 @@ namespace udemy
                                                      BlockSide.Left, BlockSide.Right,
                                                      BlockSide.Front, BlockSide.Back };
 
-        [Obsolete("提供在 Chunk 中建立 Block 時的協助，延後添加 Mesh 的時間點，而非在建構子當中添加 Mesh")]
-        public Block() { }
+        public Block(BlockType block_type, Vector3Int location) 
+        {
+            List<Mesh> meshes = new List<Mesh>();
+            Quad quad;
+
+            foreach (BlockSide side in sides)
+            {
+                quad = createQuad(side: side, block_type: block_type, crack_state: CrackState.None, offset: location);
+                meshes.Add(quad.mesh);
+            }
+
+            mesh = MeshUtils.mergeMeshes(meshes);
+            mesh.name = $"Block_{location.x}_{location.y}_{location.z}";
+        }
 
         public Block(BlockType block_type, CrackState crack_state, Vector3Int offset, Chunk chunk, Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back)
         {
