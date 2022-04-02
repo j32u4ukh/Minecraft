@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityStandardAssets.Characters.FirstPerson;
@@ -94,7 +94,7 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// À³¸Ó¬O·|±N Player ¼²¨ìªº rigidbody¡AªuµÛ³t«×¤è¦V¡A¬I¥[¤@­Ó ForceMode.Impulse Ãş«¬ªº¤O
+    /// æ‡‰è©²æ˜¯æœƒå°‡ Player æ’åˆ°çš„ rigidbodyï¼Œæ²¿è‘—é€Ÿåº¦æ–¹å‘ï¼Œæ–½åŠ ä¸€å€‹ ForceMode.Impulse é¡å‹çš„åŠ›
     /// </summary>
     /// <param name="hit"></param>
     private void OnControllerColliderHit(ControllerColliderHit hit)
@@ -129,7 +129,7 @@ public class PlayerController : MonoBehaviour
 #if !MOBILE_INPUT
         // On standalone builds, walk/run speed is modified by a key press.
         // keep track of whether or not the character is walking or running
-        // «öµÛ LeftShift ²¾°Ê¡A·|ÅÜ¦¨¶]¨B
+        // æŒ‰è‘— LeftShift ç§»å‹•ï¼Œæœƒè®Šæˆè·‘æ­¥
         is_walking = !Input.GetKey(KeyCode.LeftShift);
 #endif
 
@@ -151,7 +151,7 @@ public class PlayerController : MonoBehaviour
         {
             StopAllCoroutines();
 
-            // TODO: §Ö³t²¾°Ê®É¡AFOV À³¤U­°¡A¨Ï±oµø³¥ÅÜ¯¶
+            // TODO: å¿«é€Ÿç§»å‹•æ™‚ï¼ŒFOV æ‡‰ä¸‹é™ï¼Œä½¿å¾—è¦–é‡è®Šçª„
             StartCoroutine(is_walking ? fov.FOVKickDown() : fov.FOVKickUp());
         }
 

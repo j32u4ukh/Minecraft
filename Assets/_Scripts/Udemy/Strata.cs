@@ -1,22 +1,22 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 namespace udemy
 {
     public struct Strata
     {
-        // Å|¥[ PerlinNoise ¼h¼Æ
+        // ç–ŠåŠ  PerlinNoise å±¤æ•¸
         public int octaves;
 
-        // ÁY©ñ¨ú¼ËÂIªº®y¼Ğ
+        // ç¸®æ”¾å–æ¨£é»çš„åº§æ¨™
         public float scale;
 
-        // ÁY©ñªi«¬ªº¾_´T
+        // ç¸®æ”¾æ³¢å‹çš„éœ‡å¹…
         public float height_scale;
 
-        // °ª«×°¾²¾¶q
+        // é«˜åº¦åç§»é‡
         public float height_offset;
 
-        // ¥Î©ó¦a¼h¤¤¬Y¨ÇÄqª«ªº¥X²{¾÷²v¡A»P PerlinNoise ©Î fBM ¥»¨­µLÃö
+        // ç”¨æ–¼åœ°å±¤ä¸­æŸäº›ç¤¦ç‰©çš„å‡ºç¾æ©Ÿç‡ï¼Œèˆ‡ PerlinNoise æˆ– fBM æœ¬èº«ç„¡é—œ
         public float probability;
 
         public Strata(StrataSetting setting, float min_x = -100f, float max_x = 100f, float min_y = -100f, float max_y = 100f, int n_sample = 10)
@@ -54,23 +54,23 @@ namespace udemy
         }
 
         /// <summary>
-        /// Å|¥[¦h²Õ PerlinNoise¡A¨Ã§Q¥Î¨ä¥L°Ñ¼Æ¡A¦b¬Û¦P¦ì¸m (x, z) ¤WÀò¨ú¤£¦Pªº PerlinNoise
+        /// ç–ŠåŠ å¤šçµ„ PerlinNoiseï¼Œä¸¦åˆ©ç”¨å…¶ä»–åƒæ•¸ï¼Œåœ¨ç›¸åŒä½ç½® (x, z) ä¸Šç²å–ä¸åŒçš„ PerlinNoise
         /// reference: https://thebookofshaders.com/13/?lan=ch
-        /// ­Y¤£­×§ï¹w³]­È¡A«h»P­ì©l PerlinNoise ¬Û¦P
+        /// è‹¥ä¸ä¿®æ”¹é è¨­å€¼ï¼Œå‰‡èˆ‡åŸå§‹ PerlinNoise ç›¸åŒ
         /// </summary>
-        /// <param name="x">X ®y¼Ğ</param>
-        /// <param name="z">Z ®y¼Ğ</param>
-        /// <param name="octaves">Å|¥[ PerlinNoise ªº²Õ¼Æ¡A·|§ïÅÜªi«¬</param>
-        /// <param name="scale">ÁY©ñ x, z ¨ú­È½d³ò¡A·|§ïÅÜªi«¬</param>
-        /// <param name="height_scale">ÁY©ñ PerlinNoise ­pºâ­È¡A·|§ïÅÜªi«¬</param>
-        /// <param name="height_offset">Å|¥[§¹¦h²Õ PerlinNoise «á¡A³Ì«á¦b¥[¤Wªº°ª«×°¾²¾¶q¡A¤£·|§ïÅÜªi«¬</param>
-        /// <returns> ¤À§Î¥¬®Ô¹B°Ê¡]Fractal Brownian Motion¡^ </returns>
+        /// <param name="x">X åº§æ¨™</param>
+        /// <param name="z">Z åº§æ¨™</param>
+        /// <param name="octaves">ç–ŠåŠ  PerlinNoise çš„çµ„æ•¸ï¼Œæœƒæ”¹è®Šæ³¢å‹</param>
+        /// <param name="scale">ç¸®æ”¾ x, z å–å€¼ç¯„åœï¼Œæœƒæ”¹è®Šæ³¢å‹</param>
+        /// <param name="height_scale">ç¸®æ”¾ PerlinNoise è¨ˆç®—å€¼ï¼Œæœƒæ”¹è®Šæ³¢å‹</param>
+        /// <param name="height_offset">ç–ŠåŠ å®Œå¤šçµ„ PerlinNoise å¾Œï¼Œæœ€å¾Œåœ¨åŠ ä¸Šçš„é«˜åº¦åç§»é‡ï¼Œä¸æœƒæ”¹è®Šæ³¢å‹</param>
+        /// <returns> åˆ†å½¢å¸ƒæœ—é‹å‹•ï¼ˆFractal Brownian Motionï¼‰ </returns>
         public static float fBM(float x, float z, int octaves = 1, float scale = 1f, float height_scale = 1f, float height_offset = 0f)
         {
             float total = 0f;
             float frequncy = 1f;
 
-            // ­µ¶¥¡A¤@­Ó¤K«×¡]octave¡^¹ïÀ³µÛÀW²v¤Wªº¥[­¿©Î´î¥b¡C
+            // éŸ³éšï¼Œä¸€å€‹å…«åº¦ï¼ˆoctaveï¼‰å°æ‡‰è‘—é »ç‡ä¸Šçš„åŠ å€æˆ–æ¸›åŠã€‚
             for (int i = 0; i < octaves; i++)
             {
                 total += Mathf.PerlinNoise(x * scale * frequncy, z * scale * frequncy) * height_scale;
@@ -81,14 +81,14 @@ namespace udemy
         }
 
         /// <summary>
-        /// ¨ú±o·í«e°Ñ¼Æ¤Uªº PerlinNoise ¼Æ­È¥­§¡¼Æ
+        /// å–å¾—ç•¶å‰åƒæ•¸ä¸‹çš„ PerlinNoise æ•¸å€¼å¹³å‡æ•¸
         /// </summary>
-        /// <param name="min_x">X ¨ú¼Ë³Ì¤p­È</param>
-        /// <param name="max_x">X ¨ú¼Ë³Ì¤j­È</param>
-        /// <param name="min_y">Y ¨ú¼Ë³Ì¤p­È</param>
-        /// <param name="max_y">Y ¨ú¼Ë³Ì¤j­È</param>
-        /// <param name="scale">PerlinNoise ÁY©ñ¤ñ¨Ò¡AfBM ¤¤ªº octaves * height_scale</param>
-        /// <param name="n_sample">¨ú¼ËÂI¼Æ</param>
+        /// <param name="min_x">X å–æ¨£æœ€å°å€¼</param>
+        /// <param name="max_x">X å–æ¨£æœ€å¤§å€¼</param>
+        /// <param name="min_y">Y å–æ¨£æœ€å°å€¼</param>
+        /// <param name="max_y">Y å–æ¨£æœ€å¤§å€¼</param>
+        /// <param name="scale">PerlinNoise ç¸®æ”¾æ¯”ä¾‹ï¼ŒfBM ä¸­çš„ octaves * height_scale</param>
+        /// <param name="n_sample">å–æ¨£é»æ•¸</param>
         /// <returns></returns>
         public static float getPerlinMean(float min_x = -100f, float max_x = 100f, float min_y = -100f, float max_y = 100f, float scale = 1f, int n_sample = 10)
         {
