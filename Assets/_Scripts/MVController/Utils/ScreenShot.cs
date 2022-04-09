@@ -7,14 +7,9 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class ScreenShot : MonoBehaviour
 {
-    public int width;
-    public int height;
-    Camera m_camera;
-
-    private void Start()
-    {
-        m_camera = GetComponent<Camera>();
-    }
+    public Camera m_camera;
+    public int width = 256;
+    public int height = 256;
 
     public void takePhoto()
     {

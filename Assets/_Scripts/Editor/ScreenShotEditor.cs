@@ -1,9 +1,5 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEngine;
-using System.Collections;
 using UnityEditor;
+using UnityEngine;
 
 [CustomEditor(typeof(ScreenShot))]
 public class ScreenShotEditor : Editor
