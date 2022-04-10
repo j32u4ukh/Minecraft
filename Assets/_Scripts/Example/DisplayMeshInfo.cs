@@ -13,8 +13,6 @@ namespace udemy
         void Start()
         {
             Mesh mesh = GetComponent<MeshFilter>().mesh;
-            
-            
             Vector3 vertex;
             int i, v, len = mesh.vertices.Length;
 
@@ -32,18 +30,18 @@ namespace udemy
                     vertices.Add(vertex, v);
                 }
 
-                print($"{i}, Vertex({v}) {vertex}, Normal {mesh.normals[i]}, UV {mesh.uv[i]}");
+                Debug.Log($"[DisplayMeshInfo] {i}, Vertex({v}) {vertex}, Normal {mesh.normals[i]}, UV {mesh.uv[i]}");
                 indexs.Add(v);
             }
 
-            print("Triangles\n");
+            Debug.Log("[DisplayMeshInfo] Triangles\n");
             len = mesh.triangles.Length;
 
             for (i = 0; i < len; i += 3)
             {
-                print($"Triangle({indexs[mesh.triangles[i]]}, " +
-                      $"{indexs[mesh.triangles[i + 1]]}, " +
-                      $"{indexs[mesh.triangles[i + 2]]})");
+                Debug.Log($"[DisplayMeshInfo] Triangle({indexs[mesh.triangles[i]]}, " +
+                          $"{indexs[mesh.triangles[i + 1]]}, " +
+                          $"{indexs[mesh.triangles[i + 2]]})");
             }
         }
 

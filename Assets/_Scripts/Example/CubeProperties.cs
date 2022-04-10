@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class CubeProperties : MonoBehaviour {
-
-	MeshFilter meshFilter;
+public class CubeProperties : MonoBehaviour 
+{
+	public GameObject canvas;
 	public Text vertexPrefab;
+	MeshFilter meshFilter;
 	string allVs = "";
 
 	// Use this for initialization
-	void Start () {
+	void Start () 
+	{
 		meshFilter = this.GetComponent<MeshFilter>();
-		
-		GameObject canvas = GameObject.FindWithTag("MainCanvas");
-		Debug.Log("Vertices------");
+		Debug.Log("[CubeProperties] Vertices------");
 		int c = 0;
 
 		foreach(Vector3 v in meshFilter.mesh.vertices)
