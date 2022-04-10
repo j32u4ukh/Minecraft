@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Burst;
@@ -24,10 +24,10 @@ namespace udemy
 
         public Block[,,] blocks;
 
-        // ±N¤Tºûªº blocks ªº BlockType Åu¥­¦¨¤@­Ó°}¦C¡A¥i¥[§Ö¦s¨ú³t«×
+        // å°‡ä¸‰ç¶­çš„ blocks çš„ BlockType æ”¤å¹³æˆä¸€å€‹é™£åˆ—ï¼Œå¯åŠ å¿«å­˜å–é€Ÿåº¦
         public BlockType[] block_types;
 
-        // ±N¤Tºûªº blocks ªº CrackState Åu¥­¦¨¤@­Ó°}¦C¡A¥i¥[§Ö¦s¨ú³t«×
+        // å°‡ä¸‰ç¶­çš„ blocks çš„ CrackState æ”¤å¹³æˆä¸€å€‹é™£åˆ—ï¼Œå¯åŠ å¿«å­˜å–é€Ÿåº¦
         public CrackState[] crack_states;
 
         public Vector3Int location;
@@ -38,7 +38,7 @@ namespace udemy
         private MeshRenderer fluid_mesh_renderer;
         private GameObject fluid_mesh_obj = null;
 
-        #region ºŞ²z¤»Ãä¾F©~ªº¸ê°T¡A¤£¦A¨C¦¸¦³»İ¨D³£­n°İ¤@¦¸¾F©~¦³½Ö
+        #region ç®¡ç†å…­é‚Šé„°å±…çš„è³‡è¨Šï¼Œä¸å†æ¯æ¬¡æœ‰éœ€æ±‚éƒ½è¦å•ä¸€æ¬¡é„°å±…æœ‰èª°
         private bool met_neighbors = false;
         private (Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) neighbors;
         #endregion
@@ -46,56 +46,58 @@ namespace udemy
         // For HealBlock
         private WaitForSeconds heal_block_buffer = new WaitForSeconds(3.0f);
 
+        #region TODO: æ¨¹æˆ–ä»™äººæŒé€ å‹è¨­è¨ˆï¼Œéƒ½æ‡‰å¯«æˆæª”æ¡ˆï¼Œåˆå§‹åŒ–æ™‚å†è®€å…¥
         (Vector3Int, BlockType)[] tree_design = new (Vector3Int, BlockType)[] {
-            (new Vector3Int(-1,2,-1), BlockType.LEAVES),
-            (new Vector3Int(0,2,-1), BlockType.LEAVES),
-            (new Vector3Int(0,3,-1), BlockType.LEAVES),
-            (new Vector3Int(1,3,-1), BlockType.LEAVES),
-            (new Vector3Int(-1,4,-1), BlockType.LEAVES),
-            (new Vector3Int(0,4,-1), BlockType.LEAVES),
-            (new Vector3Int(0,5,-1), BlockType.LEAVES),
-            (new Vector3Int(0,0,0), BlockType.WOOD),
-            (new Vector3Int(0,1,0), BlockType.WOOD),
-            (new Vector3Int(-1,2,0), BlockType.LEAVES),
-            (new Vector3Int(0,2,0), BlockType.WOOD),
-            (new Vector3Int(1,2,0), BlockType.LEAVES),
-            (new Vector3Int(-1,3,0), BlockType.LEAVES),
-            (new Vector3Int(0,3,0), BlockType.WOOD),
-            (new Vector3Int(1,3,0), BlockType.LEAVES),
-            (new Vector3Int(-1,4,0), BlockType.LEAVES),
-            (new Vector3Int(0,4,0), BlockType.WOOD),
-            (new Vector3Int(1,4,0), BlockType.LEAVES),
-            (new Vector3Int(-1,5,0), BlockType.LEAVES),
-            (new Vector3Int(0,5,0), BlockType.LEAVES),
-            (new Vector3Int(1,5,0), BlockType.LEAVES),
-            (new Vector3Int(0,2,1), BlockType.LEAVES),
-            (new Vector3Int(1,2,1), BlockType.LEAVES),
-            (new Vector3Int(-1,3,1), BlockType.LEAVES),
-            (new Vector3Int(0,3,1), BlockType.LEAVES),
-            (new Vector3Int(0,4,1), BlockType.LEAVES),
-            (new Vector3Int(1,4,1), BlockType.LEAVES),
-            (new Vector3Int(0,5,1), BlockType.LEAVES)
+            (new Vector3Int(-1,2,-1), BlockType.Leaves),
+            (new Vector3Int(0,2,-1), BlockType.Leaves),
+            (new Vector3Int(0,3,-1), BlockType.Leaves),
+            (new Vector3Int(1,3,-1), BlockType.Leaves),
+            (new Vector3Int(-1,4,-1), BlockType.Leaves),
+            (new Vector3Int(0,4,-1), BlockType.Leaves),
+            (new Vector3Int(0,5,-1), BlockType.Leaves),
+            (new Vector3Int(0,0,0), BlockType.Wood),
+            (new Vector3Int(0,1,0), BlockType.Wood),
+            (new Vector3Int(-1,2,0), BlockType.Leaves),
+            (new Vector3Int(0,2,0), BlockType.Wood),
+            (new Vector3Int(1,2,0), BlockType.Leaves),
+            (new Vector3Int(-1,3,0), BlockType.Leaves),
+            (new Vector3Int(0,3,0), BlockType.Wood),
+            (new Vector3Int(1,3,0), BlockType.Leaves),
+            (new Vector3Int(-1,4,0), BlockType.Leaves),
+            (new Vector3Int(0,4,0), BlockType.Wood),
+            (new Vector3Int(1,4,0), BlockType.Leaves),
+            (new Vector3Int(-1,5,0), BlockType.Leaves),
+            (new Vector3Int(0,5,0), BlockType.Leaves),
+            (new Vector3Int(1,5,0), BlockType.Leaves),
+            (new Vector3Int(0,2,1), BlockType.Leaves),
+            (new Vector3Int(1,2,1), BlockType.Leaves),
+            (new Vector3Int(-1,3,1), BlockType.Leaves),
+            (new Vector3Int(0,3,1), BlockType.Leaves),
+            (new Vector3Int(0,4,1), BlockType.Leaves),
+            (new Vector3Int(1,4,1), BlockType.Leaves),
+            (new Vector3Int(0,5,1), BlockType.Leaves)
         };
 
         (Vector3Int, BlockType)[] cactus_design = new (Vector3Int, BlockType)[] {
-            (new Vector3Int(0,0,0), BlockType.CACTUS),
-            (new Vector3Int(0,1,0), BlockType.CACTUS),
-            (new Vector3Int(-2,2,0), BlockType.CACTUS),
-            (new Vector3Int(-1,2,0), BlockType.CACTUS),
-            (new Vector3Int(0,2,0), BlockType.CACTUS),
-            (new Vector3Int(-2,3,0), BlockType.CACTUS),
-            (new Vector3Int(0,3,0), BlockType.CACTUS),
-            (new Vector3Int(1,3,0), BlockType.CACTUS),
-            (new Vector3Int(2,3,0), BlockType.CACTUS),
-            (new Vector3Int(-2,4,0), BlockType.CACTUS),
-            (new Vector3Int(0,4,0), BlockType.CACTUS),
-            (new Vector3Int(2,4,0), BlockType.CACTUS),
-            (new Vector3Int(0,5,0), BlockType.CACTUS)
-        };
+            (new Vector3Int(0,0,0), BlockType.Cactus),
+            (new Vector3Int(0,1,0), BlockType.Cactus),
+            (new Vector3Int(-2,2,0), BlockType.Cactus),
+            (new Vector3Int(-1,2,0), BlockType.Cactus),
+            (new Vector3Int(0,2,0), BlockType.Cactus),
+            (new Vector3Int(-2,3,0), BlockType.Cactus),
+            (new Vector3Int(0,3,0), BlockType.Cactus),
+            (new Vector3Int(1,3,0), BlockType.Cactus),
+            (new Vector3Int(2,3,0), BlockType.Cactus),
+            (new Vector3Int(-2,4,0), BlockType.Cactus),
+            (new Vector3Int(0,4,0), BlockType.Cactus),
+            (new Vector3Int(2,4,0), BlockType.Cactus),
+            (new Vector3Int(0,5,0), BlockType.Cactus)
+        }; 
+        #endregion
 
-        #region Chunk ªì©l¤Æ
+        #region Chunk åˆå§‹åŒ–
         /// <summary>
-        /// ¨M©w block_types ©M crack_states ªº¤º®e¡A©|¥¼¹ê»Ú«Øºc Block
+        /// æ±ºå®š block_types å’Œ crack_states çš„å…§å®¹ï¼Œå°šæœªå¯¦éš›å»ºæ§‹ Block
         /// </summary>
         /// <param name="dimensions"></param>
         /// <param name="location"></param>
@@ -132,7 +134,7 @@ namespace udemy
 
             JobHandle handle = job.Schedule(n_block, 64);
 
-            // Schedule °õ¦æ§¹¤~·|°õ¦æ³o¤@¦æ¡A­Y¤£¥[ jobHandle.Complete()¡A«h·|¦b­I´ºÄ~Äò°õ¦æ¡A¤]°õ¦æ¤U¤èµ{¦¡½X
+            // Schedule åŸ·è¡Œå®Œæ‰æœƒåŸ·è¡Œé€™ä¸€è¡Œï¼Œè‹¥ä¸åŠ  jobHandle.Complete()ï¼Œå‰‡æœƒåœ¨èƒŒæ™¯ç¹¼çºŒåŸ·è¡Œï¼Œä¹ŸåŸ·è¡Œä¸‹æ–¹ç¨‹å¼ç¢¼
             handle.Complete();
 
             job.block_types.CopyTo(block_types);
@@ -144,10 +146,10 @@ namespace udemy
         }
 
         /// <summary>
-        /// ¤Ø¤o°Ñ¼Æªì©l¤Æ
+        /// å°ºå¯¸åƒæ•¸åˆå§‹åŒ–
         /// </summary>
-        /// <param name="dimensions">ªø¼e°ª¤Ø¤o</param>
-        /// <param name="location">¥@¬É®y¼Ğ</param>
+        /// <param name="dimensions">é•·å¯¬é«˜å°ºå¯¸</param>
+        /// <param name="location">ä¸–ç•Œåº§æ¨™</param>
         public void locate(Vector3Int dimensions, Vector3Int location)
         {
             this.location = location;
@@ -160,7 +162,7 @@ namespace udemy
         }
         #endregion
 
-        #region «Øºc Chunk Mesh (¨Æ¥ı³]¸m¤»­±¾F©~¡A¬Ù²¤¨C¦¸¸ß°İ¾F©~¦³½Öªº¬yµ{)
+        #region å»ºæ§‹ Chunk Mesh (äº‹å…ˆè¨­ç½®å…­é¢é„°å±…ï¼Œçœç•¥æ¯æ¬¡è©¢å•é„°å±…æœ‰èª°çš„æµç¨‹)
         public void build()
         {
             buildMesh(obj: ref solid_mesh_obj, mesh_type: "Solid");
@@ -174,7 +176,7 @@ namespace udemy
             //    return;
             //}
 
-            // TODO: §ï¬°¥ş°ìÅÜ¼Æ¡AÁ×§K­«½Æ GetComponent
+            // TODO: æ”¹ç‚ºå…¨åŸŸè®Šæ•¸ï¼Œé¿å…é‡è¤‡ GetComponent
             MeshFilter mesh_filter;
 
             if (obj == null)
@@ -182,7 +184,7 @@ namespace udemy
                 obj = new GameObject(mesh_type);
                 obj.transform.parent = transform;
 
-                // ·í Chunk ¤Uªº Block µo¥ÍÅÜ¤Æ¡A»İ­n­«Ã¸ Chunk ®É³o¨Ç Component ·|³Q§R°£¡A¦]¦¹¨C¦¸³£»İ­n­«·s²K¥[
+                // ç•¶ Chunk ä¸‹çš„ Block ç™¼ç”Ÿè®ŠåŒ–ï¼Œéœ€è¦é‡ç¹ª Chunk æ™‚é€™äº› Component æœƒè¢«åˆªé™¤ï¼Œå› æ­¤æ¯æ¬¡éƒ½éœ€è¦é‡æ–°æ·»åŠ 
                 mesh_filter = obj.AddComponent<MeshFilter>();
 
                 switch (mesh_type)
@@ -205,7 +207,7 @@ namespace udemy
             {
                 mesh_filter = obj.GetComponent<MeshFilter>();
 
-                // Á×§K«á­±¤S­«½Æ²K¥[ Collider
+                // é¿å…å¾Œé¢åˆé‡è¤‡æ·»åŠ  Collider
                 DestroyImmediate(obj.GetComponent<Collider>());
             }
 
@@ -246,7 +248,7 @@ namespace udemy
                 condition0 = block.mesh != null;
                 condition1 = false;
 
-                // °Ï¤À³o¸Ì¬O Solid ÁÙ¬O Fluid 
+                // å€åˆ†é€™è£¡æ˜¯ Solid é‚„æ˜¯ Fluid 
                 switch (mesh_type)
                 {
                     case "Solid":
@@ -278,7 +280,7 @@ namespace udemy
             // input_mesh_datas -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
             job.input_mesh_datas = Mesh.AcquireReadOnlyMeshData(input_mesh_datas);
 
-            // Mesh.AllocateWritableMeshData ¤À°t¤@­Ó¥i¼gªººô®æ¼Æ¾Ú¡AµM«á³q¹L jobs ¶i¦æ³»ÂI¾Ş§@¡A
+            // Mesh.AllocateWritableMeshData åˆ†é…ä¸€å€‹å¯å¯«çš„ç¶²æ ¼æ•¸æ“šï¼Œç„¶å¾Œé€šé jobs é€²è¡Œé ‚é»æ“ä½œï¼Œ
             Mesh.MeshDataArray output_mesh_datas = Mesh.AllocateWritableMeshData(1);
 
             // inputMeshes -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
@@ -295,13 +297,13 @@ namespace udemy
             //    new VertexAttributeDescriptor(VertexAttribute.TexCoord1, stream: 3));
             job.setVertexBufferParams(n_vertex: vertex_index_offset);
 
-            /* ¦b¥¿½Tªº®É¶¡½Õ¥Î Schedule ©M Complete
-             * ¤@¥¹§A¾Ö¦³¤F¤@­Ó job ©Ò»İªº¼Æ¾Ú¡AºÉ¥i¯à§Ö¦a¦b job ¤W½Õ¥Î Schedule¡A¦b§A»İ­n¥¦ªº°õ¦æµ²ªG¤§«e¤£­n½Õ¥Î Complete¡C
-             * ¤@­Ó¨}¦nªº¹ê½î¬O½Õ«×¤@­Ó§A¤£»İ­nµ¥«İªº job¡A¦P®É¥¦¤£·|»P·í«e¥¿¦b¹B¦æªº¨ä¥Ljob²£¥ÍÄvª§¡C
-             * Á|¨Ò¨Ó»¡¡A¦pªG§A¦b¤@´Vµ²§ô©M¤U¤@´V¶}©l¤§«e¾Ö¦³¤@¬q¨S¦³¨ä¥L job ¦b¹B¦æªº®É¶¡¡A¨Ã¥B¥i¥H±µ¨ü¤@´Vªº©µ¿ğ¡A§A¥i¥H¦b¤@´Vµ²§ôªº®É­Ô½Õ«×¤@­Ó job¡A¦b¤U¤@´V¤¤¨Ï¥Î¥¦ªºµ²ªG¡C
-             * ©ÎªÌ¡A¦pªG³o­ÓÂà´«®É¶¡¤w¸g³Q¨ä¥L job ¥eº¡¤F¡A¦ı¬O¦b¤@´V¤¤¦³¤@¤j¬q¥¼¥R¤À§Q¥Îªº®É¬q¡A¦b³o¨½½Õ«×§Aªº job ·|§ó¦³®Ä²v¡C
+            /* åœ¨æ­£ç¢ºçš„æ™‚é–“èª¿ç”¨ Schedule å’Œ Complete
+             * ä¸€æ—¦ä½ æ“æœ‰äº†ä¸€å€‹ job æ‰€éœ€çš„æ•¸æ“šï¼Œç›¡å¯èƒ½å¿«åœ°åœ¨ job ä¸Šèª¿ç”¨ Scheduleï¼Œåœ¨ä½ éœ€è¦å®ƒçš„åŸ·è¡Œçµæœä¹‹å‰ä¸è¦èª¿ç”¨ Completeã€‚
+             * ä¸€å€‹è‰¯å¥½çš„å¯¦è¸æ˜¯èª¿åº¦ä¸€å€‹ä½ ä¸éœ€è¦ç­‰å¾…çš„ jobï¼ŒåŒæ™‚å®ƒä¸æœƒèˆ‡ç•¶å‰æ­£åœ¨é‹è¡Œçš„å…¶ä»–jobç”¢ç”Ÿç«¶çˆ­ã€‚
+             * èˆ‰ä¾‹ä¾†èªªï¼Œå¦‚æœä½ åœ¨ä¸€å¹€çµæŸå’Œä¸‹ä¸€å¹€é–‹å§‹ä¹‹å‰æ“æœ‰ä¸€æ®µæ²’æœ‰å…¶ä»– job åœ¨é‹è¡Œçš„æ™‚é–“ï¼Œä¸¦ä¸”å¯ä»¥æ¥å—ä¸€å¹€çš„å»¶é²ï¼Œä½ å¯ä»¥åœ¨ä¸€å¹€çµæŸçš„æ™‚å€™èª¿åº¦ä¸€å€‹ jobï¼Œåœ¨ä¸‹ä¸€å¹€ä¸­ä½¿ç”¨å®ƒçš„çµæœã€‚
+             * æˆ–è€…ï¼Œå¦‚æœé€™å€‹è½‰æ›æ™‚é–“å·²ç¶“è¢«å…¶ä»– job å æ»¿äº†ï¼Œä½†æ˜¯åœ¨ä¸€å¹€ä¸­æœ‰ä¸€å¤§æ®µæœªå……åˆ†åˆ©ç”¨çš„æ™‚æ®µï¼Œåœ¨é€™é‡Œèª¿åº¦ä½ çš„ job æœƒæ›´æœ‰æ•ˆç‡ã€‚
              * 
-             * job ¾Ö¦³¤@­Ó Run ¤èªk¡A§A¥i¥H¥Î¥¦¨Ó´À¥N Schedule ±q¦ÓÅı¥D½uµ{¥ß¨è°õ¦æ³o­Ó job¡C§A¥i¥H¨Ï¥Î¥¦¨Ó¹F¨ì½Õ¸Õ¥Øªº¡C
+             * job æ“æœ‰ä¸€å€‹ Run æ–¹æ³•ï¼Œä½ å¯ä»¥ç”¨å®ƒä¾†æ›¿ä»£ Schedule å¾è€Œè®“ä¸»ç·šç¨‹ç«‹åˆ»åŸ·è¡Œé€™å€‹ jobã€‚ä½ å¯ä»¥ä½¿ç”¨å®ƒä¾†é”åˆ°èª¿è©¦ç›®çš„ã€‚
              */
             JobHandle handle = job.Schedule(input_mesh_datas.Count, 4);
             Mesh mesh = new Mesh();
@@ -311,19 +313,19 @@ namespace udemy
             sm.firstVertex = 0;
             sm.vertexCount = vertex_index_offset;
 
-            /* ½Õ¥Î JobHandle.Complete ¨Ó­«·sÀò±oÂkÄİÅv
-             * ¦b¥D½uµ{­«·s¨Ï¥Î¼Æ¾Ú«e¡A°lÂÜ¼Æ¾Úªº©Ò¦³Åv»İ­n¨Ì¿à¶µ³£§¹¦¨¡C¥uÀË¬d JobHandle.IsCompleted ¬O¤£°÷ªº¡C
-             * §A¥²¶·½Õ¥Î JobHandle.Complete ¨Ó¦b¥D½uµ{¤¤­«·sÀò¨ú NaitveContainer Ãş«¬ªº©Ò¦³Åv¡C½Õ¥Î Complete ¦P®É·|²M²z¦w¥ş©Ê¨t²Î¤¤ªºª¬ºA¡C
-             * ¤£³o¼Ë°µªº¸Ü·|³y¦¨¤º¦sªnº|¡C³o­Ó¹Lµ{¤]¦b§A¨C¤@´V³£½Õ«×¨Ì¿à©ó¤W¤@´V job ªº·s job ®É³Qªö¥Î¡C
+            /* èª¿ç”¨ JobHandle.Complete ä¾†é‡æ–°ç²å¾—æ­¸å±¬æ¬Š
+             * åœ¨ä¸»ç·šç¨‹é‡æ–°ä½¿ç”¨æ•¸æ“šå‰ï¼Œè¿½è¹¤æ•¸æ“šçš„æ‰€æœ‰æ¬Šéœ€è¦ä¾è³´é …éƒ½å®Œæˆã€‚åªæª¢æŸ¥ JobHandle.IsCompleted æ˜¯ä¸å¤ çš„ã€‚
+             * ä½ å¿…é ˆèª¿ç”¨ JobHandle.Complete ä¾†åœ¨ä¸»ç·šç¨‹ä¸­é‡æ–°ç²å– NaitveContainer é¡å‹çš„æ‰€æœ‰æ¬Šã€‚èª¿ç”¨ Complete åŒæ™‚æœƒæ¸…ç†å®‰å…¨æ€§ç³»çµ±ä¸­çš„ç‹€æ…‹ã€‚
+             * ä¸é€™æ¨£åšçš„è©±æœƒé€ æˆå…§å­˜æ³„æ¼ã€‚é€™å€‹éç¨‹ä¹Ÿåœ¨ä½ æ¯ä¸€å¹€éƒ½èª¿åº¦ä¾è³´æ–¼ä¸Šä¸€å¹€ job çš„æ–° job æ™‚è¢«é‡‡ç”¨ã€‚
              * 
-             * ¦b¥D½uµ{¤¤½Õ¥Î Schedule ©M Complete
-             * §A¥u¯à¦b¥D½uµ{¤¤½Õ¥Î Schedule ©M Complete ¤èªk¡C¦pªG¤@­Ó job »İ­n¨Ì¿à©ó¥t¤@­Ó¡A¨Ï¥Î JobHandle ¨Ó³B²z¨Ì¿àÃö¨t¦Ó¤£¬O¹Á¸Õ¦b job ¤¤½Õ«×·sªº job¡C */
+             * åœ¨ä¸»ç·šç¨‹ä¸­èª¿ç”¨ Schedule å’Œ Complete
+             * ä½ åªèƒ½åœ¨ä¸»ç·šç¨‹ä¸­èª¿ç”¨ Schedule å’Œ Complete æ–¹æ³•ã€‚å¦‚æœä¸€å€‹ job éœ€è¦ä¾è³´æ–¼å¦ä¸€å€‹ï¼Œä½¿ç”¨ JobHandle ä¾†è™•ç†ä¾è³´é—œç³»è€Œä¸æ˜¯å˜—è©¦åœ¨ job ä¸­èª¿åº¦æ–°çš„ jobã€‚ */
             handle.Complete();
 
             job.output_mesh_data.subMeshCount = 1;
             job.output_mesh_data.SetSubMesh(0, sm);
 
-            // ³q¹L Mesh.ApplyAndDisposeWritableMeshData ±µ¤f½á­È¦^ Mesh
+            // é€šé Mesh.ApplyAndDisposeWritableMeshData æ¥å£è³¦å€¼å› Mesh
             // inputMeshes -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
             Mesh.ApplyAndDisposeWritableMeshData(output_mesh_datas, new[] { mesh });
 
@@ -334,16 +336,16 @@ namespace udemy
 
             mesh.RecalculateBounds();
 
-            // §ó·s mesh_filter ªº mesh
+            // æ›´æ–° mesh_filter çš„ mesh
             mesh_filter.mesh = mesh;
 
-            // ·í Chunk ¤Uªº Block µo¥ÍÅÜ¤Æ¡A»İ­n­«Ã¸ Chunk ®É¡AMeshCollider ·|³Q§R°£¡A¦]¦¹¨C¦¸³£»İ­n­«·s²K¥[
+            // ç•¶ Chunk ä¸‹çš„ Block ç™¼ç”Ÿè®ŠåŒ–ï¼Œéœ€è¦é‡ç¹ª Chunk æ™‚ï¼ŒMeshCollider æœƒè¢«åˆªé™¤ï¼Œå› æ­¤æ¯æ¬¡éƒ½éœ€è¦é‡æ–°æ·»åŠ 
             MeshCollider collider = obj.AddComponent<MeshCollider>();
             collider.sharedMesh = mesh;
         }
 
         /// <summary>
-        /// ·í ·s¼W ©Î ¯}Ãa ¤è¶ô«á¡A©I¥s¦¹¨ç¦¡¡A¥H­«·sÃ¸»s Chunk
+        /// ç•¶ æ–°å¢ æˆ– ç ´å£ æ–¹å¡Šå¾Œï¼Œå‘¼å«æ­¤å‡½å¼ï¼Œä»¥é‡æ–°ç¹ªè£½ Chunk
         /// </summary>
         public void rebuild()
         {
@@ -354,7 +356,7 @@ namespace udemy
         }
         #endregion
 
-        #region «Øºc Chunk Mesh (¨C¦¸°õ¦æ³£»İ¶Ç¤J¤»­±¾F©~)
+        #region å»ºæ§‹ Chunk Mesh (æ¯æ¬¡åŸ·è¡Œéƒ½éœ€å‚³å…¥å…­é¢é„°å±…)
         public void buildConsiderAround(Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back)
         {
             buildMeshConsiderAround(up, down, left, right, forward, back, ref solid_mesh_obj, mesh_type: "Solid");
@@ -363,7 +365,7 @@ namespace udemy
 
         private void buildMeshConsiderAround(Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back, ref GameObject obj, string mesh_type = "Solid")
         {
-            // TODO: §ï¬°¥ş°ìÅÜ¼Æ¡AÁ×§K­«½Æ GetComponent
+            // TODO: æ”¹ç‚ºå…¨åŸŸè®Šæ•¸ï¼Œé¿å…é‡è¤‡ GetComponent
             MeshFilter mesh_filter;
 
             if (obj == null)
@@ -371,7 +373,7 @@ namespace udemy
                 obj = new GameObject(mesh_type);
                 obj.transform.parent = transform;
 
-                // ·í Chunk ¤Uªº Block µo¥ÍÅÜ¤Æ¡A»İ­n­«Ã¸ Chunk ®É³o¨Ç Component ·|³Q§R°£¡A¦]¦¹¨C¦¸³£»İ­n­«·s²K¥[
+                // ç•¶ Chunk ä¸‹çš„ Block ç™¼ç”Ÿè®ŠåŒ–ï¼Œéœ€è¦é‡ç¹ª Chunk æ™‚é€™äº› Component æœƒè¢«åˆªé™¤ï¼Œå› æ­¤æ¯æ¬¡éƒ½éœ€è¦é‡æ–°æ·»åŠ 
                 mesh_filter = obj.AddComponent<MeshFilter>();
 
                 switch (mesh_type)
@@ -394,7 +396,7 @@ namespace udemy
             {
                 mesh_filter = obj.GetComponent<MeshFilter>();
 
-                // Á×§K«á­±¤S­«½Æ²K¥[ Collider
+                // é¿å…å¾Œé¢åˆé‡è¤‡æ·»åŠ  Collider
                 DestroyImmediate(obj.GetComponent<Collider>());
             }
 
@@ -436,7 +438,7 @@ namespace udemy
                 condition0 = block.mesh != null;
                 condition1 = false;
 
-                // °Ï¤À³o¸Ì¬O Solid ÁÙ¬O Fluid 
+                // å€åˆ†é€™è£¡æ˜¯ Solid é‚„æ˜¯ Fluid 
                 switch (mesh_type)
                 {
                     case "Solid":
@@ -468,7 +470,7 @@ namespace udemy
             // input_mesh_datas -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
             job.input_mesh_datas = Mesh.AcquireReadOnlyMeshData(input_mesh_datas);
 
-            // Mesh.AllocateWritableMeshData ¤À°t¤@­Ó¥i¼gªººô®æ¼Æ¾Ú¡AµM«á³q¹L jobs ¶i¦æ³»ÂI¾Ş§@¡A
+            // Mesh.AllocateWritableMeshData åˆ†é…ä¸€å€‹å¯å¯«çš„ç¶²æ ¼æ•¸æ“šï¼Œç„¶å¾Œé€šé jobs é€²è¡Œé ‚é»æ“ä½œï¼Œ
             Mesh.MeshDataArray output_mesh_datas = Mesh.AllocateWritableMeshData(1);
 
             // inputMeshes -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
@@ -485,13 +487,13 @@ namespace udemy
             //    new VertexAttributeDescriptor(VertexAttribute.TexCoord1, stream: 3));
             job.setVertexBufferParams(n_vertex: vertex_index_offset);
 
-            /* ¦b¥¿½Tªº®É¶¡½Õ¥Î Schedule ©M Complete
-             * ¤@¥¹§A¾Ö¦³¤F¤@­Ó job ©Ò»İªº¼Æ¾Ú¡AºÉ¥i¯à§Ö¦a¦b job ¤W½Õ¥Î Schedule¡A¦b§A»İ­n¥¦ªº°õ¦æµ²ªG¤§«e¤£­n½Õ¥Î Complete¡C
-             * ¤@­Ó¨}¦nªº¹ê½î¬O½Õ«×¤@­Ó§A¤£»İ­nµ¥«İªº job¡A¦P®É¥¦¤£·|»P·í«e¥¿¦b¹B¦æªº¨ä¥Ljob²£¥ÍÄvª§¡C
-             * Á|¨Ò¨Ó»¡¡A¦pªG§A¦b¤@´Vµ²§ô©M¤U¤@´V¶}©l¤§«e¾Ö¦³¤@¬q¨S¦³¨ä¥L job ¦b¹B¦æªº®É¶¡¡A¨Ã¥B¥i¥H±µ¨ü¤@´Vªº©µ¿ğ¡A§A¥i¥H¦b¤@´Vµ²§ôªº®É­Ô½Õ«×¤@­Ó job¡A¦b¤U¤@´V¤¤¨Ï¥Î¥¦ªºµ²ªG¡C
-             * ©ÎªÌ¡A¦pªG³o­ÓÂà´«®É¶¡¤w¸g³Q¨ä¥L job ¥eº¡¤F¡A¦ı¬O¦b¤@´V¤¤¦³¤@¤j¬q¥¼¥R¤À§Q¥Îªº®É¬q¡A¦b³o¨½½Õ«×§Aªº job ·|§ó¦³®Ä²v¡C
+            /* åœ¨æ­£ç¢ºçš„æ™‚é–“èª¿ç”¨ Schedule å’Œ Complete
+             * ä¸€æ—¦ä½ æ“æœ‰äº†ä¸€å€‹ job æ‰€éœ€çš„æ•¸æ“šï¼Œç›¡å¯èƒ½å¿«åœ°åœ¨ job ä¸Šèª¿ç”¨ Scheduleï¼Œåœ¨ä½ éœ€è¦å®ƒçš„åŸ·è¡Œçµæœä¹‹å‰ä¸è¦èª¿ç”¨ Completeã€‚
+             * ä¸€å€‹è‰¯å¥½çš„å¯¦è¸æ˜¯èª¿åº¦ä¸€å€‹ä½ ä¸éœ€è¦ç­‰å¾…çš„ jobï¼ŒåŒæ™‚å®ƒä¸æœƒèˆ‡ç•¶å‰æ­£åœ¨é‹è¡Œçš„å…¶ä»–jobç”¢ç”Ÿç«¶çˆ­ã€‚
+             * èˆ‰ä¾‹ä¾†èªªï¼Œå¦‚æœä½ åœ¨ä¸€å¹€çµæŸå’Œä¸‹ä¸€å¹€é–‹å§‹ä¹‹å‰æ“æœ‰ä¸€æ®µæ²’æœ‰å…¶ä»– job åœ¨é‹è¡Œçš„æ™‚é–“ï¼Œä¸¦ä¸”å¯ä»¥æ¥å—ä¸€å¹€çš„å»¶é²ï¼Œä½ å¯ä»¥åœ¨ä¸€å¹€çµæŸçš„æ™‚å€™èª¿åº¦ä¸€å€‹ jobï¼Œåœ¨ä¸‹ä¸€å¹€ä¸­ä½¿ç”¨å®ƒçš„çµæœã€‚
+             * æˆ–è€…ï¼Œå¦‚æœé€™å€‹è½‰æ›æ™‚é–“å·²ç¶“è¢«å…¶ä»– job å æ»¿äº†ï¼Œä½†æ˜¯åœ¨ä¸€å¹€ä¸­æœ‰ä¸€å¤§æ®µæœªå……åˆ†åˆ©ç”¨çš„æ™‚æ®µï¼Œåœ¨é€™é‡Œèª¿åº¦ä½ çš„ job æœƒæ›´æœ‰æ•ˆç‡ã€‚
              * 
-             * job ¾Ö¦³¤@­Ó Run ¤èªk¡A§A¥i¥H¥Î¥¦¨Ó´À¥N Schedule ±q¦ÓÅı¥D½uµ{¥ß¨è°õ¦æ³o­Ó job¡C§A¥i¥H¨Ï¥Î¥¦¨Ó¹F¨ì½Õ¸Õ¥Øªº¡C
+             * job æ“æœ‰ä¸€å€‹ Run æ–¹æ³•ï¼Œä½ å¯ä»¥ç”¨å®ƒä¾†æ›¿ä»£ Schedule å¾è€Œè®“ä¸»ç·šç¨‹ç«‹åˆ»åŸ·è¡Œé€™å€‹ jobã€‚ä½ å¯ä»¥ä½¿ç”¨å®ƒä¾†é”åˆ°èª¿è©¦ç›®çš„ã€‚
              */
             JobHandle handle = job.Schedule(input_mesh_datas.Count, 4);
             Mesh mesh = new Mesh();
@@ -501,13 +503,13 @@ namespace udemy
             sm.firstVertex = 0;
             sm.vertexCount = vertex_index_offset;
 
-            /* ½Õ¥Î JobHandle.Complete ¨Ó­«·sÀò±oÂkÄİÅv
-             * ¦b¥D½uµ{­«·s¨Ï¥Î¼Æ¾Ú«e¡A°lÂÜ¼Æ¾Úªº©Ò¦³Åv»İ­n¨Ì¿à¶µ³£§¹¦¨¡C¥uÀË¬d JobHandle.IsCompleted ¬O¤£°÷ªº¡C
-             * §A¥²¶·½Õ¥Î JobHandle.Complete ¨Ó¦b¥D½uµ{¤¤­«·sÀò¨ú NaitveContainer Ãş«¬ªº©Ò¦³Åv¡C½Õ¥Î Complete ¦P®É·|²M²z¦w¥ş©Ê¨t²Î¤¤ªºª¬ºA¡C
-             * ¤£³o¼Ë°µªº¸Ü·|³y¦¨¤º¦sªnº|¡C³o­Ó¹Lµ{¤]¦b§A¨C¤@´V³£½Õ«×¨Ì¿à©ó¤W¤@´V job ªº·s job ®É³Qªö¥Î¡C
+            /* èª¿ç”¨ JobHandle.Complete ä¾†é‡æ–°ç²å¾—æ­¸å±¬æ¬Š
+             * åœ¨ä¸»ç·šç¨‹é‡æ–°ä½¿ç”¨æ•¸æ“šå‰ï¼Œè¿½è¹¤æ•¸æ“šçš„æ‰€æœ‰æ¬Šéœ€è¦ä¾è³´é …éƒ½å®Œæˆã€‚åªæª¢æŸ¥ JobHandle.IsCompleted æ˜¯ä¸å¤ çš„ã€‚
+             * ä½ å¿…é ˆèª¿ç”¨ JobHandle.Complete ä¾†åœ¨ä¸»ç·šç¨‹ä¸­é‡æ–°ç²å– NaitveContainer é¡å‹çš„æ‰€æœ‰æ¬Šã€‚èª¿ç”¨ Complete åŒæ™‚æœƒæ¸…ç†å®‰å…¨æ€§ç³»çµ±ä¸­çš„ç‹€æ…‹ã€‚
+             * ä¸é€™æ¨£åšçš„è©±æœƒé€ æˆå…§å­˜æ³„æ¼ã€‚é€™å€‹éç¨‹ä¹Ÿåœ¨ä½ æ¯ä¸€å¹€éƒ½èª¿åº¦ä¾è³´æ–¼ä¸Šä¸€å¹€ job çš„æ–° job æ™‚è¢«é‡‡ç”¨ã€‚
              * 
-             * ¦b¥D½uµ{¤¤½Õ¥Î Schedule ©M Complete
-             * §A¥u¯à¦b¥D½uµ{¤¤½Õ¥Î Schedule ©M Complete ¤èªk¡C¦pªG¤@­Ó job »İ­n¨Ì¿à©ó¥t¤@­Ó¡A¨Ï¥Î JobHandle ¨Ó³B²z¨Ì¿àÃö¨t¦Ó¤£¬O¹Á¸Õ¦b job ¤¤½Õ«×·sªº job¡C
+             * åœ¨ä¸»ç·šç¨‹ä¸­èª¿ç”¨ Schedule å’Œ Complete
+             * ä½ åªèƒ½åœ¨ä¸»ç·šç¨‹ä¸­èª¿ç”¨ Schedule å’Œ Complete æ–¹æ³•ã€‚å¦‚æœä¸€å€‹ job éœ€è¦ä¾è³´æ–¼å¦ä¸€å€‹ï¼Œä½¿ç”¨ JobHandle ä¾†è™•ç†ä¾è³´é—œç³»è€Œä¸æ˜¯å˜—è©¦åœ¨ job ä¸­èª¿åº¦æ–°çš„ jobã€‚
              * 
              * 
              */
@@ -516,7 +518,7 @@ namespace udemy
             job.output_mesh_data.subMeshCount = 1;
             job.output_mesh_data.SetSubMesh(0, sm);
 
-            // ³q¹L Mesh.ApplyAndDisposeWritableMeshData ±µ¤f½á­È¦^ Mesh
+            // é€šé Mesh.ApplyAndDisposeWritableMeshData æ¥å£è³¦å€¼å› Mesh
             // inputMeshes -> jobs.meshData -> jobs.outputMesh -> outputMeshData -> newMesh
             Mesh.ApplyAndDisposeWritableMeshData(output_mesh_datas, new[] { mesh });
 
@@ -527,16 +529,16 @@ namespace udemy
 
             mesh.RecalculateBounds();
 
-            // §ó·s mesh_filter ªº mesh
+            // æ›´æ–° mesh_filter çš„ mesh
             mesh_filter.mesh = mesh;
 
-            // ·í Chunk ¤Uªº Block µo¥ÍÅÜ¤Æ¡A»İ­n­«Ã¸ Chunk ®É¡AMeshCollider ·|³Q§R°£¡A¦]¦¹¨C¦¸³£»İ­n­«·s²K¥[
+            // ç•¶ Chunk ä¸‹çš„ Block ç™¼ç”Ÿè®ŠåŒ–ï¼Œéœ€è¦é‡ç¹ª Chunk æ™‚ï¼ŒMeshCollider æœƒè¢«åˆªé™¤ï¼Œå› æ­¤æ¯æ¬¡éƒ½éœ€è¦é‡æ–°æ·»åŠ 
             MeshCollider collider = obj.AddComponent<MeshCollider>();
             collider.sharedMesh = mesh;
         }
 
         /// <summary>
-        /// ·í ·s¼W ©Î ¯}Ãa ¤è¶ô«á¡A©I¥s¦¹¨ç¦¡¡A¥H­«·sÃ¸»s Chunk
+        /// ç•¶ æ–°å¢ æˆ– ç ´å£ æ–¹å¡Šå¾Œï¼Œå‘¼å«æ­¤å‡½å¼ï¼Œä»¥é‡æ–°ç¹ªè£½ Chunk
         /// </summary>
         public void rebuildConsiderAround(Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back)
         {
@@ -559,14 +561,14 @@ namespace udemy
         }
 
         /// <summary>
-        /// ·íÂIÀ»¤è¶ô©ÒÄİ Chunk¡A©M¥Ø¼Ğ¤è¶ô©ÒÄİ Chunk ¤£¦P®É¡A¤è¶ô¦ì¸mªº®y¼Ğ·|µo¥Í¯Á¤Ş­È¶W¥X¡C
-        /// ³B²z Chunk Ãä¬É¹ï Block ¯Á¤Ş­Èªº³B²z¡A·í¶W¥X·í«e Chunk ®É¡A«ü¦V¤U¤@­Ó Chunk ¨Ã­×¥¿ Block ¯Á¤Ş­È¡C
-        /// NOTE: ³o¸Ì¥¼¦Ò¼{¨ì ¥@¬É ªº¤j¤p
+        /// ç•¶é»æ“Šæ–¹å¡Šæ‰€å±¬ Chunkï¼Œå’Œç›®æ¨™æ–¹å¡Šæ‰€å±¬ Chunk ä¸åŒæ™‚ï¼Œæ–¹å¡Šä½ç½®çš„åº§æ¨™æœƒç™¼ç”Ÿç´¢å¼•å€¼è¶…å‡ºã€‚
+        /// è™•ç† Chunk é‚Šç•Œå° Block ç´¢å¼•å€¼çš„è™•ç†ï¼Œç•¶è¶…å‡ºç•¶å‰ Chunk æ™‚ï¼ŒæŒ‡å‘ä¸‹ä¸€å€‹ Chunk ä¸¦ä¿®æ­£ Block ç´¢å¼•å€¼ã€‚
+        /// NOTE: é€™è£¡æœªè€ƒæ…®åˆ° ä¸–ç•Œ çš„å¤§å°
         /// </summary>
-        /// <param name="bx">¥Ø¼Ğ¤è¶ô¦ì¸mªº X ®y¼Ğ</param>
-        /// <param name="by">¥Ø¼Ğ¤è¶ô¦ì¸mªº Y ®y¼Ğ</param>
-        /// <param name="bz">¥Ø¼Ğ¤è¶ô¦ì¸mªº Z ®y¼Ğ</param>
-        /// <returns>(¤w®Õ¥¿ chunk ¦ì¸m, ¤w®Õ¥¿ block ¯Á¤Ş­È)</returns>
+        /// <param name="bx">ç›®æ¨™æ–¹å¡Šä½ç½®çš„ X åº§æ¨™</param>
+        /// <param name="by">ç›®æ¨™æ–¹å¡Šä½ç½®çš„ Y åº§æ¨™</param>
+        /// <param name="bz">ç›®æ¨™æ–¹å¡Šä½ç½®çš„ Z åº§æ¨™</param>
+        /// <returns>(å·²æ ¡æ­£ chunk ä½ç½®, å·²æ ¡æ­£ block ç´¢å¼•å€¼)</returns>
         public (Vector3Int, Vector3Int) getChunkBlockLocation(int bx, int by, int bz)
         {
             Vector3Int chunk_location = new Vector3Int(location.x, location.y, location.z);
@@ -606,14 +608,14 @@ namespace udemy
         }
 
         /// <summary>
-        /// getChunkBlockLocation ¥u¦Ò¼{©ñ¸m¤è¶ôªº±¡§Î¡A¦]¦¹¤@¦¸¥u·|¦³¤@­Ó¤è¦V¶W¥X Chunk ªºÃä¬É
-        /// ¦Ó getChunkBlockLocationAdvanced ¨Ï¥Î©óµ{¦¡²K¥[Àô¹Ò¡A¤@¦¸·|¦³¦h­Ó¤è¦V¶W¥X Chunk ªºÃä¬É¡AXYZ ¤T­Ó¤è¦V³£¶·¦Ò¼{
-        /// ¥Ø«e¶È¦Ò¼{¶W¥X¤@­Ó Chunk ªº±¡ªp¡A©|¥¼¦Ò¼{¸ó¨â­Ó©Î¥H¤W Chunk ªº±¡ªp
+        /// getChunkBlockLocation åªè€ƒæ…®æ”¾ç½®æ–¹å¡Šçš„æƒ…å½¢ï¼Œå› æ­¤ä¸€æ¬¡åªæœƒæœ‰ä¸€å€‹æ–¹å‘è¶…å‡º Chunk çš„é‚Šç•Œ
+        /// è€Œ getChunkBlockLocationAdvanced ä½¿ç”¨æ–¼ç¨‹å¼æ·»åŠ ç’°å¢ƒï¼Œä¸€æ¬¡æœƒæœ‰å¤šå€‹æ–¹å‘è¶…å‡º Chunk çš„é‚Šç•Œï¼ŒXYZ ä¸‰å€‹æ–¹å‘éƒ½é ˆè€ƒæ…®
+        /// ç›®å‰åƒ…è€ƒæ…®è¶…å‡ºä¸€å€‹ Chunk çš„æƒ…æ³ï¼Œå°šæœªè€ƒæ…®è·¨å…©å€‹æˆ–ä»¥ä¸Š Chunk çš„æƒ…æ³
         /// </summary>
-        /// <param name="bx">¥Ø¼Ğ¤è¶ô¦ì¸mªº X ®y¼Ğ</param>
-        /// <param name="by">¥Ø¼Ğ¤è¶ô¦ì¸mªº Y ®y¼Ğ</param>
-        /// <param name="bz">¥Ø¼Ğ¤è¶ô¦ì¸mªº Z ®y¼Ğ</param>
-        /// <returns>(¤w®Õ¥¿ chunk ¦ì¸m, ¤w®Õ¥¿ block ¯Á¤Ş­È)</returns>
+        /// <param name="bx">ç›®æ¨™æ–¹å¡Šä½ç½®çš„ X åº§æ¨™</param>
+        /// <param name="by">ç›®æ¨™æ–¹å¡Šä½ç½®çš„ Y åº§æ¨™</param>
+        /// <param name="bz">ç›®æ¨™æ–¹å¡Šä½ç½®çš„ Z åº§æ¨™</param>
+        /// <returns>(å·²æ ¡æ­£ chunk ä½ç½®, å·²æ ¡æ­£ block ç´¢å¼•å€¼)</returns>
         public (Vector3Int, Vector3Int) getChunkBlockLocationAdvanced(int bx, int by, int bz)
         {
             Vector3Int chunk_location = new Vector3Int(location.x, location.y, location.z);
@@ -691,33 +693,33 @@ namespace udemy
         }
 
         /// <summary>
-        /// ºVÀ»¬Y¶ô¤è¶ô®É¡A²Ö¥[¯}Ãaµ{«×
-        /// ­Y¯}Ãaµ{«×»P¤è¶ô±j«×¬Û·í¡A¤~·|¯uªº¯}Ãa±¼
+        /// æ•²æ“ŠæŸå¡Šæ–¹å¡Šæ™‚ï¼Œç´¯åŠ ç ´å£ç¨‹åº¦
+        /// è‹¥ç ´å£ç¨‹åº¦èˆ‡æ–¹å¡Šå¼·åº¦ç›¸ç•¶ï¼Œæ‰æœƒçœŸçš„ç ´å£æ‰
         /// </summary>
-        /// <param name="index">¤è¶ô¯Á¤Ş­È</param>
-        /// <returns>¸Ó¤è¶ô¬O§_³Q¯}Ãa</returns>
+        /// <param name="index">æ–¹å¡Šç´¢å¼•å€¼</param>
+        /// <returns>è©²æ–¹å¡Šæ˜¯å¦è¢«ç ´å£</returns>
         public bool crackBlock(int index)
         {
-            // ­YµLªk¯}Ãa¡Aª½±µªğ¦^
+            // è‹¥ç„¡æ³•ç ´å£ï¼Œç›´æ¥è¿”å›
             if (!isCrackable(index))
             {
                 return false;
             }
 
-            // ²Ä¤@¦¸ºVÀ»®ÉÄ²µo¡A¤@¬q®É¶¡«áÀË¬d¬O§_¤w³QºV±¼¡A§_«h­×´_¦Û¤v crack_state «ì´_¦¨ CrackState.None
+            // ç¬¬ä¸€æ¬¡æ•²æ“Šæ™‚è§¸ç™¼ï¼Œä¸€æ®µæ™‚é–“å¾Œæª¢æŸ¥æ˜¯å¦å·²è¢«æ•²æ‰ï¼Œå¦å‰‡ä¿®å¾©è‡ªå·± crack_state æ¢å¾©æˆ CrackState.None
             if (crack_states[index].Equals(CrackState.None))
             {
                 StartCoroutine(healBlock(index));
             }
 
-            // ²Ö¥[¯}Ãaµ{«×
+            // ç´¯åŠ ç ´å£ç¨‹åº¦
             crack_states[index]++;
 
-            // ­Y ¯}Ãaµ{«× »P ¤è¶ô±j«× ¬Û·í
+            // è‹¥ ç ´å£ç¨‹åº¦ èˆ‡ æ–¹å¡Šå¼·åº¦ ç›¸ç•¶
             if (isCracked(index))
             {
-                // ¹ê»Ú¯}Ãa¸Ó¤è¶ô
-                block_types[index] = BlockType.AIR;
+                // å¯¦éš›ç ´å£è©²æ–¹å¡Š
+                block_types[index] = BlockType.Air;
                 crack_states[index] = CrackState.None;
 
                 return true;
@@ -727,32 +729,32 @@ namespace udemy
         }
 
         /// <summary>
-        /// ¯}Ãaµ{«×(CrackState) »P ¤è¶ô±j«×(Strenth) ¬Û·í¡A¤~¯à¯uªº¯}Ãa±¼
+        /// ç ´å£ç¨‹åº¦(CrackState) èˆ‡ æ–¹å¡Šå¼·åº¦(Strenth) ç›¸ç•¶ï¼Œæ‰èƒ½çœŸçš„ç ´å£æ‰
         /// </summary>
-        /// <param name="index">¤è¶ô¯Á¤Ş­È</param>
-        /// <returns>¬O§_³Q¯}Ãa¤F</returns>
+        /// <param name="index">æ–¹å¡Šç´¢å¼•å€¼</param>
+        /// <returns>æ˜¯å¦è¢«ç ´å£äº†</returns>
         public bool isCracked(int index)
         {
             return crack_states[index].Equals((CrackState)MeshUtils.getStrenth(block_types[index]));
         }
 
         /// <summary>
-        /// ­Y¬°°ò©¥µ¥Ãş«¬ªº¤è¶ô¡A±j«×³]¸m¬° -1¡Aªí¥ÜµLªk¯}Ãa¡C
-        /// ¨ä¥Lªº«hµL­­¨î¡C
+        /// è‹¥ç‚ºåŸºå²©ç­‰é¡å‹çš„æ–¹å¡Šï¼Œå¼·åº¦è¨­ç½®ç‚º -1ï¼Œè¡¨ç¤ºç„¡æ³•ç ´å£ã€‚
+        /// å…¶ä»–çš„å‰‡ç„¡é™åˆ¶ã€‚
         /// </summary>
         /// <param name="index"></param>
-        /// <returns>¸Ó¤è¶ô¬O§_¥i¥H¯}Ãa</returns>
+        /// <returns>è©²æ–¹å¡Šæ˜¯å¦å¯ä»¥ç ´å£</returns>
         public bool isCrackable(int index)
         {
             return MeshUtils.getStrenth(block_types[index]) != -1;
         }
 
-        // ¤@¬q®É¶¡«áÀË¬d¬O§_¤w³QºV±¼¡A§_«h­×´_¦Û¤v health «ì´_¦¨ NOCRACK
+        // ä¸€æ®µæ™‚é–“å¾Œæª¢æŸ¥æ˜¯å¦å·²è¢«æ•²æ‰ï¼Œå¦å‰‡ä¿®å¾©è‡ªå·± health æ¢å¾©æˆ NOCRACK
         public IEnumerator healBlock(int index)
         {
             yield return heal_block_buffer;
 
-            if (block_types[index] != BlockType.AIR)
+            if (block_types[index] != BlockType.Air)
             {
                 crack_states[index] = CrackState.None;
                 rebuild();
@@ -765,15 +767,15 @@ namespace udemy
         } 
         #endregion
 
-        #region ºŞ²z¤»Ãä¾F©~ªº¸ê°T
+        #region ç®¡ç†å…­é‚Šé„°å±…çš„è³‡è¨Š
         public bool hasMetNeighbors()
         {
             return met_neighbors;
         }
 
         /// <summary>
-        /// ³]¸m¤»­±¾F©~¡A³q±`·|¥ıÀË¬d¬O§_³]¸m¹L¡A­Y³]¸m¹L´N·|¬Ù²¤¦¹¨BÆJ¡C
-        /// ­Y¤§«á Chunk ·|°ÊºA¥Í¦¨¡A¨º´N»İ­n½T«O¤»­±¾F©~³£¦s¦b¡A¤~¤£Ä~Äò§ó·s¾F©~
+        /// è¨­ç½®å…­é¢é„°å±…ï¼Œé€šå¸¸æœƒå…ˆæª¢æŸ¥æ˜¯å¦è¨­ç½®éï¼Œè‹¥è¨­ç½®éå°±æœƒçœç•¥æ­¤æ­¥é©Ÿã€‚
+        /// è‹¥ä¹‹å¾Œ Chunk æœƒå‹•æ…‹ç”Ÿæˆï¼Œé‚£å°±éœ€è¦ç¢ºä¿å…­é¢é„°å±…éƒ½å­˜åœ¨ï¼Œæ‰ä¸ç¹¼çºŒæ›´æ–°é„°å±…
         /// </summary>
         /// <param name="neighbors"></param>
         public void setNeighbors((Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back) neighbors)
@@ -794,7 +796,7 @@ namespace udemy
 
             for (int i = 0; i < n_block; i++)
             {
-                if (block_types[i] == BlockType.WOODBASE)
+                if (block_types[i] == BlockType.WoodBase)
                 {
                     base_pos = flatToVector3Int(i);
 
@@ -804,7 +806,7 @@ namespace udemy
                         yield return (block_pos, tree.Item2);
                     }
                 }
-                else if (block_types[i] == BlockType.CACTUSBASE)
+                else if (block_types[i] == BlockType.CactusBase)
                 {
                     base_pos = flatToVector3Int(i);
 
@@ -824,7 +826,7 @@ namespace udemy
         }
 
         /// <summary>
-        /// mesh_renderer_solid ©M mesh_renderer_fluid ¬O§_¥i¨£ªºª¬ºA¬Û¦P¡A¦]¦¹ªğ¦^¥ô¤@­Óªºª¬ºA§Y¥i
+        /// mesh_renderer_solid å’Œ mesh_renderer_fluid æ˜¯å¦å¯è¦‹çš„ç‹€æ…‹ç›¸åŒï¼Œå› æ­¤è¿”å›ä»»ä¸€å€‹çš„ç‹€æ…‹å³å¯
         /// </summary>
         /// <returns></returns>
         public bool isVisiable()
@@ -833,7 +835,7 @@ namespace udemy
         }
 
 
-        [Obsolete("´£¨Ñ¦b Chunk ¤¤«Ø¥ß Block ®É¡A¨ó§U§PÂ_¦U­± Mesh ¬O§_»İ­n²K¥[")]
+        [Obsolete("æä¾›åœ¨ Chunk ä¸­å»ºç«‹ Block æ™‚ï¼Œå”åŠ©åˆ¤æ–·å„é¢ Mesh æ˜¯å¦éœ€è¦æ·»åŠ ")]
         (bool is_inside, int nx, int ny, int nz) getNeighbourInfo(int bx, int by, int bz, BlockSide side)
         {
             bool is_inside = true;
@@ -905,7 +907,7 @@ namespace udemy
             return (is_inside, bx, by, bz);
         }
 
-        [Obsolete("´£¨Ñ¦b Chunk ¤¤«Ø¥ß Block ®É¡A¨ó§U§PÂ_¦U­± Mesh ¬O§_»İ­n²K¥[")]
+        [Obsolete("æä¾›åœ¨ Chunk ä¸­å»ºç«‹ Block æ™‚ï¼Œå”åŠ©åˆ¤æ–·å„é¢ Mesh æ˜¯å¦éœ€è¦æ·»åŠ ")]
         bool hasInsideNeighbour(int x, int y, int z, BlockType block_type)
         {
             int block_idx = Utils.xyzToFlat(x, y, z, width: WIDTH, depth: DEPTH);
@@ -915,7 +917,7 @@ namespace udemy
                 return true;
             }
 
-            if (getBlockType(block_idx).Equals(BlockType.AIR) || getBlockType(block_idx).Equals(BlockType.WATER))
+            if (getBlockType(block_idx).Equals(BlockType.Air) || getBlockType(block_idx).Equals(BlockType.Water))
             {
                 return false;
             }
@@ -923,7 +925,7 @@ namespace udemy
             return true;
         }
 
-        [Obsolete("´£¨Ñ¦b Chunk ¤¤«Ø¥ß Block ®É¡A¨ó§U§PÂ_¦U­± Mesh ¬O§_»İ­n²K¥[")]
+        [Obsolete("æä¾›åœ¨ Chunk ä¸­å»ºç«‹ Block æ™‚ï¼Œå”åŠ©åˆ¤æ–·å„é¢ Mesh æ˜¯å¦éœ€è¦æ·»åŠ ")]
         bool hasNeighbour(Chunk chunk, int x, int y, int z, BlockType block_type)
         {
             int block_idx = Utils.xyzToFlat(x, y, z, width: WIDTH, depth: DEPTH);
@@ -933,7 +935,7 @@ namespace udemy
                 return true;
             }
 
-            if (chunk.getBlockType(block_idx).Equals(BlockType.AIR) || chunk.getBlockType(block_idx).Equals(BlockType.WATER))
+            if (chunk.getBlockType(block_idx).Equals(BlockType.Air) || chunk.getBlockType(block_idx).Equals(BlockType.Water))
             {
                 return false;
             }
@@ -942,35 +944,35 @@ namespace udemy
         }
     }
 
-    /* ©Ò¦³ªº job ³£·|¬O struct¡A¨Ã®Ú¾Ú»İ­nÄ~©Ó¤£¦Pªºinterface
+    /* æ‰€æœ‰çš„ job éƒ½æœƒæ˜¯ structï¼Œä¸¦æ ¹æ“šéœ€è¦ç¹¼æ‰¿ä¸åŒçš„interface
      * 
-     * ¤@­Ó¨Ã¦æ¤Æ job ¨Ï¥Î¤@­Ó NativeArray ¦s©ñ¼Æ¾Ú¨Ó§@¬°¥¦ªº¼Æ¾Ú·½¡C¨Ã¦æ¤Æ job ¾î¸ó¦h­Ó®Ö¤ß°õ¦æ¡C¨C­Ó®Ö¤ß¤W¦³¤@­Ó job¡A¨C­Ó job ³B²z¤@³¡¤À¤u§@¶q¡C
-     * IJobParallelFor ªº¦æ¬°«ÜÃş¦ü©ó IJob¡A¦ı¬O¤£¦P©ó¥u°õ¦æ¤@­Ó Execute ¤èªk¡A¥¦·|¦b¼Æ¾Ú·½ªº¨C¤@¶µ¤W°õ¦æ Execute ¤èªk¡CExecute ¤èªk¤¤¦³¤@­Ó¾ã¼Æ«¬ªº°Ñ¼Æ¡C
-     * ³o­Ó¯Á¤Ş¬O¬°¤F¦b job ªº¨ãÅé¾Ş§@¹ê²{¤¤³X°İ©M¾Ş§@¼Æ¾Ú·½¤Wªº³æ­Ó¤¸¯À¡C
+     * ä¸€å€‹ä¸¦è¡ŒåŒ– job ä½¿ç”¨ä¸€å€‹ NativeArray å­˜æ”¾æ•¸æ“šä¾†ä½œç‚ºå®ƒçš„æ•¸æ“šæºã€‚ä¸¦è¡ŒåŒ– job æ©«è·¨å¤šå€‹æ ¸å¿ƒåŸ·è¡Œã€‚æ¯å€‹æ ¸å¿ƒä¸Šæœ‰ä¸€å€‹ jobï¼Œæ¯å€‹ job è™•ç†ä¸€éƒ¨åˆ†å·¥ä½œé‡ã€‚
+     * IJobParallelFor çš„è¡Œç‚ºå¾ˆé¡ä¼¼æ–¼ IJobï¼Œä½†æ˜¯ä¸åŒæ–¼åªåŸ·è¡Œä¸€å€‹ Execute æ–¹æ³•ï¼Œå®ƒæœƒåœ¨æ•¸æ“šæºçš„æ¯ä¸€é …ä¸ŠåŸ·è¡Œ Execute æ–¹æ³•ã€‚Execute æ–¹æ³•ä¸­æœ‰ä¸€å€‹æ•´æ•¸å‹çš„åƒæ•¸ã€‚
+     * é€™å€‹ç´¢å¼•æ˜¯ç‚ºäº†åœ¨ job çš„å…·é«”æ“ä½œå¯¦ç¾ä¸­è¨ªå•å’Œæ“ä½œæ•¸æ“šæºä¸Šçš„å–®å€‹å…ƒç´ ã€‚
      * 
-     * ·í½Õ«×¨Ã¦æ¤Æ job ®É¡A§A¥²¶·«ü©w§A¤À³Î NativeArray ¼Æ¾Ú·½ªºªø«×¡C¦bµ²ºc¤¤¦P®É¦s¦b¦h­Ó NativeArrayUnity ®É¡AC# Job System ¤£ª¾¹D§A­n¨Ï¥Î­ş¤@­Ó NativeArray §@¬°¼Æ¾Ú·½¡C
-     * ³o­Óªø«×¦P®É·|§iª¾ C# Job System ¦³¦h¤Ö­Ó Execute ¤èªk·|³Q°õ¦æ¡C
-     * ¦b³o­Ó³õ´º¤¤¡A¨Ã¦æ¤Æ job ªº½Õ«×·|§ó½ÆÂø¡C·í½Õ«×¨Ã¦æ¤Æ¥ô°È®É¡AC# Job System ·|±N¤u§@¤À¦¨¦h­Ó§å¦¸¡A¤Àµoµ¹¤£¦Pªº®Ö¤ß¨Ó³B²z¡C¨C¤@­Ó§å¦¸³£¥]§t¤@³¡¤Àªº Execute ¤èªk¡C
-     * ÀH«á C# Job System ·|¦b¨C­Ó CPU ®Ö¤ßªº Unity ­ì¥Í Job System ¤W½Õ«×³Ì¦h¤@­Ó job¡A¨Ã¶Ç»¼µ¹³o­Ó job ¤@¨Ç§å¦¸ªº¤u§@¨Ó§¹¦¨¡C
+     * ç•¶èª¿åº¦ä¸¦è¡ŒåŒ– job æ™‚ï¼Œä½ å¿…é ˆæŒ‡å®šä½ åˆ†å‰² NativeArray æ•¸æ“šæºçš„é•·åº¦ã€‚åœ¨çµæ§‹ä¸­åŒæ™‚å­˜åœ¨å¤šå€‹ NativeArrayUnity æ™‚ï¼ŒC# Job System ä¸çŸ¥é“ä½ è¦ä½¿ç”¨å“ªä¸€å€‹ NativeArray ä½œç‚ºæ•¸æ“šæºã€‚
+     * é€™å€‹é•·åº¦åŒæ™‚æœƒå‘ŠçŸ¥ C# Job System æœ‰å¤šå°‘å€‹ Execute æ–¹æ³•æœƒè¢«åŸ·è¡Œã€‚
+     * åœ¨é€™å€‹å ´æ™¯ä¸­ï¼Œä¸¦è¡ŒåŒ– job çš„èª¿åº¦æœƒæ›´è¤‡é›œã€‚ç•¶èª¿åº¦ä¸¦è¡ŒåŒ–ä»»å‹™æ™‚ï¼ŒC# Job System æœƒå°‡å·¥ä½œåˆ†æˆå¤šå€‹æ‰¹æ¬¡ï¼Œåˆ†ç™¼çµ¦ä¸åŒçš„æ ¸å¿ƒä¾†è™•ç†ã€‚æ¯ä¸€å€‹æ‰¹æ¬¡éƒ½åŒ…å«ä¸€éƒ¨åˆ†çš„ Execute æ–¹æ³•ã€‚
+     * éš¨å¾Œ C# Job System æœƒåœ¨æ¯å€‹ CPU æ ¸å¿ƒçš„ Unity åŸç”Ÿ Job System ä¸Šèª¿åº¦æœ€å¤šä¸€å€‹ jobï¼Œä¸¦å‚³éçµ¦é€™å€‹ job ä¸€äº›æ‰¹æ¬¡çš„å·¥ä½œä¾†å®Œæˆã€‚
      * 
-     * ·í¤@­Ó­ì¥Í job ´£«e§¹¦¨¤F¤À°tµ¹¥¦ªº¤u§@§å¦¸«á¡A¥¦·|±q¨ä¥L­ì¥Í job ¨º¨½Àò¨ú¨ä³Ñ§Eªº¤u§@§å¦¸¡C¥¦¨C¦¸¥uÀò¨ú¨º­Ó­ì¥Í job ³Ñ§E§å¦¸ªº¤@¥b¡A¬°¤F½T«O½w¦s§½³¡©Ê(cache locality)¡C
-     * ¬°¤FÀu¤Æ³o­Ó¹Lµ{¡A§A»İ­n«ü©w¤@­Ó¨C§å¦¸¼Æ¶q(batch count)¡C³o­Ó¨C§å¦¸¼Æ¶q±±¨î¤F§A·|¥Í¦¨¦h¤Ö job ©M½uµ{¤¤¶i¦æ¥ô°È¤Àµoªº²É«×¡C
-     * ¨Ï¥Î¤@­Ó¸û§Cªº¨C§å¦¸¼Æ¶q¡A¤ñ¦p 1¡A·|¨Ï§A¦b½uµ{¤§¶¡ªº¤u§@¤À°t§ó¥­§¡¡C¥¦·|±a¨Ó¤@¨ÇÃB¥~ªº¶}¾P¡A©Ò¥H¦³®É¼W¥[¨C§å¦¸¼Æ¶q·|¬O§ó¦nªº¿ï¾Ü¡C
-     * ±q¨C§å¦¸¼Æ¶q¬° 1 ¶}©l¡AµM«áºCºC¼W¥[³o­Ó¼Æ¶qª½¨ì©Ê¯à¤£¦A´£¤É¬O¤@­Ó¦X²zªºµ¦²¤¡C
+     * ç•¶ä¸€å€‹åŸç”Ÿ job æå‰å®Œæˆäº†åˆ†é…çµ¦å®ƒçš„å·¥ä½œæ‰¹æ¬¡å¾Œï¼Œå®ƒæœƒå¾å…¶ä»–åŸç”Ÿ job é‚£é‡Œç²å–å…¶å‰©ä½™çš„å·¥ä½œæ‰¹æ¬¡ã€‚å®ƒæ¯æ¬¡åªç²å–é‚£å€‹åŸç”Ÿ job å‰©ä½™æ‰¹æ¬¡çš„ä¸€åŠï¼Œç‚ºäº†ç¢ºä¿ç·©å­˜å±€éƒ¨æ€§(cache locality)ã€‚
+     * ç‚ºäº†å„ªåŒ–é€™å€‹éç¨‹ï¼Œä½ éœ€è¦æŒ‡å®šä¸€å€‹æ¯æ‰¹æ¬¡æ•¸é‡(batch count)ã€‚é€™å€‹æ¯æ‰¹æ¬¡æ•¸é‡æ§åˆ¶äº†ä½ æœƒç”Ÿæˆå¤šå°‘ job å’Œç·šç¨‹ä¸­é€²è¡Œä»»å‹™åˆ†ç™¼çš„ç²’åº¦ã€‚
+     * ä½¿ç”¨ä¸€å€‹è¼ƒä½çš„æ¯æ‰¹æ¬¡æ•¸é‡ï¼Œæ¯”å¦‚ 1ï¼Œæœƒä½¿ä½ åœ¨ç·šç¨‹ä¹‹é–“çš„å·¥ä½œåˆ†é…æ›´å¹³å‡ã€‚å®ƒæœƒå¸¶ä¾†ä¸€äº›é¡å¤–çš„é–‹éŠ·ï¼Œæ‰€ä»¥æœ‰æ™‚å¢åŠ æ¯æ‰¹æ¬¡æ•¸é‡æœƒæ˜¯æ›´å¥½çš„é¸æ“‡ã€‚
+     * å¾æ¯æ‰¹æ¬¡æ•¸é‡ç‚º 1 é–‹å§‹ï¼Œç„¶å¾Œæ…¢æ…¢å¢åŠ é€™å€‹æ•¸é‡ç›´åˆ°æ€§èƒ½ä¸å†æå‡æ˜¯ä¸€å€‹åˆç†çš„ç­–ç•¥ã€‚
      * 
-     * ¤£­n¦b job ¤¤¶}¹@¦«ºŞ¤º¦s
-     * ¦b job ¤¤¶}¹@¦«ºŞ¤º¦s·|Ãø¥H¸m«H±oºC¡A¨Ã¥B³o­Ó job ¤£¯à§Q¥Î Unity ªº Burst ½sÄ¶¾¹¨Ó´£¤É©Ê¯à¡C
-     * Burst ¬O¤@­Ó·sªº°ò©ó LLVM ªº«áºİ½sÄ¶¾¹§Ş³N¡A¥¦·|¨Ï¨Æ±¡¹ï©ó§A§ó¥[Â²³æ¡C¥¦Àò¨ú C# job ¨Ã§Q¥Î§A¥­¥xªº¯S©w¥\¯à²£¥Í°ª«×Àu¤Æªº¾÷¾¹½X¡C
-     * °Ñ¦Ò¡Ghttps://zhuanlan.zhihu.com/p/58125078
+     * ä¸è¦åœ¨ job ä¸­é–‹è¾Ÿæ‰˜ç®¡å…§å­˜
+     * åœ¨ job ä¸­é–‹è¾Ÿæ‰˜ç®¡å…§å­˜æœƒé›£ä»¥ç½®ä¿¡å¾—æ…¢ï¼Œä¸¦ä¸”é€™å€‹ job ä¸èƒ½åˆ©ç”¨ Unity çš„ Burst ç·¨è­¯å™¨ä¾†æå‡æ€§èƒ½ã€‚
+     * Burst æ˜¯ä¸€å€‹æ–°çš„åŸºæ–¼ LLVM çš„å¾Œç«¯ç·¨è­¯å™¨æŠ€è¡“ï¼Œå®ƒæœƒä½¿äº‹æƒ…å°æ–¼ä½ æ›´åŠ ç°¡å–®ã€‚å®ƒç²å– C# job ä¸¦åˆ©ç”¨ä½ å¹³å°çš„ç‰¹å®šåŠŸèƒ½ç”¢ç”Ÿé«˜åº¦å„ªåŒ–çš„æ©Ÿå™¨ç¢¼ã€‚
+     * åƒè€ƒï¼šhttps://zhuanlan.zhihu.com/p/58125078
      */
 
-    // DefineBlockJob¡G®Ú¾Ú®ü©Ş»P¦ì¸mµ¥¸ê°T¡A¨M©w Block ªºÃş«¬»P¦ì¸m¡C¦A¥æ¥Ñ ProcessMeshDataJob ³B²z¦p¦ó§e²{¡C
+    // DefineBlockJobï¼šæ ¹æ“šæµ·æ‹”èˆ‡ä½ç½®ç­‰è³‡è¨Šï¼Œæ±ºå®š Block çš„é¡å‹èˆ‡ä½ç½®ã€‚å†äº¤ç”± ProcessMeshDataJob è™•ç†å¦‚ä½•å‘ˆç¾ã€‚
     struct DefineBlockJob : IJobParallelFor
     {
         public NativeArray<BlockType> block_types;
         public NativeArray<CrackState> crack_states;
 
-        // TODO: ­ì¥»¨C¦¸¶}°_ªºÀH¾÷¼Æ³£·|¬Û¦P¡A¬O¦]¬°µ¹ Unity.Mathematics.Random ªº seed ³£¬O 1¡A¦]¦¹¥u¶·¶Ç¤JÀH¾÷ªº seed¡A¨Ã¦b Execute(int i) ¥~³¡«Ø¥ß Unity.Mathematics.Random ª«¥ó§Y¥i
+        // TODO: åŸæœ¬æ¯æ¬¡é–‹èµ·çš„éš¨æ©Ÿæ•¸éƒ½æœƒç›¸åŒï¼Œæ˜¯å› ç‚ºçµ¦ Unity.Mathematics.Random çš„ seed éƒ½æ˜¯ 1ï¼Œå› æ­¤åªé ˆå‚³å…¥éš¨æ©Ÿçš„ seedï¼Œä¸¦åœ¨ Execute(int i) å¤–éƒ¨å»ºç«‹ Unity.Mathematics.Random ç‰©ä»¶å³å¯
         public NativeArray<Unity.Mathematics.Random> randoms;
 
         public int width;
@@ -1032,102 +1034,102 @@ namespace udemy
                                                height_offset: World.biome_cluster.height_offset);
 
 
-            /* ¥Ø«e¦b¤ô½u¤Uªº°ª«×©ñ¤F¤@­Ó Post-process Volume¡A©w¸qÄá¼v¾÷¶i¤J¸Ó°Ï°ìªº®ÄªG(¬İ°_¨ÓÂÅÂÅªº¡B¯à¨£«×«Ü§C)¡A
-             * ¨Ã§Q¥Î WaterManager ¦b¤ô¥­¤è¦V°lÂÜª±®a¡C§Y¡A¤£ºŞ±q­ş¸Ì¤U­°¨ì¤ô½u¥H¤Uªº°Ï°ì³£·|¬İ°_¨Ó¹³¦b¤ô¤¤¡A
-             * §Y«K²{¦b¤£¦b¤ô¤¤¡C ³o­Ó°µªk¥²¶·§ï±¼¡A¦]¬°¥¦¤£¦ı¤ô½u¥H¤U³£ªş¥[¸Ó®ÄªG¡A¤ô½uªº©w¦ì¤è¦¡(­n¦Û¤vºâ§Î¦¨ªº¥@¬É¦³¦h°ª)¤]¤£¬O«Ü²z·Q */
+            /* ç›®å‰åœ¨æ°´ç·šä¸‹çš„é«˜åº¦æ”¾äº†ä¸€å€‹ Post-process Volumeï¼Œå®šç¾©æ”å½±æ©Ÿé€²å…¥è©²å€åŸŸçš„æ•ˆæœ(çœ‹èµ·ä¾†è—è—çš„ã€èƒ½è¦‹åº¦å¾ˆä½)ï¼Œ
+             * ä¸¦åˆ©ç”¨ WaterManager åœ¨æ°´å¹³æ–¹å‘è¿½è¹¤ç©å®¶ã€‚å³ï¼Œä¸ç®¡å¾å“ªè£¡ä¸‹é™åˆ°æ°´ç·šä»¥ä¸‹çš„å€åŸŸéƒ½æœƒçœ‹èµ·ä¾†åƒåœ¨æ°´ä¸­ï¼Œ
+             * å³ä¾¿ç¾åœ¨ä¸åœ¨æ°´ä¸­ã€‚ é€™å€‹åšæ³•å¿…é ˆæ”¹æ‰ï¼Œå› ç‚ºå®ƒä¸ä½†æ°´ç·šä»¥ä¸‹éƒ½é™„åŠ è©²æ•ˆæœï¼Œæ°´ç·šçš„å®šä½æ–¹å¼(è¦è‡ªå·±ç®—å½¢æˆçš„ä¸–ç•Œæœ‰å¤šé«˜)ä¹Ÿä¸æ˜¯å¾ˆç†æƒ³ */
             int WATER_LINE = 20;
 
             crack_states[i] = CrackState.None;
 
             if (xyz.y == 0)
             {
-                block_types[i] = BlockType.BEDROCK;
+                block_types[i] = BlockType.BedRock;
                 return;
             }
 
-            // TODO: ¥Ø«eªº¬}¥Ş¥i¯à·|«õ¨ì¦aªí¡A¥B¦]¨S¦³¦Ò¼{¨ì¬O§_¬O¦aªí¡A¦]¦Ó³y¦¨¦aªí¬°ªd¤g¦Ó«D¯ó¦a
+            // TODO: ç›®å‰çš„æ´ç©´å¯èƒ½æœƒæŒ–åˆ°åœ°è¡¨ï¼Œä¸”å› æ²’æœ‰è€ƒæ…®åˆ°æ˜¯å¦æ˜¯åœ°è¡¨ï¼Œå› è€Œé€ æˆåœ°è¡¨ç‚ºæ³¥åœŸè€Œéè‰åœ°
             if (dig_cave < World.cave_cluster.boundary)
             {
-                block_types[i] = BlockType.AIR;
+                block_types[i] = BlockType.Air;
                 return;
             }
 
-            // NOTE: ¦aªíºØ´Ó´Óª«®É¡A·|¥ı³]¸m¤@­Ó¯S®í BlockType ¼Ğµù¡A¹ê»ÚºØ´Ó®É¤]·|±N¸Ó¯S®í BlockType ÂĞ»\¡A¥iÁ×§K­«½Æ»{©w»İ­nºØ¾ğ
+            // NOTE: åœ°è¡¨ç¨®æ¤æ¤ç‰©æ™‚ï¼Œæœƒå…ˆè¨­ç½®ä¸€å€‹ç‰¹æ®Š BlockType æ¨™è¨»ï¼Œå¯¦éš›ç¨®æ¤æ™‚ä¹Ÿæœƒå°‡è©²ç‰¹æ®Š BlockType è¦†è“‹ï¼Œå¯é¿å…é‡è¤‡èªå®šéœ€è¦ç¨®æ¨¹
             if (xyz.y == surface_height && xyz.y >= WATER_LINE)
             {
                 if (dessert_biome < World.biome_cluster.boundary)
                 {
-                    block_types[i] = BlockType.SAND;
+                    block_types[i] = BlockType.Sand;
 
                     if (random.NextFloat(1) <= 0.01f)
                     {
-                        block_types[i] = BlockType.CACTUSBASE;
+                        block_types[i] = BlockType.CactusBase;
                     }
                 }
                 else if (plant_tree < World.tree_cluster.boundary)
                 {
-                    block_types[i] = BlockType.FOREST;
+                    block_types[i] = BlockType.Forest;
 
-                    // TODO: ¾ğ¥X²{ªº±K«×(¾÷²v)À³¥Ñ¥~³¡³]¸m
+                    // TODO: æ¨¹å‡ºç¾çš„å¯†åº¦(æ©Ÿç‡)æ‡‰ç”±å¤–éƒ¨è¨­ç½®
                     if (random.NextFloat(1) <= 0.05f)
                     {
-                        // Execute ·í¤¤¤@¦¸³B²z¤@­Ó Block¡A¦]¦¹³o¸Ì¶È©ñ¸m¾ğ°ò¡A¦Ó«Dª½±µºØ¤@´Ê¾ğ
-                        block_types[i] = BlockType.WOODBASE;
+                        // Execute ç•¶ä¸­ä¸€æ¬¡è™•ç†ä¸€å€‹ Blockï¼Œå› æ­¤é€™è£¡åƒ…æ”¾ç½®æ¨¹åŸºï¼Œè€Œéç›´æ¥ç¨®ä¸€æ£µæ¨¹
+                        block_types[i] = BlockType.WoodBase;
                     }
                 }
                 else
                 {
-                    block_types[i] = BlockType.GRASSSIDE;
+                    block_types[i] = BlockType.GrassSide;
                 }
             }
 
             else if ((diamond_bottom_height < xyz.y) && (xyz.y < diamond_top_height) && (random.NextFloat(1) <= World.diamond_top_strata.probability))
             {
-                block_types[i] = BlockType.DIAMOND;
+                block_types[i] = BlockType.Diamond;
             }
 
             else if ((xyz.y < stone_height) && (random.NextFloat(1) <= World.stone_strata.probability))
             {
-                block_types[i] = BlockType.STONE;
+                block_types[i] = BlockType.Stone;
             }
 
             else if (xyz.y < surface_height)
             {
-                block_types[i] = BlockType.DIRT;
+                block_types[i] = BlockType.Dirt;
             }
 
-            // TODO: ¹ê»Ú¼Æ­È­n®Ú¾Ú¦a§Î°ª§C¨Ó°µ½Õ¾ã
-            // TODO: ¦p¦ó½T«O¤ô¬O¦Û¤v¤@­Ó°Ï¶ô¡A¦Ó«DÀH¾÷ªº´²§G¦b¦a¹Ï¤¤¡H¤j·§­n¹³¾ğ¤@¼Ë¡A¨Ï¥Î fBM3D
+            // TODO: å¯¦éš›æ•¸å€¼è¦æ ¹æ“šåœ°å½¢é«˜ä½ä¾†åšèª¿æ•´
+            // TODO: å¦‚ä½•ç¢ºä¿æ°´æ˜¯è‡ªå·±ä¸€å€‹å€å¡Šï¼Œè€Œééš¨æ©Ÿçš„æ•£ä½ˆåœ¨åœ°åœ–ä¸­ï¼Ÿå¤§æ¦‚è¦åƒæ¨¹ä¸€æ¨£ï¼Œä½¿ç”¨ fBM3D
             else if (xyz.y < WATER_LINE)
             {
-                block_types[i] = BlockType.WATER;
+                block_types[i] = BlockType.Water;
             }
 
             else
             {
-                block_types[i] = BlockType.AIR;
+                block_types[i] = BlockType.Air;
             }
         }
     }
 
 
-    // ProcessMeshDataJob¡G®Ú¾Ú Block ªºÃş«¬»P¦ì¸mµ¥¡A­pºâ©Ò»İ¶K¹Ï»P¦ì¸m
-    // ProcessMeshDataJob ¥Î©ó±N¦h­Ó Mesh ¦X¨Ö¬°³æ¤@­Ó Mesh¡A§@¥Î¦P MeshUtils.mergeMeshes¡A¦ı¬O¨Ï¥Î¤F Job System ·|§ó¦³®Ä²v
-    // BurstCompile »İ¨Ï¥Î .NET 4.0 ¥H¤W
+    // ProcessMeshDataJobï¼šæ ¹æ“š Block çš„é¡å‹èˆ‡ä½ç½®ç­‰ï¼Œè¨ˆç®—æ‰€éœ€è²¼åœ–èˆ‡ä½ç½®
+    // ProcessMeshDataJob ç”¨æ–¼å°‡å¤šå€‹ Mesh åˆä½µç‚ºå–®ä¸€å€‹ Meshï¼Œä½œç”¨åŒ MeshUtils.mergeMeshesï¼Œä½†æ˜¯ä½¿ç”¨äº† Job System æœƒæ›´æœ‰æ•ˆç‡
+    // BurstCompile éœ€ä½¿ç”¨ .NET 4.0 ä»¥ä¸Š
     [BurstCompile]
     struct ProcessMeshDataJob : IJobParallelFor
     {
-        /* ±N NativeContainer ¼Ğ°O¬°¥uÅªªº
-         * °O¦í job ¦bÀq»{±¡ªp¤U¾Ö¦³ NativeContainer ªºÅª¼gÅv­­¡C¦b¦X¾Aªº NativeContainer ¤W¨Ï¥Î [ReadOnly] Äİ©Ê¥i¥H´£¤É©Ê¯à¡C*/
+        /* å°‡ NativeContainer æ¨™è¨˜ç‚ºåªè®€çš„
+         * è¨˜ä½ job åœ¨é»˜èªæƒ…æ³ä¸‹æ“æœ‰ NativeContainer çš„è®€å¯«æ¬Šé™ã€‚åœ¨åˆé©çš„ NativeContainer ä¸Šä½¿ç”¨ [ReadOnly] å±¬æ€§å¯ä»¥æå‡æ€§èƒ½ã€‚*/
         [ReadOnly] public Mesh.MeshDataArray input_mesh_datas;
 
-        // ProcessMeshDataJob ±N¦h­Ó MeshData ¦X¨Ö¦¨¤@­Ó¡A¦]¦¹³o¸Ì¬O MeshData ¦Ó«D MeshDataArray
+        // ProcessMeshDataJob å°‡å¤šå€‹ MeshData åˆä½µæˆä¸€å€‹ï¼Œå› æ­¤é€™è£¡æ˜¯ MeshData è€Œé MeshDataArray
         public Mesh.MeshData output_mesh_data;
 
-        // ²Ö¥[«e­±¦U­Ó MeshData ªº vertex ­Ó¼Æ¡A§i¶D·í«e vertex ¼Æ¾Ú­n¦s¤J®É¡A¯Á¤Ş­Èªº°¾²¾¶q
+        // ç´¯åŠ å‰é¢å„å€‹ MeshData çš„ vertex å€‹æ•¸ï¼Œå‘Šè¨´ç•¶å‰ vertex æ•¸æ“šè¦å­˜å…¥æ™‚ï¼Œç´¢å¼•å€¼çš„åç§»é‡
         public NativeArray<int> vertex_index_offsets;
 
-        // ²Ö¥[«e­±¦U­Ó MeshData ªº triangle ­Ó¼Æ¡A§i¶D·í«e triangle ¼Æ¾Ú­n¦s¤J®É¡A¯Á¤Ş­Èªº°¾²¾¶q
+        // ç´¯åŠ å‰é¢å„å€‹ MeshData çš„ triangle å€‹æ•¸ï¼Œå‘Šè¨´ç•¶å‰ triangle æ•¸æ“šè¦å­˜å…¥æ™‚ï¼Œç´¢å¼•å€¼çš„åç§»é‡
         public NativeArray<int> triangle_index_offsets;
 
         /// <summary>
@@ -1138,35 +1140,35 @@ namespace udemy
         {
             Mesh.MeshData data = input_mesh_datas[index];
 
-            // ·í«e vertex ¼Æ¾Ú­n¦s¤J®É¡A¯Á¤Ş­Èªº°¾²¾¶q
+            // ç•¶å‰ vertex æ•¸æ“šè¦å­˜å…¥æ™‚ï¼Œç´¢å¼•å€¼çš„åç§»é‡
             int vertex_index_offset = vertex_index_offsets[index];
 
-            // ·í«e vertex ¼Æ¾Ú­Ó¼Æ
+            // ç•¶å‰ vertex æ•¸æ“šå€‹æ•¸
             int n_vertex = data.vertexCount;
 
             NativeArray<float3> current_vertices = new NativeArray<float3>(n_vertex, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
 
-            // ±q data ¤¤¨ú±o Vertices ©ñ¤J current_vertices¡AReinterpret<Vector3> Åª¤J Vector3¡AÂà´«¦¨ float3
+            // å¾ data ä¸­å–å¾— Vertices æ”¾å…¥ current_verticesï¼ŒReinterpret<Vector3> è®€å…¥ Vector3ï¼Œè½‰æ›æˆ float3
             data.GetVertices(current_vertices.Reinterpret<Vector3>());
 
             NativeArray<float3> current_normals = new NativeArray<float3>(n_vertex, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             data.GetNormals(current_normals.Reinterpret<Vector3>());
 
-            // uv ¥»¨­Áö¬O Vector2¡A¦ı¦b Job System ¤¤À³¨Ï¥Î Vector3
+            // uv æœ¬èº«é›–æ˜¯ Vector2ï¼Œä½†åœ¨ Job System ä¸­æ‡‰ä½¿ç”¨ Vector3
             NativeArray<float3> current_uvs = new NativeArray<float3>(n_vertex, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             data.GetUVs(0, current_uvs.Reinterpret<Vector3>());
 
             NativeArray<float3> current_uv2s = new NativeArray<float3>(n_vertex, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             data.GetUVs(1, current_uv2s.Reinterpret<Vector3>());
 
-            // ®Ú¾Ú SetVertexBufferParams Â\©ñ¶¶§Ç¡A¨Ì§Ç¨ú±o 0: Position, 1: Normal, 2: TexCoord0, 3: TexCoord1
+            // æ ¹æ“š SetVertexBufferParams æ“ºæ”¾é †åºï¼Œä¾åºå–å¾— 0: Position, 1: Normal, 2: TexCoord0, 3: TexCoord1
             NativeArray<Vector3> vertices = output_mesh_data.GetVertexData<Vector3>(stream: 0);
             NativeArray<Vector3> normals = output_mesh_data.GetVertexData<Vector3>(stream: 1);
             NativeArray<Vector3> uvs = output_mesh_data.GetVertexData<Vector3>(stream: 2);
             NativeArray<Vector3> uv2s = output_mesh_data.GetVertexData<Vector3>(stream: 3);
 
-            /* §Q¥Î index ¨ú±o¦U­Ó MeshData¡A¦A¤À§O¨ú¥X vertices, normals, uvs, uv2s¡A
-             * ±N¼Æ¾Ú¦s¤J¦P¤@­Ó NativeArray<Vector3>¡A§Q¥Î vertex_index ±N¦U­Ó MeshData ªº¼Æ¾ÚÀx¦s¨ì¥¿½Tªº¦ì¸m
+            /* åˆ©ç”¨ index å–å¾—å„å€‹ MeshDataï¼Œå†åˆ†åˆ¥å–å‡º vertices, normals, uvs, uv2sï¼Œ
+             * å°‡æ•¸æ“šå­˜å…¥åŒä¸€å€‹ NativeArray<Vector3>ï¼Œåˆ©ç”¨ vertex_index å°‡å„å€‹ MeshData çš„æ•¸æ“šå„²å­˜åˆ°æ­£ç¢ºçš„ä½ç½®
              * 
              */
             for (int i = 0; i < n_vertex; i++)
@@ -1177,19 +1179,19 @@ namespace udemy
                 uv2s[vertex_index_offset + i] = current_uv2s[i];
             }
 
-            /* NativeArray ¨Ï¥Î«áÀ³©I¥s Dispose()¡A¥HÁ×§K°O¾ĞÅé·¸¥X */
+            /* NativeArray ä½¿ç”¨å¾Œæ‡‰å‘¼å« Dispose()ï¼Œä»¥é¿å…è¨˜æ†¶é«”æº¢å‡º */
             current_vertices.Dispose();
             current_normals.Dispose();
             current_uvs.Dispose();
             current_uv2s.Dispose();
 
-            // ¨ú±o¿é¥X¼Æ¾Ú¤¤ªº¤T¨¤§Î³»ÂI¯Á¤Ş­È
+            // å–å¾—è¼¸å‡ºæ•¸æ“šä¸­çš„ä¸‰è§’å½¢é ‚é»ç´¢å¼•å€¼
             NativeArray<int> triangles = output_mesh_data.GetIndexData<int>();
 
-            // ·í«e triangle ¼Æ¾Ú­n¦s¤J®É¡A¯Á¤Ş­Èªº°¾²¾¶q
+            // ç•¶å‰ triangle æ•¸æ“šè¦å­˜å…¥æ™‚ï¼Œç´¢å¼•å€¼çš„åç§»é‡
             int triangle_index_offset = triangle_index_offsets[index];
 
-            // ·í«e triangle ¼Æ¾Ú­Ó¼Æ
+            // ç•¶å‰ triangle æ•¸æ“šå€‹æ•¸
             int n_triangle = data.GetSubMesh(0).indexCount;
 
             int idx;
@@ -1220,7 +1222,7 @@ namespace udemy
         }
 
         /// <summary>
-        /// ³o¸Ìªº stream ªº¶¶§Ç¡AÀ³©M ProcessMeshDataJob.Execute ·í¤¤ GetVertexData ªº stream ªº¶¶§Ç¬Û¦P
+        /// é€™è£¡çš„ stream çš„é †åºï¼Œæ‡‰å’Œ ProcessMeshDataJob.Execute ç•¶ä¸­ GetVertexData çš„ stream çš„é †åºç›¸åŒ
         /// 0: Position, 1: Normal, 2: TexCoord0, 3: TexCoord1
         /// </summary>
         /// <param name="n_vertex"></param>

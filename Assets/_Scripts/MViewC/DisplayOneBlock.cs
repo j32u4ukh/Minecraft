@@ -8,7 +8,7 @@ namespace udemy
     public class DisplayOneBlock : MonoBehaviour
     {
         public Material material;
-        public BlockType block_type = BlockType.DIRT;
+        public BlockType block_type = BlockType.Dirt;
         public Vector3Int location = Vector3Int.zero;
 
         MeshFilter mesh_filter;

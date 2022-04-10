@@ -1,5 +1,4 @@
-using System;
-using System.Collections;
+ï»¿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,25 +11,25 @@ namespace udemy
     {
         public static readonly float UV_SIZE = 0.0625f;
 
-        // Dict<BlockType, Tuple(x, y)> -> (x, y) ¦A§Q¥Î Vector2[] getBlockUVs(int x, int y) ¨ú±o UV Ãä¬É®y¼Ğ
+        // Dict<BlockType, Tuple(x, y)> -> (x, y) å†åˆ©ç”¨ Vector2[] getBlockUVs(int x, int y) å–å¾— UV é‚Šç•Œåº§æ¨™
         private static readonly Dictionary<BlockType, Tuple<int, int>> block_anchor = new Dictionary<BlockType, Tuple<int, int>>()
         {
-            {BlockType.GRASSTOP, new Tuple<int, int>(2, 6) },
-            {BlockType.GRASSSIDE, new Tuple<int, int>(3, 15) },
-            {BlockType.DIRT, new Tuple<int, int>(2, 15) },
-            {BlockType.WATER, new Tuple<int, int>(14, 2) },
-            {BlockType.STONE, new Tuple<int, int>(0, 15) },
-            {BlockType.SAND, new Tuple<int, int>(2, 14) },
-            {BlockType.LEAVES, new Tuple<int, int>(1, 6) },
-            {BlockType.WOOD, new Tuple<int, int>(4, 14) },
-            {BlockType.WOODBASE, new Tuple<int, int>(4, 14) },
-            {BlockType.FOREST, new Tuple<int, int>(4, 13) },
-            {BlockType.CACTUS, new Tuple<int, int>(6, 11) },
-            {BlockType.CACTUSBASE, new Tuple<int, int>(4, 13) },
-            {BlockType.GOLD, new Tuple<int, int>(0, 13) },
-            {BlockType.BEDROCK, new Tuple<int, int>(5, 13) },
-            {BlockType.REDSTONE, new Tuple<int, int>(3, 12) },
-            {BlockType.DIAMOND, new Tuple<int, int>(2, 12) },
+            {BlockType.GrassTop, new Tuple<int, int>(2, 6) },
+            {BlockType.GrassSide, new Tuple<int, int>(3, 15) },
+            {BlockType.Dirt, new Tuple<int, int>(2, 15) },
+            {BlockType.Water, new Tuple<int, int>(14, 2) },
+            {BlockType.Stone, new Tuple<int, int>(0, 15) },
+            {BlockType.Sand, new Tuple<int, int>(2, 14) },
+            {BlockType.Leaves, new Tuple<int, int>(1, 6) },
+            {BlockType.Wood, new Tuple<int, int>(4, 14) },
+            {BlockType.WoodBase, new Tuple<int, int>(4, 14) },
+            {BlockType.Forest, new Tuple<int, int>(4, 13) },
+            {BlockType.Cactus, new Tuple<int, int>(6, 11) },
+            {BlockType.CactusBase, new Tuple<int, int>(4, 13) },
+            {BlockType.Gold, new Tuple<int, int>(0, 13) },
+            {BlockType.BedRock, new Tuple<int, int>(5, 13) },
+            {BlockType.RedStone, new Tuple<int, int>(3, 12) },
+            {BlockType.Diamond, new Tuple<int, int>(2, 12) },
         };
 
         private static readonly Dictionary<CrackState, Tuple<int, int>> crack_anchor = new Dictionary<CrackState, Tuple<int, int>>()
@@ -48,28 +47,28 @@ namespace udemy
         // Coordinate of crack which is queried 
         private static Dictionary<CrackState, Vector2[,]> crack_to_coordinate = new Dictionary<CrackState, Vector2[,]>();
 
-        // ©w¸q¦UºØ¤è¶ô»İ­nºVÀ»´X¦¸¤~·|³Q²¾°£(-1 ªí¥ÜµLªk³Q¯}Ãa)
+        // å®šç¾©å„ç¨®æ–¹å¡Šéœ€è¦æ•²æ“Šå¹¾æ¬¡æ‰æœƒè¢«ç§»é™¤(-1 è¡¨ç¤ºç„¡æ³•è¢«ç ´å£)
         private static Dictionary<BlockType, int> block_strength = new Dictionary<BlockType, int>() {
-            { BlockType.GRASSTOP, 2 },
-            { BlockType.GRASSSIDE, 2 },
-            { BlockType.DIRT, 1 },
-            { BlockType.WATER, 1 },
-            { BlockType.STONE, 4 },
-            { BlockType.SAND, 3 },
-            { BlockType.GOLD, 4 },
-            { BlockType.BEDROCK, -1 },
-            { BlockType.REDSTONE, 3 },
-            { BlockType.DIAMOND, 4 },
-            { BlockType.WOOD, 2 },
-            { BlockType.WOODBASE, 2 },
-            { BlockType.CACTUS, 1 },
-            { BlockType.CACTUSBASE, 1 },
-            { BlockType.LEAVES, 1 },
+            { BlockType.GrassTop, 2 },
+            { BlockType.GrassSide, 2 },
+            { BlockType.Dirt, 1 },
+            { BlockType.Water, 1 },
+            { BlockType.Stone, 4 },
+            { BlockType.Sand, 3 },
+            { BlockType.Gold, 4 },
+            { BlockType.BedRock, -1 },
+            { BlockType.RedStone, 3 },
+            { BlockType.Diamond, 4 },
+            { BlockType.Wood, 2 },
+            { BlockType.WoodBase, 2 },
+            { BlockType.Cactus, 1 },
+            { BlockType.CactusBase, 1 },
+            { BlockType.Leaves, 1 },
         };
 
-        private static HashSet<BlockType> drop_blocks = new HashSet<BlockType>() { BlockType.SAND, BlockType.WATER };
+        private static HashSet<BlockType> drop_blocks = new HashSet<BlockType>() { BlockType.Sand, BlockType.Water };
 
-        private static HashSet<BlockType> spread_blocks = new HashSet<BlockType>() { BlockType.WATER };
+        private static HashSet<BlockType> spread_blocks = new HashSet<BlockType>() { BlockType.Water };
 
         /// <summary>
         /// Merge multi meshes into one mesh.
@@ -95,7 +94,7 @@ namespace udemy
             // loop through each mesh
             for (i = 0; i < n_mesh; i++)
             {
-                // ¥D­n¥Î¦b Block ·í¤¤¡A¦Ó meshes ¬°¦Û¦æ¶Ç¤Jªº List<Mesh>¡AÀ³¸Ó¤£·|¦³ªÅ­È
+                // ä¸»è¦ç”¨åœ¨ Block ç•¶ä¸­ï¼Œè€Œ meshes ç‚ºè‡ªè¡Œå‚³å…¥çš„ List<Mesh>ï¼Œæ‡‰è©²ä¸æœƒæœ‰ç©ºå€¼
                 if (meshes[i] == null)
                 {
                     Debug.LogError($"[MeshUtils] mergeMeshes | meshes[{i}] == null");
@@ -192,7 +191,7 @@ namespace udemy
         }
 
         /// <summary>
-        /// ¨C­Ó¤è¶ô¤Ø¤o¬° 0.0625 * 0.0625¡A®Ú¾Ú (x, y) ¦ì¸m¡Aªğ¦^Ãä¬É¥|ÂI®y¼Ğ
+        /// æ¯å€‹æ–¹å¡Šå°ºå¯¸ç‚º 0.0625 * 0.0625ï¼Œæ ¹æ“š (x, y) ä½ç½®ï¼Œè¿”å›é‚Šç•Œå››é»åº§æ¨™
         /// </summary>
         /// <param name="x"></param>
         /// <param name="y"></param>
@@ -210,10 +209,10 @@ namespace udemy
         }
 
         /// <summary>
-        /// ¦UºØ¤è¶ô»İ­nºVÀ»´X¦¸¤~·|³Q²¾°£(-1 ªí¥ÜµLªk³Q¯}Ãa)
+        /// å„ç¨®æ–¹å¡Šéœ€è¦æ•²æ“Šå¹¾æ¬¡æ‰æœƒè¢«ç§»é™¤(-1 è¡¨ç¤ºç„¡æ³•è¢«ç ´å£)
         /// </summary>
         /// <param name="block_type"></param>
-        /// <returns>©Ò»İºVÀ»¦¸¼Æ</returns>
+        /// <returns>æ‰€éœ€æ•²æ“Šæ¬¡æ•¸</returns>
         public static int getStrenth(BlockType block_type)
         {
             if (block_strength.ContainsKey(block_type))

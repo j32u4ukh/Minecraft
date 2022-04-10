@@ -1,24 +1,20 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-namespace udemy
+ï»¿namespace udemy
 {
     public struct Cluster
     {
-        // Å|¥[ PerlinNoise ¼h¼Æ
+        // ç–ŠåŠ  PerlinNoise å±¤æ•¸
         public int octaves;
 
-        // ÁY©ñ¨ú¼ËÂIªº®y¼Ğ
+        // ç¸®æ”¾å–æ¨£é»çš„åº§æ¨™
         public float scale;
 
-        // ÁY©ñªi«¬ªº¾_´T
+        // ç¸®æ”¾æ³¢å‹çš„éœ‡å¹…
         public float height_scale;
 
-        // °ª«×°¾²¾¶q
+        // é«˜åº¦åç§»é‡
         public float height_offset;
 
-        // Ãä¬É©w¸q¼Æ­È
+        // é‚Šç•Œå®šç¾©æ•¸å€¼
         public float boundary;
 
         public Cluster(ClusterSetting setting)
@@ -40,7 +36,7 @@ namespace udemy
         }
 
         /// <summary>
-        /// 3D ª©¤À§Î¥¬®Ô¹B°Ê¡]Fractal Brownian Motion¡^¡A­Y¤£­×§ï¹w³]­È¡A«h¬° 3D ª© PerlinNoise¡C
+        /// 3D ç‰ˆåˆ†å½¢å¸ƒæœ—é‹å‹•ï¼ˆFractal Brownian Motionï¼‰ï¼Œè‹¥ä¸ä¿®æ”¹é è¨­å€¼ï¼Œå‰‡ç‚º 3D ç‰ˆ PerlinNoiseã€‚
         /// </summary>
         /// <param name="x"></param>
         /// <param name="y"></param>

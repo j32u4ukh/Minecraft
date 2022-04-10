@@ -30,7 +30,7 @@ namespace udemy
 
         public Block(BlockType block_type, CrackState crack_state, Vector3Int offset, Chunk chunk, Chunk up, Chunk down, Chunk left, Chunk right, Chunk forward, Chunk back)
         {
-            if (block_type == BlockType.AIR)
+            if (block_type == BlockType.Air)
             {
                 return;
             }
@@ -124,7 +124,7 @@ namespace udemy
                 return true;
             }
 
-            if (chunk.getBlockType(block_idx).Equals(BlockType.AIR) || chunk.getBlockType(block_idx).Equals(BlockType.WATER))
+            if (chunk.getBlockType(block_idx).Equals(BlockType.Air) || chunk.getBlockType(block_idx).Equals(BlockType.Water))
             {
                 return false;
             }
@@ -208,18 +208,18 @@ namespace udemy
             switch (side)
             {
                 case BlockSide.Top:
-                    if (block_type == BlockType.GRASSSIDE)
+                    if (block_type == BlockType.GrassSide)
                     {
-                        return new Quad(BlockType.GRASSTOP, crack_state, side, offset);
+                        return new Quad(BlockType.GrassTop, crack_state, side, offset);
                     }
                     else
                     {
                         return new Quad(block_type, crack_state, side, offset);
                     }
                 case BlockSide.Bottom:
-                    if (block_type == BlockType.GRASSSIDE)
+                    if (block_type == BlockType.GrassSide)
                     {
-                        return new Quad(BlockType.DIRT, crack_state, side, offset);
+                        return new Quad(BlockType.Dirt, crack_state, side, offset);
                     }
                     else
                     {

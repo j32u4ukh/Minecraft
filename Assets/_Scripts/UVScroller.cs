@@ -6,6 +6,7 @@ namespace udemy
 {
     /// <summary>
     /// 透過 UV 位置的偏移，造成流動的效果，但僅限於鄰近 UV 圖案相同時
+    /// 水面 或 岩漿 會需要使用
     /// </summary>
     public class UVScroller : MonoBehaviour
     {
@@ -20,12 +21,6 @@ namespace udemy
 
         void LateUpdate()
         {
-            //if (m_renderer == null)
-            //{
-            //    m_renderer = GetComponent<Renderer>();
-            //    return;
-            //}
-
             offset += speed * Time.deltaTime;
 
             if (offset.y > MeshUtils.UV_SIZE)

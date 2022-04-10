@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -32,18 +32,19 @@ namespace udemy
             }
         }
 
-        // NOTE: ª±®a©Ò¯à¨Ï¥Îªº Input System ¬Ò¦b¦¹©w¸q¡AÁ×§K¦b¦U³B³£©w¸q¡A³y¦¨¦P¤@­Ó¿é¤J¦³¤£¦Pªº¨ç¦¡³QÄ²µo
+        // NOTE: ç©å®¶æ‰€èƒ½ä½¿ç”¨çš„ Input System çš†åœ¨æ­¤å®šç¾©ï¼Œé¿å…åœ¨å„è™•éƒ½å®šç¾©ï¼Œé€ æˆåŒä¸€å€‹è¼¸å…¥æœ‰ä¸åŒçš„å‡½å¼è¢«è§¸ç™¼
         void Update()
         {
             checkBlockSelected();
         }
 
-        // ÀË¬d­ş­Ó¤è¶ô³Q¿ï¾Ü
+        // æª¢æŸ¥å“ªå€‹æ–¹å¡Šè¢«é¸æ“‡
         void checkBlockSelected()
         {
             int key;
 
-            for(key = 0; key < 4; key++)
+            // TODO: éµç›¤è¼¸å…¥çµ±ä¸€ç”± KeyboardManager é€²è¡Œç®¡ç†
+            for (key = 0; key < 4; key++)
             {
                 // Alpha1 ~ Alpha4
                 if (Input.GetKeyDown((KeyCode)(key + KEY_OFFSET)))
@@ -55,8 +56,8 @@ namespace udemy
                 }
             }
 
-            // NOTE: ¥Ø«e¬O³Q¿ï¨ìªº button ·|¦³¬õ¦âÂoÃè¡A¦ı«ö¤F·Æ¹««á¡AÃC¦â´N·|®ø¥¢
-            // TODO: button «e¤èÂĞ»\¤è®Ø¡A³Q¿ï¾Ü®É¡A¤è®Ø²¾°Ê¨ì button «e­±
+            // NOTE: ç›®å‰æ˜¯è¢«é¸åˆ°çš„ button æœƒæœ‰ç´…è‰²æ¿¾é¡ï¼Œä½†æŒ‰äº†æ»‘é¼ å¾Œï¼Œé¡è‰²å°±æœƒæ¶ˆå¤±
+            // TODO: button å‰æ–¹è¦†è“‹æ–¹æ¡†ï¼Œè¢«é¸æ“‡æ™‚ï¼Œæ–¹æ¡†ç§»å‹•åˆ° button å‰é¢
             if (Input.GetKeyDown(KeyCode.Tab) && buttons.Length > 1)
             {
                 // If there are, check if either shift key is being pressed

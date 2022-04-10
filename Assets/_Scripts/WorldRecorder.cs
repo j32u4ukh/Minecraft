@@ -7,6 +7,7 @@ using System.IO;
 
 namespace udemy
 {
+    // TODO: 是否轉為 JSON 來儲存？
     public static class WorldRecorder
     {
         // C:\Users\PC\AppData\LocalLow\DefaultCompany\Minecraft\recorder
@@ -24,10 +25,10 @@ namespace udemy
 
             BinaryFormatter bf = new BinaryFormatter();
             FileStream file = File.Open(path, FileMode.OpenOrCreate);
-            Debug.Log($"Save WorldData player @ ({wd.player_x}, {wd.player_y}, {wd.player_z})");
+            Debug.Log($"[WorldRecorder] save | Save WorldData player @ ({wd.player_x}, {wd.player_y}, {wd.player_z})");
             bf.Serialize(file, wd);
             file.Close();
-            Debug.Log($"Saving world to file: {path}");
+            Debug.Log($"[WorldRecorder] save | Saving world to file: {path}");
         }
 
         public static WorldData load()
@@ -42,7 +43,7 @@ namespace udemy
                 WorldData wd = (WorldData)bf.Deserialize(file);
                 
                 file.Close();
-                Debug.Log($"Loading world from file: {path}");
+                Debug.Log($"[WorldRecorder] load | Loading world from file: {path}");
 
                 return wd;
             }

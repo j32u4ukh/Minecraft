@@ -12,7 +12,7 @@ namespace udemy
         void Start()
         {
             DropBlock drop_block = Instantiate(drop_block_prefab).GetComponent<DropBlock>();
-            drop_block.init(BlockType.DIRT, location: new Vector3Int(1, 5, 1));
+            drop_block.init(BlockType.Dirt, location: new Vector3Int(1, 5, 1));
         }
 
         // Update is called once per frame

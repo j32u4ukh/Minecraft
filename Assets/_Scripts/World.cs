@@ -763,14 +763,14 @@ namespace udemy
 
                 // NOTE: 當方塊掉往的 Chunk 尚未被建構，可能發生 chunk_below == null
                 // 檢查下方是否有掉落空間
-                if (chunk_below != null && chunk_below.getBlockType(block_below_index).Equals(BlockType.AIR))
+                if (chunk_below != null && chunk_below.getBlockType(block_below_index).Equals(BlockType.Air))
                 {
                     // 方塊落往 chunk_below
                     chunk_below.setBlockType(index: block_below_index, block_type: block_type);
                     chunk_below.setCrackState(index: block_below_index);
 
                     // 更新當前方塊
-                    chunk.setBlockType(index: block_index, block_type: BlockType.AIR);
+                    chunk.setBlockType(index: block_index, block_type: BlockType.Air);
                     chunk.setCrackState(index: block_index);
 
                     // 考慮當前方塊的上方一格是否會觸發掉落機制
@@ -853,7 +853,7 @@ namespace udemy
             int block_neighbor_index = vector3IntToFlat(location.Item2);
 
             // 若該方向有空間可溢出(方塊類型為 BlockType.AIR)
-            if (neighbor_chunk.getBlockType(block_neighbor_index).Equals(BlockType.AIR))
+            if (neighbor_chunk.getBlockType(block_neighbor_index).Equals(BlockType.Air))
             {
                 // 取得當前方塊索引值
                 int block_index = vector3IntToFlat(block_position);

@@ -1,7 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
 namespace udemy
 {
     public enum BlockSide
@@ -16,8 +12,7 @@ namespace udemy
 
     public enum BlockType
     {
-        GRASSTOP, GRASSSIDE, DIRT, WATER, STONE, LEAVES, WOOD, WOODBASE, FOREST, CACTUS, CACTUSBASE, SAND, GOLD, BEDROCK, REDSTONE, DIAMOND, NOCRACK,
-        CRACK1, CRACK2, CRACK3, CRACK4, AIR
+        GrassTop, GrassSide, Dirt, Water, Stone, Leaves, Wood, WoodBase, Forest, Cactus, CactusBase, Sand, Gold, BedRock, RedStone, Diamond, Air
     };
 
     public enum CrackState

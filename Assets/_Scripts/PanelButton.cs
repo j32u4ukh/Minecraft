@@ -10,7 +10,7 @@ namespace udemy
     {
         public Button button; 
         
-        [SerializeField] private BlockType block_type = BlockType.DIRT;
+        [SerializeField] private BlockType block_type = BlockType.Dirt;
 
         // Start is called before the first frame update
         void Start()

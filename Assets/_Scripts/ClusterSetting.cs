@@ -1,25 +1,25 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 namespace udemy
 {
     [CreateAssetMenu(fileName = "New ClusterSetting", menuName = "Cluster", order = 0)]
     public class ClusterSetting : ScriptableObject
     {
-        [Header("Å|¥[ PerlinNoise ¼h¼Æ")]
+        [Header("ç–ŠåŠ  PerlinNoise å±¤æ•¸")]
         [Min(1)]
         public int octaves = 1;
 
-        [Header("ÁY©ñ¨ú¼ËÂIªº®y¼Ğ")]
+        [Header("ç¸®æ”¾å–æ¨£é»çš„åº§æ¨™")]
         [Range(0.0f, 1.0f)]
         public float scale = 0.5f;
 
-        [Header("ÁY©ñªi«¬ªº¾_´T")]
+        [Header("ç¸®æ”¾æ³¢å‹çš„éœ‡å¹…")]
         public float height_scale = 2;
 
-        [Header("¥Ø¼Ğ®ü©Ş°ª«×")]
+        [Header("ç›®æ¨™æµ·æ‹”é«˜åº¦")]
         public float altitude = 1f;
 
-        [Header("Ãä¬É©w¸q¼Æ­È")]
+        [Header("é‚Šç•Œå®šç¾©æ•¸å€¼")]
         public float boundary = 1f;
 
         public float fBM3D(float x, float y, float z)
