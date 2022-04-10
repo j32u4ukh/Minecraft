@@ -25,6 +25,8 @@ namespace udemy
                 Debug.Log($"[DetectArea] OnTriggerEnter | Get dirt block.");
                 InventoryData data = Resources.Load<InventoryData>("ComponentDatas/ActionData/Dirt");
                 store.addAction(data: data, number: 1);
+
+                // TODO: 撿取物品後，將場景內的 3D 物品刪除
             }
         }
     }

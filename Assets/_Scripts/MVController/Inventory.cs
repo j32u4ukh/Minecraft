@@ -232,7 +232,7 @@ namespace udemy
             {
                 if (slots[i].item != null)
                 {
-                    slotStrings[i].itemID = slots[i].item.GetItemID();
+                    slotStrings[i].itemID = slots[i].item.getID();
                     slotStrings[i].number = slots[i].number;
                 }
             }

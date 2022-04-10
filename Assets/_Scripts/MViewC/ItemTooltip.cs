@@ -9,15 +9,13 @@ namespace udemy
     public class ItemTooltip : MonoBehaviour
     {
         // CONFIG DATA
-        [SerializeField] TextMeshProUGUI titleText = null;
-        [SerializeField] TextMeshProUGUI bodyText = null;
+        [SerializeField] TextMeshProUGUI title_text = null;
+        [SerializeField] TextMeshProUGUI body_text = null;
 
-        // PUBLIC
-
-        public void Setup(InventoryData item)
+        public void setup(InventoryData item)
         {
-            titleText.text = item.GetDisplayName();
-            bodyText.text = item.GetDescription();
+            title_text.text = item.getDisplayName();
+            body_text.text = item.getDescription();
         }
     }
 }

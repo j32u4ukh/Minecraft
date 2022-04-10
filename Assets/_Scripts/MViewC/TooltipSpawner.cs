@@ -14,92 +14,139 @@ namespace udemy
     {
         // CONFIG DATA
         [Tooltip("The prefab of the tooltip to spawn.")]
-        [SerializeField] GameObject tooltipPrefab = null;
+        [SerializeField] GameObject prefab = null;
 
         // PRIVATE STATE
         GameObject tooltip = null;
+        RectTransform tooltip_rect_transform;
+
+        Canvas canvas;
+        RectTransform rect_transform;
+
+        private void Awake()
+        {
+            canvas = GetComponentInParent<Canvas>();
+            rect_transform = GetComponent<RectTransform>();
+        }
 
         /// <summary>
         /// Called when it is time to update the information on the tooltip
         /// prefab.
         /// </summary>
-        /// <param name="tooltip">
+        /// <param name="obj">
         /// The spawned tooltip prefab for updating.
         /// </param>
-        public abstract void UpdateTooltip(GameObject tooltip);
+        public abstract void updateTooltip(GameObject obj);
 
         /// <summary>
         /// Return true when the tooltip spawner should be allowed to create a tooltip.
+        /// 是否可產生提示
         /// </summary>
-        public abstract bool CanCreateTooltip();
+        public abstract bool canCreateTooltip();
 
         // PRIVATE
 
         private void OnDestroy()
         {
-            ClearTooltip();
+            clearTooltip();
         }
 
         private void OnDisable()
         {
-            ClearTooltip();
+            clearTooltip();
         }
 
+        #region 實作 IPointerEnterHandler
+        /// <summary>
+        /// 當滑鼠移入
+        /// </summary>
+        /// <param name="eventData"></param>
         void IPointerEnterHandler.OnPointerEnter(PointerEventData eventData)
         {
-            var parentCanvas = GetComponentInParent<Canvas>();
-
-            if (tooltip && !CanCreateTooltip())
+            if (tooltip && !canCreateTooltip())
             {
-                ClearTooltip();
+                clearTooltip();
             }
 
-            if (!tooltip && CanCreateTooltip())
+            if (!tooltip && canCreateTooltip())
             {
-                tooltip = Instantiate(tooltipPrefab, parentCanvas.transform);
+                tooltip = Instantiate(prefab, canvas.transform);
+                tooltip_rect_transform = tooltip.GetComponent<RectTransform>();
             }
 
             if (tooltip)
             {
-                UpdateTooltip(tooltip);
-                PositionTooltip();
+                updateTooltip(tooltip);
+                locateTooltip();
             }
         }
 
-        private void PositionTooltip()
+        /// <summary>
+        /// 定位提示位置
+        /// </summary>
+        private void locateTooltip()
         {
             // Required to ensure corners are updated by positioning elements.
             Canvas.ForceUpdateCanvases();
 
-            var tooltipCorners = new Vector3[4];
-            tooltip.GetComponent<RectTransform>().GetWorldCorners(tooltipCorners);
-            var slotCorners = new Vector3[4];
-            GetComponent<RectTransform>().GetWorldCorners(slotCorners);
+            Vector3[] tooltip_corners = new Vector3[4];
+            tooltip_rect_transform.GetWorldCorners(tooltip_corners);
+
+            Vector3[] slot_corners = new Vector3[4];
+            rect_transform.GetWorldCorners(slot_corners);
 
             bool below = transform.position.y > Screen.height / 2;
             bool right = transform.position.x < Screen.width / 2;
 
-            int slotCorner = GetCornerIndex(below, right);
-            int tooltipCorner = GetCornerIndex(!below, !right);
+            int slot_corner = getCornerIndex(below, right);
+            int tooltip_corner = getCornerIndex(!below, !right);
 
-            tooltip.transform.position = slotCorners[slotCorner] - tooltipCorners[tooltipCorner] + tooltip.transform.position;
+            tooltip.transform.position = slot_corners[slot_corner] - tooltip_corners[tooltip_corner] + tooltip.transform.position;
         }
 
-        private int GetCornerIndex(bool below, bool right)
+        /// <summary>
+        /// 根據角落的位置，取得角落對應的索引值
+        /// </summary>
+        /// <param name="below"></param>
+        /// <param name="right"></param>
+        /// <returns></returns>
+        private int getCornerIndex(bool below, bool right)
         {
-            if (below && !right) return 0;
-            else if (!below && !right) return 1;
-            else if (!below && right) return 2;
-            else return 3;
-
+            if (below && !right)
+            {
+                return 0;
+            }
+            else if (!below && !right)
+            {
+                return 1;
+            }
+            else if (!below && right)
+            {
+                return 2;
+            }
+            else
+            {
+                return 3;
+            }
         }
+        #endregion
 
+
+        #region 實作 IPointerExitHandler
+        /// <summary>
+        /// 當滑鼠離開
+        /// </summary>
+        /// <param name="eventData"></param>
         void IPointerExitHandler.OnPointerExit(PointerEventData eventData)
         {
-            ClearTooltip();
-        }
+            clearTooltip();
+        } 
+        #endregion
 
-        private void ClearTooltip()
+        /// <summary>
+        /// 刪除現有提示
+        /// </summary>
+        private void clearTooltip()
         {
             if (tooltip)
             {

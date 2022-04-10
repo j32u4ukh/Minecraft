@@ -15,40 +15,43 @@ namespace udemy
     public class InventoryIcon : MonoBehaviour
     {
         // CONFIG DATA
-        [SerializeField] GameObject textContainer = null;
-        [SerializeField] TextMeshProUGUI itemNumber = null;
+        [SerializeField] GameObject count_obj = null;
+        [SerializeField] TextMeshProUGUI count_text = null;
 
-        // PUBLIC
+        Image icon;
 
-        public void SetItem(InventoryData item)
+        private void Start()
         {
-            SetItem(item, 0);
+            icon = GetComponent<Image>();
         }
 
-        public void SetItem(InventoryData item, int number)
+        public void setItem(InventoryData item)
         {
-            var iconImage = GetComponent<Image>();
+            setItem(item, 0);
+        }
 
+        public void setItem(InventoryData item, int number)
+        {
             if (item == null)
             {
-                iconImage.enabled = false;
+                icon.enabled = false;
             }
             else
             {
-                iconImage.enabled = true;
-                iconImage.sprite = item.GetIcon();
+                icon.enabled = true;
+                icon.sprite = item.getIcon();
             }
 
-            if (itemNumber)
+            if (count_text)
             {
                 if (number <= 1)
                 {
-                    textContainer.SetActive(false);
+                    count_obj.SetActive(false);
                 }
                 else
                 {
-                    textContainer.SetActive(true);
-                    itemNumber.text = number.ToString();
+                    count_obj.SetActive(true);
+                    count_text.text = number.ToString();
                 }
             }
         }

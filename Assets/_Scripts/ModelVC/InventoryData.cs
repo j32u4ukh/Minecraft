@@ -90,12 +90,12 @@ namespace udemy
             return pickup;
         }
 
-        public Sprite GetIcon()
+        public Sprite getIcon()
         {
             return icon;
         }
 
-        public string GetItemID()
+        public string getID()
         {
             return id;
         }
@@ -105,18 +105,19 @@ namespace udemy
             return stackable;
         }
 
-        public string GetDisplayName()
+        public string getDisplayName()
         {
             return display_name;
         }
 
-        public string GetDescription()
+        public string getDescription()
         {
             return description;
         }
 
         // PRIVATE
 
+        #region ¹ê§@ ISerializationCallbackReceiver
         void ISerializationCallbackReceiver.OnBeforeSerialize()
         {
             // Generate and save a new UUID if this is blank.
@@ -130,6 +131,7 @@ namespace udemy
         {
             // Require by the ISerializationCallbackReceiver but we don't need
             // to do anything with it.
-        }
+        } 
+        #endregion
     }
 }

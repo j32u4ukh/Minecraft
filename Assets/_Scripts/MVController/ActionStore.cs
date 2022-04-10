@@ -48,7 +48,7 @@ namespace udemy
         /// <summary>
         /// Get the action at the given index.
         /// </summary>
-        public ActionData GetAction(int index)
+        public ActionData getActionData(int index)
         {
             if (docked_items.ContainsKey(index))
             {
@@ -65,7 +65,7 @@ namespace udemy
         /// Will return 0 if no item is in the index or the item has
         /// been fully consumed.
         /// </returns>
-        public int GetNumber(int index)
+        public int getNumber(int index)
         {
             if (docked_items.ContainsKey(index))
             {
@@ -189,7 +189,7 @@ namespace udemy
                 docked_items[index].item.Use(user);
                 if (docked_items[index].item.isConsumable())
                 {
-                    RemoveItems(index, 1);
+                    removeItems(index, 1);
                 }
                 return true;
             }
@@ -198,8 +198,11 @@ namespace udemy
 
         /// <summary>
         /// Remove a given number of items from the given slot.
+        /// 從指定欄位中移出物品，若數量歸 0，則從管理的字典中移除。
         /// </summary>
-        public void RemoveItems(int index, int number)
+        /// <param name="index"></param>
+        /// <param name="number"></param>
+        public void removeItems(int index, int number)
         {
             if (docked_items.ContainsKey(index))
             {
@@ -212,7 +215,6 @@ namespace udemy
 
                 storeUpdated?.Invoke();
             }
-
         }
 
         /// <summary>
@@ -286,7 +288,7 @@ namespace udemy
             foreach (var pair in docked_items)
             {
                 var record = new DockedItemRecord();
-                record.itemID = pair.Value.item.GetItemID();
+                record.itemID = pair.Value.item.getID();
                 record.number = pair.Value.number;
                 state[pair.Key] = record;
             }

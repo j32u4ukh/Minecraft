@@ -69,7 +69,7 @@ namespace udemy
             var droppedItemsList = new DropRecord[droppedItems.Count];
             for (int i = 0; i < droppedItemsList.Length; i++)
             {
-                droppedItemsList[i].itemID = droppedItems[i].GetItem().GetItemID();
+                droppedItemsList[i].itemID = droppedItems[i].GetItem().getID();
                 droppedItemsList[i].position = new SerializableVector3(droppedItems[i].transform.position);
                 droppedItemsList[i].number = droppedItems[i].GetNumber();
             }
@@ -81,7 +81,7 @@ namespace udemy
             var droppedItemsList = (DropRecord[])state;
             foreach (var item in droppedItemsList)
             {
-                var pickupItem = InventoryData.getById(item.itemID);
+                InventoryData pickupItem = InventoryData.getById(item.itemID);
                 Vector3 position = item.position.ToVector();
                 int number = item.number;
                 SpawnPickup(pickupItem, position, number);

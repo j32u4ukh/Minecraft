@@ -104,7 +104,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f71bccef50102c842a601755bd4393c2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tooltipPrefab: {fileID: 6796662661069912602, guid: 55ec75d1cd022cb489f45691d5672df5, type: 3}
+  prefab: {fileID: 6796662661069912602, guid: 55ec75d1cd022cb489f45691d5672df5, type: 3}
 --- !u!1001 &7958894574751535060
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -160,7 +160,7 @@ namespace udemy
         /// <returns></returns>
         private bool attemptSimpleTransfer(IDragDestination<T> destination)
         {
-            Debug.Log($"[DragItem] attemptSimpleTransfer | destination: {destination}");
+            //Debug.Log($"[DragItem] attemptSimpleTransfer | destination: {destination}");
 
             // 被拖曳的物品
             T draggingItem = source.getItem();
@@ -183,7 +183,7 @@ namespace udemy
                 // 目標欄位的物品數量增加 toTransfer 個
                 destination.addItems(draggingItem, toTransfer);
 
-                Debug.Log($"[DragItem] attemptSimpleTransfer | source: {source}, toTransfer: {toTransfer}");
+                //Debug.Log($"[DragItem] attemptSimpleTransfer | source: {source}, toTransfer: {toTransfer}");
 
                 return false;
             }
@@ -199,7 +199,7 @@ namespace udemy
         /// <param name="source"></param>
         private void attemptSwap(IDragContainer<T> destination, IDragContainer<T> source)
         {
-            Debug.Log($"[DragItem] attemptSimpleTransfer | destination: {destination}, source: {source}");
+            //Debug.Log($"[DragItem] attemptSimpleTransfer | destination: {destination}, source: {source}");
 
             #region 暫時將物品從兩邊都移除。Provisionally remove item from both sides.
             T source_item = source.getItem();
