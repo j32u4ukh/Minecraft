@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 
 namespace udemy
@@ -17,6 +17,9 @@ namespace udemy
         [Tooltip("Does an instance of this item get consumed every time it's used.")]
         [SerializeField] bool consumable = false;
 
+        [Tooltip("同一個欄位中的最大容量")]
+        [SerializeField] int capacity = 1;
+
         // PUBLIC
 
         /// <summary>
@@ -31,6 +34,15 @@ namespace udemy
         public bool isConsumable()
         {
             return consumable;
+        }
+
+        /// <summary>
+        /// 同一個欄位中的最大容量
+        /// </summary>
+        /// <returns></returns>
+        public int getCapacity()
+        {
+            return capacity;
         }
     }
 }

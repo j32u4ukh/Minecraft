@@ -22,13 +22,13 @@ namespace udemy
         /// </summary>
         /// <param name="item"></param>
         /// <param name="number"></param>
-        public void AddItems(InventoryData item, int number)
+        public void addItems(InventoryData item, int number)
         {
             Debug.Log($"[InventoryDropTarget] AddItems | item: {item}, number: {number}");
             //player.GetComponent<ItemDropper>().DropItem(item, number);
         }
 
-        public int MaxAcceptable(InventoryData item)
+        public int getCapacity(InventoryData item)
         {
             return int.MaxValue;
         }

@@ -26,27 +26,27 @@ namespace udemy
 
         // PUBLIC
 
-        public void AddItems(InventoryData item, int number)
+        public void addItems(InventoryData item, int number)
         {
-            store.AddAction(item, index, number);
+            store.addAction(item, index, number);
         }
 
-        public InventoryData GetItem()
+        public InventoryData getItem()
         {
             return store.GetAction(index);
         }
 
-        public int GetNumber()
+        public int getNumber()
         {
             return store.GetNumber(index);
         }
 
-        public int MaxAcceptable(InventoryData item)
+        public int getCapacity(InventoryData item)
         {
-            return store.getAcceptableNumber(item, index);
+            return store.getCapacity(item, index);
         }
 
-        public void RemoveItems(int number)
+        public void removeItems(int number)
         {
             store.RemoveItems(index, number);
         }
@@ -55,7 +55,7 @@ namespace udemy
 
         void UpdateIcon()
         {
-            icon.SetItem(GetItem(), GetNumber());
+            icon.SetItem(getItem(), getNumber());
         }
     }
 }

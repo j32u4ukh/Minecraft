@@ -23,14 +23,8 @@ namespace udemy
             if (other.gameObject.name.ToLower().Equals("dirt"))
             {
                 Debug.Log($"[DetectArea] OnTriggerEnter | Get dirt block.");
-                InventoryData data = Resources.Load<InventoryData>("Dirt");
-
-                if(data == null)
-                {
-                    data = Resources.Load<InventoryData>("ComponentDatas/ActionData/Dirt");
-                }
-
-                store.AddAction(item: data, index: 1, number: 1);
+                InventoryData data = Resources.Load<InventoryData>("ComponentDatas/ActionData/Dirt");
+                store.addAction(data: data, number: 1);
             }
         }
     }

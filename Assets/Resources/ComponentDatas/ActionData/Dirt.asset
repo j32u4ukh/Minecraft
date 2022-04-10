@@ -19,3 +19,4 @@ MonoBehaviour:
   pickup: {fileID: 0}
   stackable: 1
   consumable: 0
+  capacity: 3

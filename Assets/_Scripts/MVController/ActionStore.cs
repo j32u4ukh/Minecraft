@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -18,6 +18,9 @@ namespace udemy
             public int number;
         }
 
+        int GRID_SIZE = 9;
+        int[] grid_indexs;
+
         // STATE
         Dictionary<int, DockedItemSlot> docked_items = new Dictionary<int, DockedItemSlot>();
 
@@ -27,6 +30,20 @@ namespace udemy
         /// Broadcasts when the items in the slots are added/removed.
         /// </summary>
         public event Action storeUpdated;
+
+        private void Awake()
+        {
+            grid_indexs = new int[GRID_SIZE];
+
+            int i, size0 = 9;
+
+            for(i = 0; i < size0; i++)
+            {
+                grid_indexs[i] = i;
+            }
+
+            // TODO: 背包索引值或許將不會從 9 繼續編號
+        }
 
         /// <summary>
         /// Get the action at the given index.
@@ -59,13 +76,86 @@ namespace udemy
         }
 
         /// <summary>
+        /// 自動尋找存放相同物品的欄位並放入；
+        /// 若沒有現存物品，則尋找空格放入；
+        /// 若沒有空格則會放入失敗。
+        /// </summary>
+        /// <param name="data">要放入的物品</param>
+        /// <param name="number">要放入的數量</param>
+        /// <returns>是否放入成功</returns>
+        public bool addAction(InventoryData data, int number)
+        {
+            ActionData action_data = data as ActionData;
+
+            // data 無法轉型為 ActionData
+            if (!action_data)
+            {
+                return false;
+            }
+
+            int index = -1, capacity, n_added;
+            bool need_update = false;
+
+            foreach(int i in grid_indexs)
+            {
+                if (docked_items.ContainsKey(i))
+                {
+                    DockedItemSlot docked_item = docked_items[i];
+
+                    if(ReferenceEquals(docked_item.item, data))
+                    {
+                        capacity = action_data.getCapacity() - docked_items[i].number;
+
+                        // 若欄位容量大於 0，表示可以物品可移入此欄位
+                        need_update = capacity > 0;
+
+                        if (need_update)
+                        {
+                            // 考慮欄位容量 以及 要放入的數量，取得 實際放入的個數
+                            n_added = Math.Min(capacity, number);
+
+                            // 更新欄位內物品數量
+                            docked_items[i].number += n_added;
+
+                            // 更新要新增的物品數量
+                            number -= n_added;
+                        }
+                    }
+                }
+
+                // 第 i 個欄位為空格 且 之前尚未發現空格(因此 index 仍維持 -1)
+                else if (index.Equals(-1))
+                {
+                    index = i;
+                }
+            }
+
+            // 若前面的步驟中還沒將要新增的物品放完，則將物品放入前一步驟中找到的空格
+            if (!index.Equals(-1) && number > 0)
+            {
+                DockedItemSlot docked_item = new DockedItemSlot();
+                docked_item.item = data as ActionData;
+                docked_item.number = number;
+                docked_items.Add(index, docked_item);
+                need_update = true;
+            }
+
+            if (need_update)
+            {
+                storeUpdated?.Invoke();
+            }
+
+            return need_update;
+        }
+
+        /// <summary>
         /// Add an item to the given index.
-        /// TODO: �۰ʧ�Ů��J�A�Y�L�Ů�h�L�k��J
+        /// TODO: 自動找空格放入，若無空格則無法放入
         /// </summary>
         /// <param name="item">What item should be added.</param>
         /// <param name="index">Where should the item be added.</param>
         /// <param name="number">How many items to add.</param>
-        public void AddAction(InventoryData item, int index, int number)
+        public void addAction(InventoryData item, int index, int number)
         {
             if (docked_items.ContainsKey(index))
             {
@@ -83,10 +173,7 @@ namespace udemy
                 docked_items.Add(index, slot);
             }
 
-            if (storeUpdated != null)
-            {
-                storeUpdated();
-            }
+            storeUpdated?.Invoke();
         }
 
         /// <summary>
@@ -117,14 +204,13 @@ namespace udemy
             if (docked_items.ContainsKey(index))
             {
                 docked_items[index].number -= number;
+
                 if (docked_items[index].number <= 0)
                 {
                     docked_items.Remove(index);
                 }
-                if (storeUpdated != null)
-                {
-                    storeUpdated();
-                }
+
+                storeUpdated?.Invoke();
             }
 
         }
@@ -132,41 +218,56 @@ namespace udemy
         /// <summary>
         /// What is the maximum number of items allowed in this slot.
         /// 
-        /// �ۦP���~�B�����ӫ~�A�~��֥[�|��F�_�h���u���@�Ӫ��~�C
-        /// TODO: �j���������|�[�A�ھڤ��P���~�|�����P���|�[�ƶq�W��
+        /// 相同物品且為消耗品，才能累加疊放；否則都只能放一個物品。
+        /// TODO: 大部分都能疊加，根據不同物品會有不同的疊加數量上限
         /// This takes into account whether the slot already contains an item and whether it is the same type. 
         /// Will only accept multiple if the item is consumable.
         /// </summary>
         /// <returns>Will return int.MaxValue when there is not effective bound.</returns>
-        public int getAcceptableNumber(InventoryData item, int index)
+        public int getCapacity(InventoryData item, int index)
         {
-            var action_item = item as ActionData;
+            ActionData action_item = item as ActionData;
 
-            // actionItem �L�k�૬�� ActionData
+            // actionItem 無法轉型為 ActionData
             if (!action_item)
             {
                 return 0;
             }
 
-            // index ���V����m�w�񦳪��~�A���n���J�����~�P�{�����~�������P
-            if (docked_items.ContainsKey(index) && !ReferenceEquals(item, docked_items[index].item))
+            // index 指向的欄位為空，可放入數量等同於 item 在同一欄為最大容量
+            if (!docked_items.ContainsKey(index))
+            {
+                return action_item.getCapacity();                
+            }
+
+            // index 指向的位置已放有物品，但要移入的物品與現有物品種類不同
+            else if (!ReferenceEquals(action_item, docked_items[index].item))
             {
                 return 0;
             }
 
-            // �Y���~�����ӫ~�A�S���s��W��
-            if (action_item.isConsumable())
+            // index 指向的位置已放有物品，返回還可以放多少進去
+            else
             {
-                return int.MaxValue;
+                // item 在同一個欄位中的最大容量 扣掉 已存在的數量
+                int capacity = action_item.getCapacity() - docked_items[index].number;
+
+                return Math.Max(capacity, 0);
             }
 
-            // index ���V����m�w�񦳪��~�A�B�D���ӫ~
-            if (docked_items.ContainsKey(index))
-            {
-                return 0;
-            }
+            //// 若物品為消耗品，沒有存放上限
+            //if (action_item.isConsumable())
+            //{
+            //    return int.MaxValue;
+            //}
 
-            return 1;
+            //// index 指向的位置已放有物品，且非消耗品
+            //if (docked_items.ContainsKey(index))
+            //{
+            //    return 0;
+            //}
+
+            //return 1;
         }
 
         /// PRIVATE
@@ -199,7 +300,7 @@ namespace udemy
 
             foreach (var pair in stateDict)
             {
-                AddAction(InventoryData.getById(pair.Value.itemID), pair.Key, pair.Value.number);
+                addAction(InventoryData.getById(pair.Value.itemID), pair.Key, pair.Value.number);
             }
         }
     }

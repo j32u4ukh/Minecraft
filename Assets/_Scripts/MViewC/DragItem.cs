@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -35,60 +35,60 @@ namespace udemy
             canvas_group = GetComponent<CanvasGroup>();
         }
 
-        #region ¹ê§@ IBeginDragHandler
-        // ¶}©l©ì¦²ªºÀş¶¡
+        #region å¯¦ä½œ IBeginDragHandler
+        // é–‹å§‹æ‹–æ›³çš„ç¬é–“
         void IBeginDragHandler.OnBeginDrag(PointerEventData eventData)
         {
             start_position = transform.position;
             original_parent = transform.parent;
 
-            // ¤¹³\ Raycast ¤~¯à¨Ï¥Î©ì¦²¥\¯à
+            // å…è¨± Raycast æ‰èƒ½ä½¿ç”¨æ‹–æ›³åŠŸèƒ½
             canvas_group.blocksRaycasts = false;
 
-            // ³] Canvas §@¬°¤÷ª«¥ó
+            // è¨­ Canvas ä½œç‚ºçˆ¶ç‰©ä»¶
             transform.SetParent(canvas.transform, true);
         }
         #endregion
 
-        #region ¹ê§@ IDragHandler
-        // ©ì¦²ª««~¤¤
+        #region å¯¦ä½œ IDragHandler
+        // æ‹–æ›³ç‰©å“ä¸­
         void IDragHandler.OnDrag(PointerEventData eventData)
         {
             transform.position = eventData.position;
         }
         #endregion
 
-        #region ¹ê§@ IEndDragHandler
-        // ±q©ì¦²ª¬ºA¤U©ñ¶}·Æ¹«ªºÀş¶¡
+        #region å¯¦ä½œ IEndDragHandler
+        // å¾æ‹–æ›³ç‹€æ…‹ä¸‹æ”¾é–‹æ»‘é¼ çš„ç¬é–“
         void IEndDragHandler.OnEndDrag(PointerEventData eventData)
         {
-            // ¬Û¹ï©ó­ì¤÷ª«¥óªº¦ì¸m
+            // ç›¸å°æ–¼åŸçˆ¶ç‰©ä»¶çš„ä½ç½®
             transform.position = start_position;
 
-            // Á×§K UI ¾×¦í Raycast
+            // é¿å… UI æ“‹ä½ Raycast
             canvas_group.blocksRaycasts = true;
 
-            // ÁÙ­ì¤÷ª«¥ó
+            // é‚„åŸçˆ¶ç‰©ä»¶
             transform.SetParent(original_parent, true);
 
             IDragDestination<T> container;
 
-            // ­Y pointer ¨S¦³¦b¹CÀ¸ª«¥ó¤W
+            // è‹¥ pointer æ²’æœ‰åœ¨éŠæˆ²ç‰©ä»¶ä¸Š
             if (!EventSystem.current.IsPointerOverGameObject())
             {
-                // ¥H canvas §@¬°³Q©ì¦²ª««~ªº¤÷ª«¥ó(¤§«áÀ³¦b³õ´º¤¤¥Í¦¨¬Û¹ïÀ³ªº 3D ª««~)
-                // PS: ¨Ã­¸³u±N canvas ¤Uªº 2D ª««~§R°£¡A¦Ó¬O¦b«e­±´N±N InventoryItem ªº¤÷ª«¥óÁÙ­ì¦¨­ì¥»ªºÄæ¦ì
+                // ä»¥ canvas ä½œç‚ºè¢«æ‹–æ›³ç‰©å“çš„çˆ¶ç‰©ä»¶(ä¹‹å¾Œæ‡‰åœ¨å ´æ™¯ä¸­ç”Ÿæˆç›¸å°æ‡‰çš„ 3D ç‰©å“)
+                // PS: ä¸¦é£›é€å°‡ canvas ä¸‹çš„ 2D ç‰©å“åˆªé™¤ï¼Œè€Œæ˜¯åœ¨å‰é¢å°±å°‡ InventoryItem çš„çˆ¶ç‰©ä»¶é‚„åŸæˆåŸæœ¬çš„æ¬„ä½
                 container = canvas.GetComponent<IDragDestination<T>>();
             }
 
-            // ­Y pointer ¦b¹CÀ¸ª«¥ó¤W
+            // è‹¥ pointer åœ¨éŠæˆ²ç‰©ä»¶ä¸Š
             else
             {
-                // ¹Á¸Õ¨ú±o¸Óª«¥óªº IDragDestination ¥H©ñ¸m³Q©ì¦²ªºª««~
+                // å˜—è©¦å–å¾—è©²ç‰©ä»¶çš„ IDragDestination ä»¥æ”¾ç½®è¢«æ‹–æ›³çš„ç‰©å“
                 container = getContainer(eventData);
             }
 
-            // ­Y©ì¦²ªº²×ÂI¤£¬° null¡A±N³Q©ì¦²ªºª««~©ñ¤J container
+            // è‹¥æ‹–æ›³çš„çµ‚é»ä¸ç‚º nullï¼Œå°‡è¢«æ‹–æ›³çš„ç‰©å“æ”¾å…¥ container
             if (container != null)
             {
                 dropItemIntoContainer(container);
@@ -96,8 +96,8 @@ namespace udemy
         }
 
         /// <summary>
-        /// ©ó pointer «ü¦Vªºª«¥ó»P¨ä¤÷ª«¥ó·í¤¤·j´M IDragDestination¡A¨Ãªğ¦^§t¦³ IDragDestination ªºª«¥ó¡C
-        /// ¥Ñ©ó·|¤@ª½©¹¤W¼h´M§ä¡A³Ì²×±N·|´M§ä¨ì canvas ¨Ãªğ¦^¡F°£«D«ü¦Vªºª«¥ó¤£Äİ©ó UI¡A¦Ó¬O«ü¦V¹CÀ¸ªÅ¶¡µ¥¦a¤è¡C
+        /// æ–¼ pointer æŒ‡å‘çš„ç‰©ä»¶èˆ‡å…¶çˆ¶ç‰©ä»¶ç•¶ä¸­æœå°‹ IDragDestinationï¼Œä¸¦è¿”å›å«æœ‰ IDragDestination çš„ç‰©ä»¶ã€‚
+        /// ç”±æ–¼æœƒä¸€ç›´å¾€ä¸Šå±¤å°‹æ‰¾ï¼Œæœ€çµ‚å°‡æœƒå°‹æ‰¾åˆ° canvas ä¸¦è¿”å›ï¼›é™¤éæŒ‡å‘çš„ç‰©ä»¶ä¸å±¬æ–¼ UIï¼Œè€Œæ˜¯æŒ‡å‘éŠæˆ²ç©ºé–“ç­‰åœ°æ–¹ã€‚
         /// </summary>
         /// <param name="eventData"></param>
         /// <returns></returns>
@@ -107,8 +107,8 @@ namespace udemy
 
             if (eventData.pointerEnter)
             {
-                // GetComponentInParent: ·|Àu¥ı§PÂ_ª«Åé¦Û¨­¬O§_¦³¥Ø¼Ğ²Õ¥ó¡A­Y¦³ª½±µªğ¦^¸Ó²Õ¥ó¡A¤£¹M¾ú¤÷ª«¥ó¡F
-                // ­Yª«Åé¦Û¨­¨S¦³¥Ø¼Ğ²Õ¥ó¡A¹M¾ú¤÷ª«¥ó¡A«ö·Ó¤÷ª«¥ó¶¶§Ç¬d§ä¡]¤ñ¦p¡G¥ı§PÂ_¤W¤@¼h¤÷ª«¥ó¡A­Y¨S¦³Àò¨ú¨ì¥Ø¼Ğ²Õ¥ó¡A¦A¹M¾ú¤W¤W¤@¼h¤÷ª«¥ó(¥Ø¼Ğª«Åé¯ª¤÷ª«Åé)¡A¥H¦¹»¼Âk¬d§ä¡^
+                // GetComponentInParent: æœƒå„ªå…ˆåˆ¤æ–·ç‰©é«”è‡ªèº«æ˜¯å¦æœ‰ç›®æ¨™çµ„ä»¶ï¼Œè‹¥æœ‰ç›´æ¥è¿”å›è©²çµ„ä»¶ï¼Œä¸éæ­·çˆ¶ç‰©ä»¶ï¼›
+                // è‹¥ç‰©é«”è‡ªèº«æ²’æœ‰ç›®æ¨™çµ„ä»¶ï¼Œéæ­·çˆ¶ç‰©ä»¶ï¼ŒæŒ‰ç…§çˆ¶ç‰©ä»¶é †åºæŸ¥æ‰¾ï¼ˆæ¯”å¦‚ï¼šå…ˆåˆ¤æ–·ä¸Šä¸€å±¤çˆ¶ç‰©ä»¶ï¼Œè‹¥æ²’æœ‰ç²å–åˆ°ç›®æ¨™çµ„ä»¶ï¼Œå†éæ­·ä¸Šä¸Šä¸€å±¤çˆ¶ç‰©ä»¶(ç›®æ¨™ç‰©é«”ç¥–çˆ¶ç‰©é«”)ï¼Œä»¥æ­¤éæ­¸æŸ¥æ‰¾ï¼‰
                 container = eventData.pointerEnter.GetComponentInParent<IDragDestination<T>>();
             }
 
@@ -116,45 +116,45 @@ namespace udemy
         }
 
         /// <summary>
-        /// ª««~²¾°Ê¨ì¥Ø¼ĞÄæ¦ì¡A©Î»P¥Ø¼ĞÄæ¦ìªºª««~¶i¦æ¥æ´«
+        /// ç‰©å“ç§»å‹•åˆ°ç›®æ¨™æ¬„ä½ï¼Œæˆ–èˆ‡ç›®æ¨™æ¬„ä½çš„ç‰©å“é€²è¡Œäº¤æ›
         /// </summary>
         /// <param name="destination"></param>
         private void dropItemIntoContainer(IDragDestination<T> destination)
         {
-            // ­Y²¾°Êªº ²×ÂI »P °_ÂI ¬Û¦P¡A«hª½±µªğ¦^
+            // è‹¥ç§»å‹•çš„ çµ‚é» èˆ‡ èµ·é» ç›¸åŒï¼Œå‰‡ç›´æ¥è¿”å›
             if (ReferenceEquals(source, destination))
             {
                 return;
             }
 
-            // ±N¨­¬° IDragDestination ªº destination Âà«¬¬° IDragContainer
+            // å°‡èº«ç‚º IDragDestination çš„ destination è½‰å‹ç‚º IDragContainer
             IDragContainer<T> destinationContainer = destination as IDragContainer<T>;
 
-            // ±N¨­¬° IDragSource ªº source Âà«¬¬° IDragContainer
+            // å°‡èº«ç‚º IDragSource çš„ source è½‰å‹ç‚º IDragContainer
             IDragContainer<T> sourceContainer = source as IDragContainer<T>;
 
-            // IDragContainer ¦P®É¥]§t IDragSource ©M IDragDestination¡AÂà«¬¦³¥i¯à·|¥¢±Ñªº­ì¦]¬°¦ó¡H
-            // attempt: ¹Á¸Õ¡F¦]¬° attemptSimpleTransfer ©M attemptSwap ³£¦³¥i¯à¦]¬°±ø¥ó¤£²Å¦Ó¨S¦³°õ¦æ¡A¤°»ò³£¤£°µ
+            // IDragContainer åŒæ™‚åŒ…å« IDragSource å’Œ IDragDestinationï¼Œè½‰å‹æœ‰å¯èƒ½æœƒå¤±æ•—çš„åŸå› ç‚ºä½•ï¼Ÿ
+            // attempt: å˜—è©¦ï¼›å› ç‚º attemptSimpleTransfer å’Œ attemptSwap éƒ½æœ‰å¯èƒ½å› ç‚ºæ¢ä»¶ä¸ç¬¦è€Œæ²’æœ‰åŸ·è¡Œï¼Œä»€éº¼éƒ½ä¸åš
 
             // Swap won't be possible
-            // Âà«¬¥¢±Ñ¡B©ì¦²ªº¥Øªº¦a¤£¦bºŞ²z¦Cªí¤§¤º ©Î ²¾°Êªº ²×ÂI »P °_ÂI ©Ò¦s©ñª««~¬Û¦P
-            // ¥D­n³B²z¥Ø¼ĞÄæ¦ìªÅªº¡A©Î¬O¨Ó·½Äæ¦ìªºª««~»P¥Ø¼ĞÄæ¦ìªºª««~¡A¨âªÌ¬Û¦Pªº±¡ªp¡C
+            // è½‰å‹å¤±æ•—ã€æ‹–æ›³çš„ç›®çš„åœ°ä¸åœ¨ç®¡ç†åˆ—è¡¨ä¹‹å…§ æˆ– ç§»å‹•çš„ çµ‚é» èˆ‡ èµ·é» æ‰€å­˜æ”¾ç‰©å“ç›¸åŒ
+            // ä¸»è¦è™•ç†ç›®æ¨™æ¬„ä½ç©ºçš„ï¼Œæˆ–æ˜¯ä¾†æºæ¬„ä½çš„ç‰©å“èˆ‡ç›®æ¨™æ¬„ä½çš„ç‰©å“ï¼Œå…©è€…ç›¸åŒçš„æƒ…æ³ã€‚
             if (destinationContainer == null ||
                 sourceContainer == null ||
-                destinationContainer.GetItem() == null ||
-                ReferenceEquals(destinationContainer.GetItem(), sourceContainer.GetItem()))
+                destinationContainer.getItem() == null ||
+                ReferenceEquals(destinationContainer.getItem(), sourceContainer.getItem()))
             {
                 attemptSimpleTransfer(destination);
                 return;
             }
 
-            // ³B²z¥Ø¼ĞÄæ¦ì¤£¬°ªÅ¡A©Î¨Ó·½Äæ¦ìªºª««~»P¥Ø¼ĞÄæ¦ìªºª««~¡A¨âªÌ¤£¬Û¦P¡C¨â­ÓÄæ¦ìªºª««~¥æ´«¡A©Î¤£º¡¨¬¥æ´«±ø¥ó¦Ó¤°»ò³£¤£°µ
+            // è™•ç†ç›®æ¨™æ¬„ä½ä¸ç‚ºç©ºï¼Œæˆ–ä¾†æºæ¬„ä½çš„ç‰©å“èˆ‡ç›®æ¨™æ¬„ä½çš„ç‰©å“ï¼Œå…©è€…ä¸ç›¸åŒã€‚å…©å€‹æ¬„ä½çš„ç‰©å“äº¤æ›ï¼Œæˆ–ä¸æ»¿è¶³äº¤æ›æ¢ä»¶è€Œä»€éº¼éƒ½ä¸åš
             attemptSwap(destinationContainer, sourceContainer);
         }
 
         /// <summary>
-        /// ­Y²¾¤J¥Ø¼ĞÄæ¦ì¦³ªÅ¦ì¥i©ñª««~¡A«h±Nª««~²¾¤J¡C®Ú¾ÚÄæ¦ìª¬ºA¡A¥i¯àµLªk²¾¤J¡B³¡¤À²¾¤J©Î¥ş³¡²¾¤J¡C
-        /// ¥D­n³B²z¥Ø¼ĞÄæ¦ìªÅªº¡A©Î¬O¨Ó·½Äæ¦ìªºª««~»P¥Ø¼ĞÄæ¦ìªºª««~¡A¨âªÌ¬Û¦Pªº±¡ªp¡C
+        /// è‹¥ç§»å…¥ç›®æ¨™æ¬„ä½æœ‰ç©ºä½å¯æ”¾ç‰©å“ï¼Œå‰‡å°‡ç‰©å“ç§»å…¥ã€‚æ ¹æ“šæ¬„ä½ç‹€æ…‹ï¼Œå¯èƒ½ç„¡æ³•ç§»å…¥ã€éƒ¨åˆ†ç§»å…¥æˆ–å…¨éƒ¨ç§»å…¥ã€‚
+        /// ä¸»è¦è™•ç†ç›®æ¨™æ¬„ä½ç©ºçš„ï¼Œæˆ–æ˜¯ä¾†æºæ¬„ä½çš„ç‰©å“èˆ‡ç›®æ¨™æ¬„ä½çš„ç‰©å“ï¼Œå…©è€…ç›¸åŒçš„æƒ…æ³ã€‚
         /// </summary>
         /// <param name="destination"></param>
         /// <returns></returns>
@@ -162,26 +162,26 @@ namespace udemy
         {
             Debug.Log($"[DragItem] attemptSimpleTransfer | destination: {destination}");
 
-            // ³Q©ì¦²ªºª««~
-            T draggingItem = source.GetItem();
+            // è¢«æ‹–æ›³çš„ç‰©å“
+            T draggingItem = source.getItem();
 
-            // ³Q©ì¦²ªºª««~ªº¼Æ¶q
-            int draggingNumber = source.GetNumber();
+            // è¢«æ‹–æ›³çš„ç‰©å“çš„æ•¸é‡
+            int draggingNumber = source.getNumber();
 
-            // ¥i©ñ¤JÄæ¦ìªºª««~¼Æ¶q
-            int acceptable = destination.MaxAcceptable(draggingItem);
+            // å¯æ”¾å…¥æ¬„ä½çš„ç‰©å“æ•¸é‡
+            int capacity = destination.getCapacity(draggingItem);
 
-            // ³Ì¦h¥i©ñ¤JÄæ¦ìªºª««~¼Æ¶q(¤£¶W¹LÄæ¦ì¥»¨­ªº­­¨î)
-            int toTransfer = Mathf.Min(acceptable, draggingNumber);
+            // æœ€å¤šå¯æ”¾å…¥æ¬„ä½çš„ç‰©å“æ•¸é‡(ä¸è¶…éæ¬„ä½æœ¬èº«çš„é™åˆ¶)
+            int toTransfer = Mathf.Min(capacity, draggingNumber);
 
-            // ¥i²¾¤J¥Ø¼ĞÄæ¦ì
+            // å¯ç§»å…¥ç›®æ¨™æ¬„ä½
             if (toTransfer > 0)
             {
-                // ¨Ó·½Äæ¦ìªºª««~¼Æ¶q´î¤Ö toTransfer ­Ó
-                source.RemoveItems(toTransfer);
+                // ä¾†æºæ¬„ä½çš„ç‰©å“æ•¸é‡æ¸›å°‘ toTransfer å€‹
+                source.removeItems(toTransfer);
 
-                // ¥Ø¼ĞÄæ¦ìªºª««~¼Æ¶q¼W¥[ toTransfer ­Ó
-                destination.AddItems(draggingItem, toTransfer);
+                // ç›®æ¨™æ¬„ä½çš„ç‰©å“æ•¸é‡å¢åŠ  toTransfer å€‹
+                destination.addItems(draggingItem, toTransfer);
 
                 Debug.Log($"[DragItem] attemptSimpleTransfer | source: {source}, toTransfer: {toTransfer}");
 
@@ -192,8 +192,8 @@ namespace udemy
         }
 
         /// <summary>
-        /// ¥æ´«¨âÄæ¦ìªºª««~¡C
-        /// ³B²z¥Ø¼ĞÄæ¦ì¤£¬°ªÅ¡A©Î¨Ó·½Äæ¦ìªºª««~»P¥Ø¼ĞÄæ¦ìªºª««~¡A¨âªÌ¤£¬Û¦P¡C¨â­ÓÄæ¦ìªºª««~¥æ´«¡A©Î¤£º¡¨¬¥æ´«±ø¥ó¦Ó¤°»ò³£¤£°µ
+        /// äº¤æ›å…©æ¬„ä½çš„ç‰©å“ã€‚
+        /// è™•ç†ç›®æ¨™æ¬„ä½ä¸ç‚ºç©ºï¼Œæˆ–ä¾†æºæ¬„ä½çš„ç‰©å“èˆ‡ç›®æ¨™æ¬„ä½çš„ç‰©å“ï¼Œå…©è€…ä¸ç›¸åŒã€‚å…©å€‹æ¬„ä½çš„ç‰©å“äº¤æ›ï¼Œæˆ–ä¸æ»¿è¶³äº¤æ›æ¢ä»¶è€Œä»€éº¼éƒ½ä¸åš
         /// </summary>
         /// <param name="destination"></param>
         /// <param name="source"></param>
@@ -201,63 +201,63 @@ namespace udemy
         {
             Debug.Log($"[DragItem] attemptSimpleTransfer | destination: {destination}, source: {source}");
 
-            #region ¼È®É±Nª««~±q¨âÃä³£²¾°£¡CProvisionally remove item from both sides.
-            T source_item = source.GetItem();
-            int n_source = source.GetNumber();
+            #region æš«æ™‚å°‡ç‰©å“å¾å…©é‚Šéƒ½ç§»é™¤ã€‚Provisionally remove item from both sides.
+            T source_item = source.getItem();
+            int n_source = source.getNumber();
 
-            T destination_item = destination.GetItem();
-            int n_destination = destination.GetNumber();
+            T destination_item = destination.getItem();
+            int n_destination = destination.getNumber();
 
-            source.RemoveItems(n_source);
-            destination.RemoveItems(n_destination);
+            source.removeItems(n_source);
+            destination.removeItems(n_destination);
             #endregion
 
-            // ­pºâ¶W¥X destination Äæ¦ì®e³\¼Æ¶qªº­Ó¼Æ¡A±N·|³Q©ñ¦^ source Äæ¦ì
+            // è¨ˆç®—è¶…å‡º destination æ¬„ä½å®¹è¨±æ•¸é‡çš„å€‹æ•¸ï¼Œå°‡æœƒè¢«æ”¾å› source æ¬„ä½
             var n_back_to_source = calculateTakeBack(source_item, n_source, source, destination);
 
-            // ­pºâ¶W¥X source Äæ¦ì®e³\¼Æ¶qªº­Ó¼Æ¡A±N·|³Q©ñ¦^ destination Äæ¦ì
+            // è¨ˆç®—è¶…å‡º source æ¬„ä½å®¹è¨±æ•¸é‡çš„å€‹æ•¸ï¼Œå°‡æœƒè¢«æ”¾å› destination æ¬„ä½
             var n_back_to_destination = calculateTakeBack(destination_item, n_destination, destination, source);
 
-            // ¦³³¡¤À¼Æ¶qªºª««~»İ­n³Q©ñ¦^ source Äæ¦ì
+            // æœ‰éƒ¨åˆ†æ•¸é‡çš„ç‰©å“éœ€è¦è¢«æ”¾å› source æ¬„ä½
             if (n_back_to_source > 0)
             {
-                source.AddItems(source_item, n_back_to_source);
+                source.addItems(source_item, n_back_to_source);
                 n_source -= n_back_to_source;
             }
 
-            // ¦³³¡¤À¼Æ¶qªºª««~»İ­n³Q©ñ¦^ destination Äæ¦ì
+            // æœ‰éƒ¨åˆ†æ•¸é‡çš„ç‰©å“éœ€è¦è¢«æ”¾å› destination æ¬„ä½
             if (n_back_to_destination > 0)
             {
-                destination.AddItems(destination_item, n_back_to_destination);
+                destination.addItems(destination_item, n_back_to_destination);
                 n_destination -= n_back_to_destination;
             }
 
-            // ­Y¨ä¤¤¤@ÃäÄæ¦ìªº®e³\¼Æ¶q¤£¨¬¥H§¹¦¨ª««~ªº²¾¤J¡A«h²×¤î¥æ´«Äæ¦ìªº¬yµ{
-            if (source.MaxAcceptable(destination_item) < n_destination ||
-                destination.MaxAcceptable(source_item) < n_source)
+            // è‹¥å…¶ä¸­ä¸€é‚Šæ¬„ä½çš„å®¹è¨±æ•¸é‡ä¸è¶³ä»¥å®Œæˆç‰©å“çš„ç§»å…¥ï¼Œå‰‡çµ‚æ­¢äº¤æ›æ¬„ä½çš„æµç¨‹
+            if (source.getCapacity(destination_item) < n_destination ||
+                destination.getCapacity(source_item) < n_source)
             {
-                // ±N³Ñ¾l¼Æ¶q¥[¦^­ì¥»ªºÄæ¦ì
-                destination.AddItems(destination_item, n_destination);
-                source.AddItems(source_item, n_source);
+                // å°‡å‰©é¤˜æ•¸é‡åŠ å›åŸæœ¬çš„æ¬„ä½
+                destination.addItems(destination_item, n_destination);
+                source.addItems(source_item, n_source);
 
                 return;
             }
 
-            #region ±N³Ñ¾l¼Æ¶q¥[¤J¦U¦Ûªº¥Ø¼ĞÄæ¦ì¤¤
+            #region å°‡å‰©é¤˜æ•¸é‡åŠ å…¥å„è‡ªçš„ç›®æ¨™æ¬„ä½ä¸­
             if (n_destination > 0)
             {
-                source.AddItems(destination_item, n_destination);
+                source.addItems(destination_item, n_destination);
             }
 
             if (n_source > 0)
             {
-                destination.AddItems(source_item, n_source);
+                destination.addItems(source_item, n_source);
             } 
             #endregion
         }
 
         /// <summary>
-        /// ­pºâ¶W¥X¥Ø¼ĞÄæ¦ì®e³\¼Æ¶qªº­Ó¼Æ¡A±N·|³Q©ñ¦^­ì¥»ªºÄæ¦ì
+        /// è¨ˆç®—è¶…å‡ºç›®æ¨™æ¬„ä½å®¹è¨±æ•¸é‡çš„å€‹æ•¸ï¼Œå°‡æœƒè¢«æ”¾å›åŸæœ¬çš„æ¬„ä½
         /// </summary>
         /// <param name="item"></param>
         /// <param name="n_moved"></param>
@@ -266,29 +266,29 @@ namespace udemy
         /// <returns></returns>
         private int calculateTakeBack(T item, int n_moved, IDragContainer<T> source, IDragContainer<T> destination)
         {
-            var takeBackNumber = 0;
+            var n_take_back = 0;
 
-            // ¥Ø¼ĞÄæ¦ì¥i²¾¤J¼Æ¶q
-            var destinationMaxAcceptable = destination.MaxAcceptable(item);
+            // ç›®æ¨™æ¬„ä½å¯ç§»å…¥æ•¸é‡
+            var n_destination = destination.getCapacity(item);
 
-            // ­Y ¥i²¾¤J¼Æ¶q ¤Ö©ó ­n²¾¤J¼Æ¶q
-            if (destinationMaxAcceptable < n_moved)
+            // è‹¥ å¯ç§»å…¥æ•¸é‡ å°‘æ–¼ è¦ç§»å…¥æ•¸é‡
+            if (n_destination < n_moved)
             {
-                // ¦³ takeBackNumber ­Óª««~µLªk²¾¤J¡A±N²¾¦^­ì¥»ªºÄæ¦ì
-                takeBackNumber = n_moved - destinationMaxAcceptable;
+                // æœ‰ takeBackNumber å€‹ç‰©å“ç„¡æ³•ç§»å…¥ï¼Œå°‡ç§»å›åŸæœ¬çš„æ¬„ä½
+                n_take_back = n_moved - n_destination;
 
-                // ¨Ó·½Äæ¦ìªº¥i²¾¤J¼Æ¶q
-                var sourceTakeBackAcceptable = source.MaxAcceptable(item);
+                // ä¾†æºæ¬„ä½çš„å¯ç§»å…¥æ•¸é‡
+                var n_source = source.getCapacity(item);
 
                 // Abort and reset
-                // ¨Ó·½Äæ¦ìªº¥i²¾¤J¼Æ¶q ¤Ö©ó ²¾¦^­ì¥»ªºÄæ¦ìªº¼Æ¶q(±q¸ÓÄæ¦ì²¾¥X¦A²¾¦^¥h¡A¼Æ¶q´N¶W¥X­­¨î¡H)
-                if (sourceTakeBackAcceptable < takeBackNumber)
+                // ä¾†æºæ¬„ä½çš„å¯ç§»å…¥æ•¸é‡ å°‘æ–¼ ç§»å›åŸæœ¬çš„æ¬„ä½çš„æ•¸é‡(å¾è©²æ¬„ä½ç§»å‡ºå†ç§»å›å»ï¼Œæ•¸é‡å°±è¶…å‡ºé™åˆ¶ï¼Ÿ)
+                if (n_source < n_take_back)
                 {
                     return 0;
                 }
             }
 
-            return takeBackNumber;
+            return n_take_back;
         }
         #endregion
     }

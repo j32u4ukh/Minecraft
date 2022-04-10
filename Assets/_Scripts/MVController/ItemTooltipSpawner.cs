@@ -12,7 +12,7 @@ namespace udemy
     {
         public override bool CanCreateTooltip()
         {
-            var item = GetComponent<IItemHolder>().GetItem();
+            var item = GetComponent<IItemHolder>().getItem();
             if (!item) return false;
 
             return true;
@@ -23,7 +23,7 @@ namespace udemy
             var itemTooltip = tooltip.GetComponent<ItemTooltip>();
             if (!itemTooltip) return;
 
-            var item = GetComponent<IItemHolder>().GetItem();
+            var item = GetComponent<IItemHolder>().getItem();
 
             itemTooltip.Setup(item);
         }

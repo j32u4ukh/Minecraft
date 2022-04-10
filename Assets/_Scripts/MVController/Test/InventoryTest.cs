@@ -15,7 +15,7 @@ public class InventoryTest : MonoBehaviour
         player = GameObject.FindGameObjectWithTag("Player");
         store = player.GetComponent<ActionStore>();
 
-        store.AddAction(item: data, index: 0, number: 1);
+        store.addAction(item: data, index: 0, number: 1);
     }
 
     // Update is called once per frame

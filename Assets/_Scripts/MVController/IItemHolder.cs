@@ -9,6 +9,6 @@ namespace udemy
     /// </summary>
     public interface IItemHolder
     {
-        InventoryData GetItem();
+        InventoryData getItem();
     }
 }

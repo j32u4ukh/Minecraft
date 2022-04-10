@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,20 +13,26 @@ namespace udemy
     {
         /// <summary>
         /// What item type currently resides in this source?
+        /// 
+        /// 原專案名稱為 GetItem
         /// </summary>
-        T GetItem();
+        T getItem();
 
         /// <summary>
         /// What is the quantity of items in this source?
+        /// 
+        /// 原專案名稱為 GetNumber
         /// </summary>
-        int GetNumber();
+        int getNumber();
 
         /// <summary>
         /// Remove a given number of items from the source.
+        /// 
+        /// 原專案名稱為 RemoveItems
         /// </summary>
         /// <param name="number">
         /// This should never exceed the number returned by `GetNumber`.
         /// </param>
-        void RemoveItems(int number);
+        void removeItems(int number);
     }
 }
