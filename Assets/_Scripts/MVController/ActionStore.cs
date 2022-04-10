@@ -12,13 +12,14 @@ namespace udemy
     /// </summary>
     public class ActionStore : MonoBehaviour, ISaveable
     {
-        // STATE
-        Dictionary<int, DockedItemSlot> dockedItems = new Dictionary<int, DockedItemSlot>();
         private class DockedItemSlot
         {
             public ActionData item;
             public int number;
         }
+
+        // STATE
+        Dictionary<int, DockedItemSlot> docked_items = new Dictionary<int, DockedItemSlot>();
 
         // PUBLIC
 
@@ -32,10 +33,11 @@ namespace udemy
         /// </summary>
         public ActionData GetAction(int index)
         {
-            if (dockedItems.ContainsKey(index))
+            if (docked_items.ContainsKey(index))
             {
-                return dockedItems[index].item;
+                return docked_items[index].item;
             }
+
             return null;
         }
 
@@ -48,35 +50,39 @@ namespace udemy
         /// </returns>
         public int GetNumber(int index)
         {
-            if (dockedItems.ContainsKey(index))
+            if (docked_items.ContainsKey(index))
             {
-                return dockedItems[index].number;
+                return docked_items[index].number;
             }
+
             return 0;
         }
 
         /// <summary>
         /// Add an item to the given index.
+        /// TODO: 自動找空格放入，若無空格則無法放入
         /// </summary>
         /// <param name="item">What item should be added.</param>
         /// <param name="index">Where should the item be added.</param>
         /// <param name="number">How many items to add.</param>
         public void AddAction(InventoryData item, int index, int number)
         {
-            if (dockedItems.ContainsKey(index))
+            if (docked_items.ContainsKey(index))
             {
-                if (object.ReferenceEquals(item, dockedItems[index].item))
+                if (ReferenceEquals(item, docked_items[index].item))
                 {
-                    dockedItems[index].number += number;
+                    docked_items[index].number += number;
                 }
             }
             else
             {
-                var slot = new DockedItemSlot();
+                DockedItemSlot slot = new DockedItemSlot();
                 slot.item = item as ActionData;
                 slot.number = number;
-                dockedItems[index] = slot;
+
+                docked_items.Add(index, slot);
             }
+
             if (storeUpdated != null)
             {
                 storeUpdated();
@@ -91,10 +97,10 @@ namespace udemy
         /// <returns>False if the action could not be executed.</returns>
         public bool Use(int index, GameObject user)
         {
-            if (dockedItems.ContainsKey(index))
+            if (docked_items.ContainsKey(index))
             {
-                dockedItems[index].item.Use(user);
-                if (dockedItems[index].item.isConsumable())
+                docked_items[index].item.Use(user);
+                if (docked_items[index].item.isConsumable())
                 {
                     RemoveItems(index, 1);
                 }
@@ -108,12 +114,12 @@ namespace udemy
         /// </summary>
         public void RemoveItems(int index, int number)
         {
-            if (dockedItems.ContainsKey(index))
+            if (docked_items.ContainsKey(index))
             {
-                dockedItems[index].number -= number;
-                if (dockedItems[index].number <= 0)
+                docked_items[index].number -= number;
+                if (docked_items[index].number <= 0)
                 {
-                    dockedItems.Remove(index);
+                    docked_items.Remove(index);
                 }
                 if (storeUpdated != null)
                 {
@@ -126,25 +132,36 @@ namespace udemy
         /// <summary>
         /// What is the maximum number of items allowed in this slot.
         /// 
-        /// This takes into account whether the slot already contains an item
-        /// and whether it is the same type. Will only accept multiple if the
-        /// item is consumable.
+        /// 相同物品且為消耗品，才能累加疊放；否則都只能放一個物品。
+        /// TODO: 大部分都能疊加，根據不同物品會有不同的疊加數量上限
+        /// This takes into account whether the slot already contains an item and whether it is the same type. 
+        /// Will only accept multiple if the item is consumable.
         /// </summary>
         /// <returns>Will return int.MaxValue when there is not effective bound.</returns>
-        public int MaxAcceptable(InventoryData item, int index)
+        public int getAcceptableNumber(InventoryData item, int index)
         {
-            var actionItem = item as ActionData;
-            if (!actionItem) return 0;
+            var action_item = item as ActionData;
 
-            if (dockedItems.ContainsKey(index) && !object.ReferenceEquals(item, dockedItems[index].item))
+            // actionItem 無法轉型為 ActionData
+            if (!action_item)
             {
                 return 0;
             }
-            if (actionItem.isConsumable())
+
+            // index 指向的位置已放有物品，但要移入的物品與現有物品種類不同
+            if (docked_items.ContainsKey(index) && !ReferenceEquals(item, docked_items[index].item))
+            {
+                return 0;
+            }
+
+            // 若物品為消耗品，沒有存放上限
+            if (action_item.isConsumable())
             {
                 return int.MaxValue;
             }
-            if (dockedItems.ContainsKey(index))
+
+            // index 指向的位置已放有物品，且非消耗品
+            if (docked_items.ContainsKey(index))
             {
                 return 0;
             }
@@ -164,22 +181,25 @@ namespace udemy
         object ISaveable.CaptureState()
         {
             var state = new Dictionary<int, DockedItemRecord>();
-            foreach (var pair in dockedItems)
+
+            foreach (var pair in docked_items)
             {
                 var record = new DockedItemRecord();
                 record.itemID = pair.Value.item.GetItemID();
                 record.number = pair.Value.number;
                 state[pair.Key] = record;
             }
+
             return state;
         }
 
         void ISaveable.RestoreState(object state)
         {
             var stateDict = (Dictionary<int, DockedItemRecord>)state;
+
             foreach (var pair in stateDict)
             {
-                AddAction(InventoryData.GetFromID(pair.Value.itemID), pair.Key, pair.Value.number);
+                AddAction(InventoryData.getById(pair.Value.itemID), pair.Key, pair.Value.number);
             }
         }
     }

@@ -43,7 +43,7 @@ namespace udemy
 
         public int MaxAcceptable(InventoryData item)
         {
-            return store.MaxAcceptable(item, index);
+            return store.getAcceptableNumber(item, index);
         }
 
         public void RemoveItems(int number)

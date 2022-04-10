@@ -23,6 +23,7 @@ namespace udemy
         public void init(BlockType block_type, Vector3Int location, float life_time = 10f)
         {
             this.block_type = block_type;
+            name = block_type.ToString();
             transform.position = location;
 
             Block block = new Block(block_type, Vector3Int.zero);

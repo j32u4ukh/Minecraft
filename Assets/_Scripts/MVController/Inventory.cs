@@ -244,7 +244,7 @@ namespace udemy
             var slotStrings = (InventorySlotRecord[])state;
             for (int i = 0; i < inventorySize; i++)
             {
-                slots[i].item = InventoryData.GetFromID(slotStrings[i].itemID);
+                slots[i].item = InventoryData.getById(slotStrings[i].itemID);
                 slots[i].number = slotStrings[i].number;
             }
             if (inventoryUpdated != null)
@@ -259,7 +259,7 @@ namespace udemy
             {
                 case "HasInventoryData":
                     // ex: 28c6f2e6-46e9-4879-a14f-d6998c781cb7
-                    return HasItem(InventoryData.GetFromID(parameters[0]));
+                    return HasItem(InventoryData.getById(parameters[0]));
                 default:
                     return null;
             }

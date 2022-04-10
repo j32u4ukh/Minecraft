@@ -10,7 +10,7 @@ namespace udemy
     /// This class should be used as a base. Subclasses must implement the `Use`
     /// method.
     /// </remarks>
-    [CreateAssetMenu(menuName = ("GameDevTV/GameDevTV.UI.InventorySystem/Action Item"))]
+    [CreateAssetMenu(menuName = "ComponentData/Action Item")]
     public class ActionData : InventoryData
     {
         // CONFIG DATA

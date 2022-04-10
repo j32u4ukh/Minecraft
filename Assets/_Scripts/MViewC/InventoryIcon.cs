@@ -7,8 +7,8 @@ using TMPro;
 namespace udemy
 {
     /// <summary>
-    /// To be put on the icon representing an inventory item. Allows the slot to
-    /// update the icon and number.
+    /// To be put on the icon representing an inventory item. 
+    /// Allows the slot to update the icon and number.
     /// 原專案名稱為 InventoryItemIcon
     /// </summary>
     [RequireComponent(typeof(Image))]
@@ -28,6 +28,7 @@ namespace udemy
         public void SetItem(InventoryData item, int number)
         {
             var iconImage = GetComponent<Image>();
+
             if (item == null)
             {
                 iconImage.enabled = false;

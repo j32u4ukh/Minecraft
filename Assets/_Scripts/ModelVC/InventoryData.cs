@@ -15,54 +15,65 @@ namespace udemy
     /// </remarks>
     public abstract class InventoryData : ScriptableObject, ISerializationCallbackReceiver
     {
-        // CONFIG DATA
+        #region CONFIG DATA
         [Tooltip("Auto-generated UUID for saving/loading. Clear this field if you want to generate a new one.")]
-        [SerializeField] string itemID = null;
+        [SerializeField] string id = null;
+
         [Tooltip("Item name to be displayed in UI.")]
-        [SerializeField] string displayName = null;
+        [SerializeField] string display_name = null;
+
         [Tooltip("Item description to be displayed in UI.")]
         [SerializeField] [TextArea] string description = null;
+
         [Tooltip("The UI icon to represent this item in the inventory.")]
         [SerializeField] Sprite icon = null;
+
         [Tooltip("The prefab that should be spawned when this item is dropped.")]
         [SerializeField] Pickup pickup = null;
+
         [Tooltip("If true, multiple items of this type can be stacked in the same inventory slot.")]
-        [SerializeField] bool stackable = false;
+        [SerializeField] bool stackable = false; 
+        #endregion
 
         // STATE
-        static Dictionary<string, InventoryData> itemLookupCache;
+        static Dictionary<string, InventoryData> inventories;
 
         // PUBLIC
 
         /// <summary>
         /// Get the inventory item instance from its UUID.
         /// </summary>
-        /// <param name="itemID">
+        /// <param name="id">
         /// String UUID that persists between game instances.
         /// </param>
         /// <returns>
         /// Inventory item instance corresponding to the ID.
         /// </returns>
-        public static InventoryData GetFromID(string itemID)
+        public static InventoryData getById(string id)
         {
-            if (itemLookupCache == null)
+            if (inventories == null)
             {
-                itemLookupCache = new Dictionary<string, InventoryData>();
-                var itemList = Resources.LoadAll<InventoryData>("");
-                foreach (var item in itemList)
+                inventories = new Dictionary<string, InventoryData>();
+
+                foreach (var item in Resources.LoadAll<InventoryData>(""))
                 {
-                    if (itemLookupCache.ContainsKey(item.itemID))
+                    if (inventories.ContainsKey(item.id))
                     {
-                        Debug.LogError(string.Format("Looks like there's a duplicate GameDevTV.UI.InventorySystem ID for objects: {0} and {1}", itemLookupCache[item.itemID], item));
+                        // TODO: 實作 ToString 以協助區分不同檔案
+                        Debug.LogError($"Looks like there's a duplicate ID for objects: {inventories[item.id]} and {item}");
                         continue;
                     }
 
-                    itemLookupCache[item.itemID] = item;
+                    inventories.Add(item.id, item);
                 }
             }
 
-            if (itemID == null || !itemLookupCache.ContainsKey(itemID)) return null;
-            return itemLookupCache[itemID];
+            if (id == null || !inventories.ContainsKey(id))
+            {
+                return null;
+            }
+
+            return inventories[id];
         }
 
         /// <summary>
@@ -86,7 +97,7 @@ namespace udemy
 
         public string GetItemID()
         {
-            return itemID;
+            return id;
         }
 
         public bool IsStackable()
@@ -96,7 +107,7 @@ namespace udemy
 
         public string GetDisplayName()
         {
-            return displayName;
+            return display_name;
         }
 
         public string GetDescription()
@@ -109,9 +120,9 @@ namespace udemy
         void ISerializationCallbackReceiver.OnBeforeSerialize()
         {
             // Generate and save a new UUID if this is blank.
-            if (string.IsNullOrWhiteSpace(itemID))
+            if (string.IsNullOrWhiteSpace(id))
             {
-                itemID = System.Guid.NewGuid().ToString();
+                id = System.Guid.NewGuid().ToString();
             }
         }
 
