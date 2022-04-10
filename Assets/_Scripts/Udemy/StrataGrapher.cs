@@ -7,6 +7,7 @@ namespace udemy
     {
         public LineRenderer lr;
 
+        #region 若修改 Inspector 當中的數值，會觸發 OnValidate 來重新繪製 LineRenderer，可以動態觀察到線段的變化
         //[Header("縮放波型的震幅")]
         //public float height_scale = 2;
 
@@ -19,7 +20,8 @@ namespace udemy
         //public int octaves = 1;
 
         //[Header("目標海拔高度")]
-        //public float altitude = 1f;
+        //public float altitude = 1f; 
+        #endregion
 
         public StrataSetting setting;
 

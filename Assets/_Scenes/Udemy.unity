@@ -11437,7 +11437,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dfec0435c56d6e744a96ed600855e27c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  load_file: 1
+  load_file: 0
   chunk_prefab: {fileID: 8462583276562152735, guid: 7fe3ccf06f8654943a3c376d82ff803d, type: 3}
   main_camera: {fileID: 1803130323}
   player: {fileID: 544356408}
